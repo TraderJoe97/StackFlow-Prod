@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace StackFlow.Models
@@ -26,12 +26,12 @@ namespace StackFlow.Models
         public required string PasswordHash { get; set; } = string.Empty;
 
         [Column("role_id")] // Explicit foreign key property, good practice
-        public required int RoleId { get; set; } = 2;
+        public required int Role_Id { get; set; } = 2;
         [ForeignKey("RoleId")]
         public Role? Role { get; set; } // Navigation property for Role
 
         [Column("created_at", TypeName = "date")] // Using TypeName for 'date'
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime Created_At { get; set; } = DateTime.UtcNow;
 
 
 
