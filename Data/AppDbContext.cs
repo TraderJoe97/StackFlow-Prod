@@ -40,26 +40,29 @@ namespace StackFlow.Data
                 .HasForeignKey(p => p.Created_By)
                 .IsRequired(); // Assuming created_by is NOT NULL
 
-            // Task and Project relationship
+            // Ticket and Project relationship
             modelBuilder.Entity<Ticket>()
                 .HasOne(t => t.Project)
                 .WithMany(p => p.Tickets) // Assuming Project has ICollection<Task> Tasks
                 .HasForeignKey(t => t.Project_Id)
-                .IsRequired(); // Assuming project_id is NOT NULL
+                .IsRequired() // Assuming project_id is NOT NULL
+                .OnDelete(DeleteBehavior.Cascade);
 
-            // Task and User (AssignedTo) relationship
+            // Ticket and User (AssignedTo) relationship
             modelBuilder.Entity<Ticket>()
                 .HasOne(t => t.AssignedTo)
                 .WithMany(u => u.AssignedTickets) // Assuming User has ICollection<Task> AssignedTasks
                 .HasForeignKey(t => t.Assigned_To)
-                .IsRequired(false); // Assigned_to is NULLABLE
+                .IsRequired(false) // Assigned_to is NULLABLE
+                .OnDelete(DeleteBehavior.ClientSetNull);
 
-            // Task and User (TaskCreatedBy) relationship
+            // Ticket and User (TaskCreatedBy) relationship
             modelBuilder.Entity<Ticket>()
                 .HasOne(t => t.CreatedBy)
                 .WithMany(u => u.CreatedTickets) // Assuming User has ICollection<Task> CreatedTasks
                 .HasForeignKey(t => t.Created_By)
-                .IsRequired(); // Assuming task_created_by is NOT NULL
+                .IsRequired() // Assuming task_created_by is NOT NULL
+                .OnDelete(DeleteBehavior.Restrict);
 
             // TaskComment and Task relationship
             modelBuilder.Entity<Comment>()
