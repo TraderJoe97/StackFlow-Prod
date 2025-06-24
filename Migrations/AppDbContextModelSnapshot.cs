@@ -100,6 +100,16 @@ namespace StackFlow.Migrations
                     b.HasIndex("Created_By");
 
                     b.ToTable("projects", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Created_By = 1,
+                            Description = "This is a test project.",
+                            Name = "Seed Project",
+                            Status = "Active"
+                        });
                 });
 
             modelBuilder.Entity("StackFlow.Models.Role", b =>
@@ -125,6 +135,14 @@ namespace StackFlow.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("roles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Description = "",
+                            Name = "Admin"
+                        });
                 });
 
             modelBuilder.Entity("StackFlow.Models.Ticket", b =>
@@ -237,6 +255,17 @@ namespace StackFlow.Migrations
                     b.HasIndex("Role_Id");
 
                     b.ToTable("users", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Created_At = new DateTime(2025, 6, 24, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Email = "sipho@example.com",
+                            Name = "Siphokazi",
+                            PasswordHash = "placeholder-password",
+                            Role_Id = 1
+                        });
                 });
 
             modelBuilder.Entity("StackFlow.Models.Comment", b =>
@@ -244,11 +273,7 @@ namespace StackFlow.Migrations
                     b.HasOne("StackFlow.Models.User", "CreatedBy")
                         .WithMany("TicketComments")
                         .HasForeignKey("Created_By")
-<<<<<<< HEAD
-                        .OnDelete(DeleteBehavior.Cascade)
-=======
                         .OnDelete(DeleteBehavior.Restrict)
->>>>>>> b1732e4e3b5b5c8be480bbc178f355c46f1c1b2c
                         .IsRequired();
 
                     b.HasOne("StackFlow.Models.Ticket", "Ticket")
@@ -277,12 +302,7 @@ namespace StackFlow.Migrations
                 {
                     b.HasOne("StackFlow.Models.User", "AssignedTo")
                         .WithMany("AssignedTickets")
-<<<<<<< HEAD
-                        .HasForeignKey("Assigned_To")
-                        .OnDelete(DeleteBehavior.Restrict);
-=======
                         .HasForeignKey("Assigned_To");
->>>>>>> b1732e4e3b5b5c8be480bbc178f355c46f1c1b2c
 
                     b.HasOne("StackFlow.Models.User", "CreatedBy")
                         .WithMany("CreatedTickets")
