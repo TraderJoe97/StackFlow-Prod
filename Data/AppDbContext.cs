@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using StackFlow.Models;
-using System.Data;
 
 namespace StackFlow.Data
 {
@@ -12,7 +11,7 @@ namespace StackFlow.Data
         public DbSet<Role> Role { get; set; } = null!;
         public DbSet<Project> Project { get; set; } = null!;
         public DbSet<Ticket> Ticket { get; set; } = null!;
-        public DbSet<Comment> TicketComment { get; set; } = null!;
+        public DbSet<Comment> TicketComment { get; set; } = null!; // Renamed from Comment to TicketComment to match DbSet name
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -32,57 +31,73 @@ namespace StackFlow.Data
                 .WithMany(r => r.Users)
                 .HasForeignKey(u => u.Role_Id)
                 .IsRequired(); // RoleId is NOT NULL based on schema for user 'role id'
+                               
 
             // Project and User (CreatedBy) relationship
+            // KEEP THIS AS CASCADE if you want deleting a user to delete their projects
+            // This is one part of the problematic cycle User -> Project (Cascade) -> Ticket (Cascade)
             modelBuilder.Entity<Project>()
                 .HasOne(p => p.CreatedBy)
                 .WithMany(u => u.CreatedProjects) // Assuming you have ICollection<Project> CreatedProjects in User.cs
                 .HasForeignKey(p => p.Created_By)
                 .IsRequired(); // Assuming created_by is NOT NULL
+                               // Default DeleteBehavior.Cascade is assumed here, contributing to the cycle.
 
-            // Ticket and Project relationship
+            // Ticket and Project relationship <<<<<<< HEAD =======
+            // KEEP THIS AS CASCADE if you want deleting a project to delete its tickets
+            // This is another part of the problematic cycle User -> Project -> Ticket (Cascade) >>>>>>> b1732e4e3b5b5c8be480bbc178f355c46f1c1b2c
             modelBuilder.Entity<Ticket>()
                 .HasOne(t => t.Project)
-                .WithMany(p => p.Tickets) // Assuming Project has ICollection<Task> Tasks
+                .WithMany(p => p.Tickets) // Assuming Project has ICollection<Ticket> Tickets
                 .HasForeignKey(t => t.Project_Id)
                 .IsRequired() // Assuming project_id is NOT NULL
-                .OnDelete(DeleteBehavior.Cascade);
-
+                .OnDelete(DeleteBehavior.Cascade)
+                .IsRequired(); // Assuming project_id is NOT NULL
+                               // Default DeleteBehavior.Cascade is assumed here, contributing to the cycle.
             // Ticket and User (AssignedTo) relationship
             modelBuilder.Entity<Ticket>()
                 .HasOne(t => t.AssignedTo)
-                .WithMany(u => u.AssignedTickets) // Assuming User has ICollection<Task> AssignedTasks
+                .WithMany(u => u.AssignedTickets) // Assuming User has ICollection<Ticket> AssignedTickets
                 .HasForeignKey(t => t.Assigned_To)
                 .IsRequired(false) // Assigned_to is NULLABLE
-                .OnDelete(DeleteBehavior.ClientSetNull);
+                .OnDelete(DeleteBehavior.ClientSetNull)
 
             // Ticket and User (TaskCreatedBy) relationship
+                .IsRequired(false); // Assigned_to is NULLABLE
+                                    // Default DeleteBehavior.SetNull for optional foreign keys, or NoAction if not explicitly set. Fine as is.
+
+            // Ticket and User (CreatedBy) relationship - MODIFIED TO RESTRICT
+            // This was the first conflict point 
             modelBuilder.Entity<Ticket>()
                 .HasOne(t => t.CreatedBy)
-                .WithMany(u => u.CreatedTickets) // Assuming User has ICollection<Task> CreatedTasks
+                .WithMany(u => u.CreatedTickets) // Assuming User has ICollection<Ticket> CreatedTickets
                 .HasForeignKey(t => t.Created_By)
-                .IsRequired() // Assuming task_created_by is NOT NULL
-                .OnDelete(DeleteBehavior.Restrict);
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict); 
 
-            // TaskComment and Task relationship
+            // Comment and Ticket relationship
+            // KEEP THIS AS CASCADE if you want deleting a ticket to delete its comments
+            // This is one part of the problematic cycle Ticket -> Comment (Cascade)
             modelBuilder.Entity<Comment>()
                 .HasOne(c => c.Ticket)
                 .WithMany(t => t.TicketComments)
                 .HasForeignKey(tc => tc.Ticket_Id)
-                .IsRequired(); // Assuming task_id is NOT NULL
+                .IsRequired(); // Assuming ticket_id is NOT NULL
+                               // Default DeleteBehavior.Cascade is assumed here, contributing to the cycle.
 
-            // TaskComment and User relationship
+            // Comment and User relationship - MODIFIED TO RESTRICT
+            // This was the second conflict point for User -> Comment
             modelBuilder.Entity<Comment>()
                 .HasOne(c => c.CreatedBy)
                 .WithMany(u => u.TicketComments)
                 .HasForeignKey(tc => tc.Created_By)
-                .IsRequired(); // Assuming user_id is NOT NULL
-
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict); // CHANGE: Prevents multiple cascade paths from User to Comment
 
             // Seed a default project for easy testing (optional)
             // Ensure that a user with Id = 1 exists in your database or this will fail.
             // This seeding will only run if you apply migrations after adding it.
-
+            // (Your seeding logic would go here if uncommented)
         }
     }
 }

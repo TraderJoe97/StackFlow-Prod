@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using StackFlow.Data;
 
@@ -11,9 +12,11 @@ using StackFlow.Data;
 namespace StackFlow.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250624175223_initialmigration")]
+    partial class initialmigration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -244,11 +247,7 @@ namespace StackFlow.Migrations
                     b.HasOne("StackFlow.Models.User", "CreatedBy")
                         .WithMany("TicketComments")
                         .HasForeignKey("Created_By")
-<<<<<<< HEAD
-                        .OnDelete(DeleteBehavior.Cascade)
-=======
                         .OnDelete(DeleteBehavior.Restrict)
->>>>>>> b1732e4e3b5b5c8be480bbc178f355c46f1c1b2c
                         .IsRequired();
 
                     b.HasOne("StackFlow.Models.Ticket", "Ticket")
@@ -277,12 +276,7 @@ namespace StackFlow.Migrations
                 {
                     b.HasOne("StackFlow.Models.User", "AssignedTo")
                         .WithMany("AssignedTickets")
-<<<<<<< HEAD
-                        .HasForeignKey("Assigned_To")
-                        .OnDelete(DeleteBehavior.Restrict);
-=======
                         .HasForeignKey("Assigned_To");
->>>>>>> b1732e4e3b5b5c8be480bbc178f355c46f1c1b2c
 
                     b.HasOne("StackFlow.Models.User", "CreatedBy")
                         .WithMany("CreatedTickets")
