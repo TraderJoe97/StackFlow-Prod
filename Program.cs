@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using StackFlow.Data;
 using System;
+using Microsoft.AspNetCore.Authentication.Cookies; // Added for cookie authentication
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,8 +21,22 @@ builder.Services.AddDbContext<AppDbContext>(options =>
                 errorNumbersToAdd: null);
             sqlOptions.CommandTimeout(60);
         });
-
 });
+
+// Configure Authentication services (specifically Cookie Authentication)
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Account/Login"; // Path to your login action
+        options.LogoutPath = "/Account/Logout"; // Path to your logout action
+        options.AccessDeniedPath = "/Account/AccessDenied"; // Path for access denied
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(30); // Cookie expiration time
+        options.SlidingExpiration = true; // Renew cookie if half of its lifetime has passed
+    });
+
+// Add Authorization services
+builder.Services.AddAuthorization();
+
 
 var app = builder.Build();
 
@@ -38,6 +53,9 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+// IMPORTANT: UseAuthentication must be placed before UseAuthorization
+// This ensures that the user's identity is established before authorization checks are performed.
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(
