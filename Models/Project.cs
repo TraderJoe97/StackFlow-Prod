@@ -13,7 +13,7 @@ namespace StackFlow.Models
     {
         [Key]
         [Column("id")]
-        public static int Id { get; set; }
+        public int Id { get; set; }
 
         [Required]
         [Column("project_name")]
@@ -54,3 +54,4 @@ namespace StackFlow.Models
 
     }
 }
+
