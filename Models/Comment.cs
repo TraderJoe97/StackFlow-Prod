@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 
 namespace StackFlow.Models
@@ -7,7 +7,7 @@ namespace StackFlow.Models
     {
         [Key]
         [Column("id")]
-        public static int Id { get; set; }
+        public int Id { get; set; }
 
         [Column("ticket_id")]
         public int Ticket_Id { get; set; }
@@ -23,12 +23,12 @@ namespace StackFlow.Models
 
         [Column("created_by")]
         public int Created_By { get; set; }
-        [ForeignKey("CreatedBy")]
+        [ForeignKey("Created_By")]
         public User? CreatedBy { get; set; }
 
 
         [Column("comment_created_at", TypeName = "date")]
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime Created_At { get; set; } = DateTime.UtcNow;
 
     }
 }
