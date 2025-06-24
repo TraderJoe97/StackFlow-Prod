@@ -30,7 +30,7 @@ namespace StackFlow.Data
             modelBuilder.Entity<User>()
                 .HasOne(u => u.Role)
                 .WithMany(r => r.Users)
-                .HasForeignKey(u => u.RoleId)
+                .HasForeignKey(u => u.Role_Id)
                 .IsRequired(); // RoleId is NOT NULL based on schema for user 'role id'
 
             // Project and User (CreatedBy) relationship

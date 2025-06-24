@@ -123,8 +123,8 @@ namespace StackFlow.Controllers
                 Name = username, // Changed from Username to Name to match User.cs model
                 Email = email,
                 PasswordHash = passwordHash,
-                RoleId = defaultRole.Id, // Assign the ID of the 'Developer' role
-                CreatedAt = DateTime.UtcNow
+                Role_Id = defaultRole.Id, // Assign the ID of the 'Developer' role
+                Created_At = DateTime.UtcNow
             };
 
             _context.User.Add(newUser);
