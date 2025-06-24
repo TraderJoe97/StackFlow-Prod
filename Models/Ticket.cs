@@ -24,7 +24,7 @@ namespace StackFlow.Models
 
         [Key]
         [Column("id")]
-        public static int Id { get; set; }
+        public int Id { get; set; }
 
         [Required]
         [Column("ticket_title")]
@@ -63,7 +63,7 @@ namespace StackFlow.Models
         public DateTime Due_Date { get; set; } = new DateTime();
 
 
-        [Column("task_completed_at", TypeName = "date")]
+        [Column("ticket_completed_at", TypeName = "date")]
         public DateTime Completed_At { get; set; } = new DateTime();
 
 
