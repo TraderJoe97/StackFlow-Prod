@@ -24,12 +24,14 @@ namespace StackFlow.Data
             modelBuilder.Entity<Ticket>().ToTable("tickets");
             modelBuilder.Entity<Comment>().ToTable("comments");
 
+
             // User and Role relationship
             modelBuilder.Entity<User>()
                 .HasOne(u => u.Role)
                 .WithMany(r => r.Users)
                 .HasForeignKey(u => u.Role_Id)
                 .IsRequired(); // RoleId is NOT NULL based on schema for user 'role id'
+
 
             // Project and User (CreatedBy) relationship
             // KEEP THIS AS CASCADE if you want deleting a user to delete their projects
@@ -39,18 +41,20 @@ namespace StackFlow.Data
                 .WithMany(u => u.CreatedProjects) // Assuming you have ICollection<Project> CreatedProjects in User.cs
                 .HasForeignKey(p => p.Created_By)
                 .IsRequired(); // Assuming created_by is NOT NULL
+                               // Default DeleteBehavior.Cascade is assumed here, contributing to the cycle.
 
-            // Ticket and Project relationship
+            // Ticket and Project relationship <<<<<<< HEAD =======
             // KEEP THIS AS CASCADE if you want deleting a project to delete its tickets
-            // This is another part of the problematic cycle User -> Project -> Ticket (Cascade)
+            // This is another part of the problematic cycle User -> Project -> Ticket (Cascade) >>>>>>> b1732e4e3b5b5c8be480bbc178f355c46f1c1b2c
             modelBuilder.Entity<Ticket>()
                 .HasOne(t => t.Project)
                 .WithMany(p => p.Tickets) // Assuming Project has ICollection<Ticket> Tickets
                 .HasForeignKey(t => t.Project_Id)
                 .IsRequired() // Assuming project_id is NOT NULL
-                .OnDelete(DeleteBehavior.Cascade);
-
-            // Ticket and User (AssignedTo) relationship
+                .OnDelete(DeleteBehavior.Cascade)
+                .IsRequired(); // Assuming project_id is NOT NULL
+                               // Default DeleteBehavior.Cascade is assumed here, contributing to the cycle.
+                               // Ticket and User (AssignedTo) relationship
             modelBuilder.Entity<Ticket>()
                 .HasOne(t => t.AssignedTo)
                 .WithMany(u => u.AssignedTickets) // Assuming User has ICollection<Ticket> AssignedTickets
@@ -58,8 +62,9 @@ namespace StackFlow.Data
                 .IsRequired(false) // Assigned_to is NULLABLE
                 .OnDelete(DeleteBehavior.ClientSetNull)
 
-                // Ticket and User (TaskCreatedBy) relationship
+            // Ticket and User (TaskCreatedBy) relationship
                 .IsRequired(false); // Assigned_to is NULLABLE
+                                    // Default DeleteBehavior.SetNull for optional foreign keys, or NoAction if not explicitly set. Fine as is.
 
             // Ticket and User (CreatedBy) relationship - MODIFIED TO RESTRICT
             // This was the first conflict point 
@@ -78,6 +83,7 @@ namespace StackFlow.Data
                 .WithMany(t => t.TicketComments)
                 .HasForeignKey(tc => tc.Ticket_Id)
                 .IsRequired(); // Assuming ticket_id is NOT NULL
+                               // Default DeleteBehavior.Cascade is assumed here, contributing to the cycle.
 
             // Comment and User relationship - MODIFIED TO RESTRICT
             // This was the second conflict point for User -> Comment
@@ -88,32 +94,10 @@ namespace StackFlow.Data
                 .IsRequired()
                 .OnDelete(DeleteBehavior.Restrict); // CHANGE: Prevents multiple cascade paths from User to Comment
 
-            // ✅ Seed data to avoid null reference/required warnings during migrations
-            modelBuilder.Entity<Role>().HasData(
-                new Role { Id = 1, Name = "Admin" }
-            );
-
-            modelBuilder.Entity<User>().HasData(
-                new User
-                {
-                    Id = 1,
-                    Name = "Siphokazi",
-                    Email = "sipho@example.com",
-                    Role_Id = 1,
-                    PasswordHash = "placeholder-password",
-                    Created_At = new DateTime(2025, 6, 24) // static fixed date to avoid migration errors
-                }
-            );
-
-            modelBuilder.Entity<Project>().HasData(
-                new Project
-                {
-                    Id = 1,
-                    Name = "Seed Project",
-                    Description = "This is a test project.",
-                    Created_By = 1,
-                }
-            );
+            // Seed a default project for easy testing (optional)
+            // Ensure that a user with Id = 1 exists in your database or this will fail.
+            // This seeding will only run if you apply migrations after adding it.
+            // (Your seeding logic would go here if uncommented)
         }
     }
 }
