@@ -6,13 +6,16 @@
 
 <h2>Ticket List</h2>
 
+@* Link to the Create action for adding a new ticket *@
 <p>
     @Html.ActionLink("Create New Ticket", "Create")
 </p>
 
+@* Table to display the list of tickets *@
 <table class="table table-bordered table-striped">
     <thead>
         <tr>
+            @* Column headers with display names pulled from model metadata *@
             <th>@Html.DisplayNameFor(model => model.Title)</th>
             <th>@Html.DisplayNameFor(model => model.Due_Date)</th>
             <th>@Html.DisplayNameFor(model => model.Status)</th>
@@ -23,6 +26,7 @@
         </tr>
     </thead>
     <tbody>
+        @* Loop through each ticket item in the model and display its properties *@
         @foreach (var item in Model)
         {
             <tr>
@@ -30,9 +34,10 @@
                 <td>@item.Due_Date.ToShortDateString()</td>
                 <td>@item.Status</td>
                 <td>@item.Priority</td>
-                <td>@item.Project?.Name</td>
-                <td>@item.AssignedTo?.Name</td>
+                <td>@item.Project?.Name</td> @* Null check in case project is not linked *@
+                <td>@item.AssignedTo?.Name</td> @* Null check in case ticket is unassigned *@
                 <td>
+                    @* Links to Edit, Details, and Delete actions for each ticket *@
                     @Html.ActionLink("Edit", "Edit", new { id = item.Id }) |
                     @Html.ActionLink("Details", "Details", new { id = item.Id }) |
                     @Html.ActionLink("Delete", "Delete", new { id = item.Id })
