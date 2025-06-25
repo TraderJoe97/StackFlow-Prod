@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using StackFlow.Data;
 
@@ -11,9 +12,11 @@ using StackFlow.Data;
 namespace StackFlow.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250624215750_SeedDefaults")]
+    partial class SeedDefaults
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -260,7 +263,7 @@ namespace StackFlow.Migrations
                         new
                         {
                             Id = 1,
-                            Created_At = new DateTime(2025, 6, 24, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Created_At = new DateTime(2025, 6, 24, 21, 57, 35, 989, DateTimeKind.Utc).AddTicks(4079),
                             Email = "sipho@example.com",
                             Name = "Siphokazi",
                             PasswordHash = "placeholder-password",

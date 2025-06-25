@@ -31,7 +31,7 @@ namespace StackFlow.Data
                 .WithMany(r => r.Users)
                 .HasForeignKey(u => u.Role_Id)
                 .IsRequired(); // RoleId is NOT NULL based on schema for user 'role id'
-                               
+
 
             // Project and User (CreatedBy) relationship
             // KEEP THIS AS CASCADE if you want deleting a user to delete their projects
@@ -54,7 +54,7 @@ namespace StackFlow.Data
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired(); // Assuming project_id is NOT NULL
                                // Default DeleteBehavior.Cascade is assumed here, contributing to the cycle.
-            // Ticket and User (AssignedTo) relationship
+                               // Ticket and User (AssignedTo) relationship
             modelBuilder.Entity<Ticket>()
                 .HasOne(t => t.AssignedTo)
                 .WithMany(u => u.AssignedTickets) // Assuming User has ICollection<Ticket> AssignedTickets
@@ -73,7 +73,7 @@ namespace StackFlow.Data
                 .WithMany(u => u.CreatedTickets) // Assuming User has ICollection<Ticket> CreatedTickets
                 .HasForeignKey(t => t.Created_By)
                 .IsRequired()
-                .OnDelete(DeleteBehavior.Restrict); 
+                .OnDelete(DeleteBehavior.Restrict);
 
             // Comment and Ticket relationship
             // KEEP THIS AS CASCADE if you want deleting a ticket to delete its comments
