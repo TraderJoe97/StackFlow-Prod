@@ -27,7 +27,7 @@ namespace StackFlow.Models
 
         [Column("role_id")] // Explicit foreign key property, good practice
         public required int Role_Id { get; set; } = 2;
-        [ForeignKey("RoleId")]
+        [ForeignKey("role_Id")]
         public Role? Role { get; set; } // Navigation property for Role
 
         [Column("created_at", TypeName = "date")] // Using TypeName for 'date'
