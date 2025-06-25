@@ -6,16 +6,19 @@
 
 <h2>Edit Ticket</h2>
 
+@* Begin the form for editing a ticket *@
 @using (Html.BeginForm())
 {
-    @Html.AntiForgeryToken()
-    @Html.HiddenFor(model => model.Id)
+    @Html.AntiForgeryToken() @* Helps prevent CSRF attacks *@
+    @Html.HiddenFor(model => model.Id) @* Keeps track of which ticket is being edited *@
 
     <div class="form-horizontal">
         <h4>Ticket</h4>
         <hr />
+        @* Displays validation messages, if any *@
         @Html.ValidationSummary(true, "", new { @class = "text-danger" })
 
+        @* Ticket Title field *@
         <div class="form-group">
             @Html.LabelFor(m => m.Title, htmlAttributes: new { @class = "control-label col-md-2" })
             <div class="col-md-10">
@@ -24,6 +27,7 @@
             </div>
         </div>
 
+        @* Ticket Description field *@
         <div class="form-group">
             @Html.LabelFor(m => m.Description, htmlAttributes: new { @class = "control-label col-md-2" })
             <div class="col-md-10">
@@ -32,6 +36,7 @@
             </div>
         </div>
 
+        @* Due Date field *@
         <div class="form-group">
             @Html.LabelFor(m => m.Due_Date, htmlAttributes: new { @class = "control-label col-md-2" })
             <div class="col-md-10">
@@ -40,6 +45,7 @@
             </div>
         </div>
 
+        @* Priority dropdown (values from enum) *@
         <div class="form-group">
             @Html.LabelFor(m => m.Priority, htmlAttributes: new { @class = "control-label col-md-2" })
             <div class="col-md-10">
@@ -48,6 +54,7 @@
             </div>
         </div>
 
+        @* Status dropdown (values from enum) *@
         <div class="form-group">
             @Html.LabelFor(m => m.Status, htmlAttributes: new { @class = "control-label col-md-2" })
             <div class="col-md-10">
@@ -56,6 +63,7 @@
             </div>
         </div>
 
+        @* Assigned user dropdown from ViewBag *@
         <div class="form-group">
             @Html.Label("Assigned_To", "Assigned To", htmlAttributes: new { @class = "control-label col-md-2" })
             <div class="col-md-10">
@@ -63,6 +71,7 @@
             </div>
         </div>
 
+        @* Project dropdown from ViewBag *@
         <div class="form-group">
             @Html.Label("Project_Id", "Project", htmlAttributes: new { @class = "control-label col-md-2" })
             <div class="col-md-10">
@@ -70,6 +79,7 @@
             </div>
         </div>
 
+        @* Submit and cancel buttons *@
         <div class="form-group">
             <div class="col-md-offset-2 col-md-10">
                 <input type="submit" value="Save" class="btn btn-primary" />
