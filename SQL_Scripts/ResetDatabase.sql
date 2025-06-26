@@ -50,12 +50,13 @@ GO
 CREATE TABLE users (
     id INT IDENTITY(1,1) NOT NULL,
     name NVARCHAR(150) NOT NULL,
-    email NVARCHAR(255) NOT NULL,
+    email NVARCHAR(255) UNIQUE NOT NULL,
     password NVARCHAR(255) NOT NULL,
     role_id INT NOT NULL,
     created_at DATE NOT NULL,
     isActive BIT NOT NULL DEFAULT 1, -- New column: isActive (boolean, default to true)
     CONSTRAINT PK_users PRIMARY KEY (id),
+    CONSTRAINT UQ_users_email UNIQUE (email),
     CONSTRAINT FK_users_roles_role_id FOREIGN KEY (role_id) REFERENCES roles (id) ON DELETE CASCADE
 );
 GO
@@ -90,7 +91,7 @@ CREATE TABLE tickets (
     CONSTRAINT PK_tickets PRIMARY KEY (id),
     CONSTRAINT FK_tickets_projects_project_id FOREIGN KEY (project_id) REFERENCES projects (id) ON DELETE CASCADE,
     CONSTRAINT FK_tickets_users_assigned_to FOREIGN KEY (assigned_to) REFERENCES users (id) ON DELETE NO ACTION,
-    CONSTRAINT FK_tickets_users_ticket_created_by FOREIGN KEY (ticket_created_by) REFERENCES users (id) ON DELETE NO ACTION -- Changed to ON DELETE NO ACTION
+    CONSTRAINT FK_tickets_users_ticket_created_by FOREIGN KEY (ticket_created_by) REFERENCES users (id) ON DELETE NO ACTION
 );
 GO
 
@@ -103,7 +104,7 @@ CREATE TABLE comments (
     comment_created_at DATE NOT NULL,
     CONSTRAINT PK_comments PRIMARY KEY (id),
     CONSTRAINT FK_comments_tickets_ticket_id FOREIGN KEY (ticket_id) REFERENCES tickets (id) ON DELETE CASCADE,
-    CONSTRAINT FK_comments_users_created_by FOREIGN KEY (created_by) REFERENCES users (id) ON DELETE CASCADE
+    CONSTRAINT FK_comments_users_created_by FOREIGN KEY (created_by) REFERENCES users (id) ON DELETE NO ACTION -- Changed to ON DELETE NO ACTION
 );
 GO
 
@@ -128,3 +129,4 @@ GO
 
 CREATE INDEX IX_users_role_id ON users (role_id);
 GO
+
