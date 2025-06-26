@@ -99,7 +99,7 @@
                         </a>
 
                         <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Ticket" && ViewContext.RouteData.Values["Action"].ToString() == "Ticket" ? "active" : "")"
-                           asp-area="" asp-controller="Ticket" asp-action="Index">
+                           asp-area="" asp-controller="Task" asp-action="Index">
                             <i class="bi bi-grid-fill me-2"></i> Tickets
                         </a>
                     </li>
@@ -110,7 +110,7 @@
                     {
                         <li class="nav-item">
                             <a class="nav-link @(ViewContext.RouteData.Values["Action"].ToString() == "CreateTicket" ? "active" : "")"
-                               asp-area="" asp-controller="Dashboard" asp-action="CreateTicket">
+                               asp-area="" asp-controller="task" asp-action="Create">
                                 <i class="bi bi-journal-plus me-2"></i> Create Ticket
                             </a>
                         </li>
@@ -121,19 +121,19 @@
                     {
                         <li class="nav-item">
                             <a class="nav-link @(ViewContext.RouteData.Values["Action"].ToString() == "CreateProject" ? "active" : "")"
-                               asp-area="" asp-controller="Dashboard" asp-action="CreateProject">
+                               asp-area="" asp-controller="Project" asp-action="Create">
                                 <i class="bi bi-folder-plus me-2"></i> Create Project
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link @(ViewContext.RouteData.Values["Action"].ToString() == "ProjectReports" ? "active" : "")"
-                               asp-area="" asp-controller="Dashboard" asp-action="ProjectReports">
+                               asp-area="" asp-controller="ProjectReport" asp-action="index">
                                 <i class="bi bi-clipboard-data-fill me-2"></i> Project Reports
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link @(ViewContext.RouteData.Values["Action"].ToString() == "UserReports" ? "active" : "")"
-                               asp-area="" asp-controller="Dashboard" asp-action="UserReports">
+                               asp-area="" asp-controller="UserReport" asp-action="index">
                                 <i class="bi bi-file-earmark-person-fill me-2"></i> User Reports
                             </a>
                         </li>
