@@ -6,19 +6,49 @@
 
 <h1>Manage Your Account</h1>
 
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success" role="alert">@TempData["SuccessMessage"]</div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger" role="alert">@TempData["ErrorMessage"]</div>
+}
+
+
 <div class="row">
     <div class="col-md-6">
-        <h2>Update Profile</h2>
-        <form asp-action="ManageAccount" method="post">
+       
+        <h2>Update Username</h2>
+        <form asp-action="UpdateUsername" method="post">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <input type="hidden" asp-for="Id" />
+
+            <input type="hidden" name="formType" value="updateUsername" />
             @Html.AntiForgeryToken()
             <div class="form-group">
                 <label asp-for="Name" class="control-label"></label>
                 <input asp-for="Name" class="form-control" />
                 <span asp-validation-for="Name" class="text-danger"></span>
             </div>
+            <div class="form-group mt-3">
+                <button type="submit" class="btn btn-primary">Update Username</button>
+            </div>
+        </form>
 
+        <h2 class="mt-4">Update Password</h2>
+        <form asp-action="UpdatePassword" method="post">
+            @if (ViewData["PasswordErrorMessage"] != null)
+            {
+                <div class="alert alert-danger" role="alert">@ViewData["PasswordErrorMessage"]</div>
+            }
+
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="Id" />
+
+            <input type="hidden" name="formType" value="updatePassword" />
+            @Html.AntiForgeryToken()
             <div class="form-group">
                 <label for="currentPassword" class="control-label">Current Password</label>
                 <input type="password" id="currentPassword" name="currentPassword" class="form-control" />
@@ -32,7 +62,7 @@
                 <input type="password" id="confirmNewPassword" name="confirmNewPassword" class="form-control" />
             </div>
             <div class="form-group mt-3">
-                <input type="submit" value="Update Account" class="btn btn-primary" />
+                <button type="submit" class="btn btn-primary">Update Password</button>
             </div>
         </form>
     </div>

@@ -183,55 +183,88 @@ namespace StackFlow.Controllers
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ManageAccount(User updatedUser, string currentPassword, string newPassword, string confirmNewPassword)
+        public async Task<IActionResult> UpdateUsername(string Name)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userId == null || updatedUser.Id != int.Parse(userId))
+            if (userId == null)
             {
                 return Unauthorized();
             }
 
-            // Basic validation for non-password fields if needed, but the primary focus is password
-
-            if (!string.IsNullOrEmpty(newPassword) || !string.IsNullOrEmpty(confirmNewPassword) || !string.IsNullOrEmpty(currentPassword))
-            {
-                // Password change is attempted
-                if (newPassword != confirmNewPassword)
-                {
-                    ViewData["ErrorMessage"] = "New password and confirmation password do not match.";
-                    return View(await _context.User.FindAsync(updatedUser.Id));
-                }
-
-                var userForPasswordUpdate = await _context.User.FindAsync(updatedUser.Id);
-                if (userForPasswordUpdate == null)
-                {
-                    return NotFound();
-                }
-
-                if (!BCrypt.Net.BCrypt.Verify(currentPassword, userForPasswordUpdate.PasswordHash))
-                {
-                    ViewData["ErrorMessage"] = "Incorrect current password.";
-                    return View(userForPasswordUpdate);
-                }
-
-                // Update password
-                userForPasswordUpdate.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
-            }
-            var user = await _context.User.FindAsync(updatedUser.Id);
+            var user = await _context.User.FindAsync(int.Parse(userId));
             if (user == null)
             {
                 return NotFound();
             }
 
-            user.Name = updatedUser.Name;
-            // Email should not be updatable here based on the requirement
-            // Add other fields you want to allow users to update
+            // Only update if the username is provided and different from the current one
+            if (!string.IsNullOrWhiteSpace(Name) && user.Name != Name)
+            {
+                user.Name = Name;
+                try
+                {
+                    await _context.SaveChangesAsync(); // Save changes to the database
+                    TempData["SuccessMessage"] = "Your name has been updated successfully!";
+                }
+                catch (DbUpdateException ex)
+                {
+                    // Log the exception or handle it appropriately
+                    TempData["ErrorMessage"] = "Error updating username.";
+                }
+                TempData["SuccessMessage"] = "Your name has been updated successfully!";
+            }
+            else if (string.IsNullOrWhiteSpace(Name))
+            {
+                TempData["ErrorMessage"] = "Username cannot be empty.";
+            }
 
-            _context.User.Update(user);
-            await _context.SaveChangesAsync();
-
-            ViewData["SuccessMessage"] = "Account information updated successfully!";
             return RedirectToAction(nameof(ManageAccount));
+        }
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdatePassword(string currentPassword, string newPassword, string confirmNewPassword)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+            {
+                return Unauthorized();
+            }
+
+            var user = await _context.User.FindAsync(int.Parse(userId));
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            // Only attempt password update if any password field is provided
+            if (!string.IsNullOrWhiteSpace(currentPassword) || !string.IsNullOrWhiteSpace(newPassword) || !string.IsNullOrWhiteSpace(confirmNewPassword))
+            {
+                if (newPassword != confirmNewPassword)
+                {
+                    ViewData["PasswordErrorMessage"] = "New password and confirmation password do not match.";
+                    return View("ManageAccount", user); // Return with current user data and error message
+                }
+
+                if (!BCrypt.Net.BCrypt.Verify(currentPassword, user.PasswordHash))
+                {
+                    ViewData["PasswordErrorMessage"] = "Incorrect current password.";
+                    return View(user);
+                }
+
+                if (string.IsNullOrWhiteSpace(newPassword))
+                {
+                    ViewData["PasswordErrorMessage"] = "New password cannot be empty.";
+                    return View("ManageAccount", user);
+                }
+
+                // Update password
+                user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Password updated successfully!";
+            }
+            return View("ManageAccount", user); // Return to the manage account page
         }
 
         [Authorize]
@@ -244,8 +277,7 @@ namespace StackFlow.Controllers
 
             if (user != null)
             {
-                user.IsActive = false; 
-                _context.User.Update(user);
+                user.IsActive = false;
                 await _context.SaveChangesAsync();
                 await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme); // Log user out after marking inactive
                 TempData["AccountDeletionMessage"] = "Your account has been successfully deactivated.";
