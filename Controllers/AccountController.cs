@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using BCrypt.Net; // For password hashing
 
 namespace StackFlow.Controllers
@@ -54,7 +55,7 @@ namespace StackFlow.Controllers
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.Name), 
+                new Claim(ClaimTypes.Name, user.Name),
                 new Claim(ClaimTypes.Email, user.Email)
             };
 
@@ -158,6 +159,118 @@ namespace StackFlow.Controllers
             {
                 return RedirectToAction("Index", "Dashboard");
             }
+        }
+
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> ManageAccount()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+            {
+                return Unauthorized();
+            }
+
+            var user = await _context.User.FindAsync(int.Parse(userId));
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            return View(user);
+        }
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ManageAccount(User updatedUser, string currentPassword, string newPassword, string confirmNewPassword)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null || updatedUser.Id != int.Parse(userId))
+            {
+                return Unauthorized();
+            }
+
+            // Basic validation for non-password fields if needed, but the primary focus is password
+
+            if (!string.IsNullOrEmpty(newPassword) || !string.IsNullOrEmpty(confirmNewPassword) || !string.IsNullOrEmpty(currentPassword))
+            {
+                // Password change is attempted
+                if (newPassword != confirmNewPassword)
+                {
+                    ViewData["ErrorMessage"] = "New password and confirmation password do not match.";
+                    return View(await _context.User.FindAsync(updatedUser.Id));
+                }
+
+                var userForPasswordUpdate = await _context.User.FindAsync(updatedUser.Id);
+                if (userForPasswordUpdate == null)
+                {
+                    return NotFound();
+                }
+
+                if (!BCrypt.Net.BCrypt.Verify(currentPassword, userForPasswordUpdate.PasswordHash))
+                {
+                    ViewData["ErrorMessage"] = "Incorrect current password.";
+                    return View(userForPasswordUpdate);
+                }
+
+                // Update password
+                userForPasswordUpdate.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+            }
+            var user = await _context.User.FindAsync(updatedUser.Id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            user.Name = updatedUser.Name;
+            // Email should not be updatable here based on the requirement
+            // Add other fields you want to allow users to update
+
+            _context.User.Update(user);
+            await _context.SaveChangesAsync();
+
+            ViewData["SuccessMessage"] = "Account information updated successfully!";
+            return RedirectToAction(nameof(ManageAccount));
+        }
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteAccount()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = await _context.User.FindAsync(int.Parse(userId));
+
+            if (user != null)
+            {
+                user.IsActive = false; 
+                _context.User.Update(user);
+                await _context.SaveChangesAsync();
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme); // Log user out after marking inactive
+                TempData["AccountDeletionMessage"] = "Your account has been successfully deactivated.";
+                return RedirectToAction("AccountDeletedConfirmation");
+            }
+            else
+            {
+                TempData["AccountDeletionError"] = "Could not find your account for deactivation.";
+                return RedirectToAction("ManageAccount"); // Or another appropriate page
+            }
+        }
+
+        [HttpGet]
+        public IActionResult AccountDeletedConfirmation()
+        {
+            var message = TempData["AccountDeletionMessage"] as string;
+            if (string.IsNullOrEmpty(message))
+            {
+                // Handle cases where they might land here without the TempData message
+                // e.g., direct URL access
+                return RedirectToAction("Login"); // Or another appropriate page
+            }
+
+            ViewBag.Message = message;
+            return View("AccountDeletedConfirmation");
         }
     }
 }
