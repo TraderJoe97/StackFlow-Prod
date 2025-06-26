@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using StackFlow.Data;
 using StackFlow.Models;
 using System.Security.Claims;
@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using BCrypt.Net; // For password hashing
 
 namespace StackFlow.Controllers
@@ -158,6 +159,92 @@ namespace StackFlow.Controllers
             {
                 return RedirectToAction("Index", "Dashboard");
             }
+        }
+
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> ManageAccount()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+            {
+                return Unauthorized();
+            }
+
+            var user = await _context.User.FindAsync(int.Parse(userId));
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            return View(user);
+        }
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ManageAccount(User updatedUser)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null || updatedUser.Id != int.Parse(userId))
+            {
+                return Unauthorized();
+            }
+
+            var user = await _context.User.FindAsync(updatedUser.Id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            user.Name = updatedUser.Name;
+            user.Email = updatedUser.Email;
+            // Add other fields you want to allow users to update
+
+            _context.User.Update(user);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Account information updated successfully!";
+            return RedirectToAction(nameof(ManageAccount));
+        }
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteAccount()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = await _context.User.FindAsync(int.Parse(userId));
+
+            if (user != null)
+            {
+                user.IsActive = false; // Assuming you have an IsActive property
+                _context.User.Update(user);
+                await _context.SaveChangesAsync();
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme); // Log user out after marking inactive
+ TempData["AccountDeletionMessage"] = "Your account has been successfully deactivated.";
+ return RedirectToAction("AccountDeletedConfirmation");
+            }
+            else
+            {
+ TempData["AccountDeletionError"] = "Could not find your account for deactivation.";
+ return RedirectToAction("ManageAccount"); // Or another appropriate page
+            }
+        }
+
+        [HttpGet]
+        public IActionResult AccountDeletedConfirmation()
+        {
+            var message = TempData["AccountDeletionMessage"] as string;
+            if (string.IsNullOrEmpty(message))
+            {
+                // Handle cases where they might land here without the TempData message
+                // e.g., direct URL access
+                return RedirectToAction("Login"); // Or another appropriate page
+            }
+
+            ViewBag.Message = message;
+            return View("AccountDeletedConfirmation");
         }
     }
 }

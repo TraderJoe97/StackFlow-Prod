@@ -1,0 +1,21 @@
+@{
+    ViewData["Title"] = "Account Deleted";
+}
+
+<h2>Account Deleted</h2>
+
+<p>
+    @if (TempData["SuccessMessage"] != null)
+    {
+        @TempData["SuccessMessage"]
+    }
+    else
+    {
+        <p>Your account has been successfully marked as inactive.</p>
+    }
+</p>
+
+<p>You can no longer log in with this account.</p>
+
+@* Optionally, add a link to the home page or another relevant page *@
+<p><a asp-controller="Home" asp-action="Index">Return to Home</a></p>
