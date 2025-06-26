@@ -31,8 +31,11 @@ namespace StackFlow.Models
         public Role? Role { get; set; } // Navigation property for Role
 
         [Column("created_at", TypeName = "date")] // Using TypeName for 'date'
+
         public DateTime Created_At { get; set; } = DateTime.UtcNow;
 
+        [Column("isActive")]
+        public bool IsActive { get; set; } = true; // Default to true, can be set to false for soft delete
 
 
         // Navigation property for Tasks created by this user

@@ -1,0 +1,101 @@
+﻿@model StackFlow.Models.User
+
+@{
+    ViewData["Title"] = "Manage Account";
+}
+
+<h1>Manage Your Account</h1>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success" role="alert">@TempData["SuccessMessage"]</div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger" role="alert">@TempData["ErrorMessage"]</div>
+}
+
+
+<div class="row">
+    <div class="col-md-6">
+       
+        <h2>Update Username</h2>
+        <form asp-action="UpdateUsername" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="Id" />
+
+            <input type="hidden" name="formType" value="updateUsername" />
+            @Html.AntiForgeryToken()
+            <div class="form-group">
+                <label asp-for="Name" class="control-label"></label>
+                <input asp-for="Name" class="form-control" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+            <div class="form-group mt-3">
+                <button type="submit" class="btn btn-primary">Update Username</button>
+            </div>
+        </form>
+
+        <h2 class="mt-4">Update Password</h2>
+        <form asp-action="UpdatePassword" method="post">
+            @if (ViewData["PasswordErrorMessage"] != null)
+            {
+                <div class="alert alert-danger" role="alert">@ViewData["PasswordErrorMessage"]</div>
+            }
+
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="Id" />
+
+            <input type="hidden" name="formType" value="updatePassword" />
+            @Html.AntiForgeryToken()
+            <div class="form-group">
+                <label for="currentPassword" class="control-label">Current Password</label>
+                <input type="password" id="currentPassword" name="currentPassword" class="form-control" />
+            </div>
+            <div class="form-group">
+                <label for="newPassword" class="control-label">New Password</label>
+                <input type="password" id="newPassword" name="newPassword" class="form-control" />
+            </div>
+            <div class="form-group">
+                <label for="confirmNewPassword" class="control-label">Confirm New Password</label>
+                <input type="password" id="confirmNewPassword" name="confirmNewPassword" class="form-control" />
+            </div>
+            <div class="form-group mt-3">
+                <button type="submit" class="btn btn-primary">Update Password</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<hr />
+
+<div class="row">
+    <div class="col-md-6">
+        <h2>Account Deletion</h2>
+        <p>
+            Deleting your account will permanently mark your account as inactive. You will no longer be able to log in or access your data.
+        </p>
+        <form asp-action="DeleteAccount" method="post" id="deleteAccountForm">
+            <input type="hidden" asp-for="Id" />
+            @Html.AntiForgeryToken()
+            <button type="submit" id="deleteAccountButton" class="btn btn-danger">Delete Account</button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        document.getElementById('deleteAccountForm').addEventListener('submit', function(event) {
+            if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+                // User confirmed, allow the form submission
+            } else {
+                // User cancelled, prevent the form submission
+                event.preventDefault();
+            }
+        });
+    </script>
+}
