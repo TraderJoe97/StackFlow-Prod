@@ -103,6 +103,13 @@
                             <i class="bi bi-grid-fill me-2"></i> Tickets
                         </a>
                     </li>
+                    
+                     <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Account" && ViewContext.RouteData.Values["Action"].ToString() == "ManageAccount" ? "active" : "")"
+                           asp-area="" asp-controller="Account" asp-action="ManageAccount">
+                            <i class="bi bi-person-circle me-2"></i> Manage Account
+                        </a>
+                    </li>
 
                     @* Project Manager and Admin specific links *@
                     @if (User.IsInRole("Admin") || User.IsInRole("Project Manager"))
