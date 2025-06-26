@@ -19,7 +19,7 @@ namespace StackFlow.Controllers
         // GET: Comment
         public async Task<IActionResult> Index()
         {
-            var comments = _context.Comments
+            var comments = _context.TicketComment
                                    .Include(c => c.Ticket)
                                    .Include(c => c.CreatedBy);
             return View(await comments.ToListAsync());
@@ -30,7 +30,7 @@ namespace StackFlow.Controllers
         {
             if (id == null) return NotFound();
 
-            var comment = await _context.Comments
+            var comment = await _context.TicketComment
                                         .Include(c => c.Ticket)
                                         .Include(c => c.CreatedBy)
                                         .FirstOrDefaultAsync(m => m.Id == id);
@@ -42,8 +42,8 @@ namespace StackFlow.Controllers
         // GET: Comment/Create
         public IActionResult Create()
         {
-            ViewData["Ticket_Id"] = new SelectList(_context.Tickets, "Id", "Title");
-            ViewData["Created_By"] = new SelectList(_context.Users, "Id", "Name");
+            ViewData["Ticket_Id"] = new SelectList(_context.Ticket, "Id", "Title");
+            ViewData["Created_By"] = new SelectList(_context.User, "Id", "Name");
             return View();
         }
 
@@ -59,8 +59,8 @@ namespace StackFlow.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            ViewData["Ticket_Id"] = new SelectList(_context.Tickets, "Id", "Title", comment.Ticket_Id);
-            ViewData["Created_By"] = new SelectList(_context.Users, "Id", "Name", comment.Created_By);
+            ViewData["Ticket_Id"] = new SelectList(_context.Ticket, "Id", "Title", comment.Ticket_Id);
+            ViewData["Created_By"] = new SelectList(_context.User, "Id", "Name", comment.Created_By);
             return View(comment);
         }
 
@@ -69,11 +69,11 @@ namespace StackFlow.Controllers
         {
             if (id == null) return NotFound();
 
-            var comment = await _context.Comments.FindAsync(id);
+            var comment = await _context.TicketComment.FindAsync(id);
             if (comment == null) return NotFound();
 
-            ViewData["Ticket_Id"] = new SelectList(_context.Tickets, "Id", "Title", comment.Ticket_Id);
-            ViewData["Created_By"] = new SelectList(_context.Users, "Id", "Name", comment.Created_By);
+            ViewData["Ticket_Id"] = new SelectList(_context.Ticket, "Id", "Title", comment.Ticket_Id);
+            ViewData["Created_By"] = new SelectList(_context.User, "Id", "Name", comment.Created_By);
             return View(comment);
         }
 
@@ -101,8 +101,8 @@ namespace StackFlow.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            ViewData["Ticket_Id"] = new SelectList(_context.Tickets, "Id", "Title", comment.Ticket_Id);
-            ViewData["Created_By"] = new SelectList(_context.Users, "Id", "Name", comment.Created_By);
+            ViewData["Ticket_Id"] = new SelectList(_context.Ticket, "Id", "Title", comment.Ticket_Id);
+            ViewData["Created_By"] = new SelectList(_context.User, "Id", "Name", comment.Created_By);
             return View(comment);
         }
 
@@ -111,7 +111,7 @@ namespace StackFlow.Controllers
         {
             if (id == null) return NotFound();
 
-            var comment = await _context.Comments
+            var comment = await _context.TicketComment
                                         .Include(c => c.Ticket)
                                         .Include(c => c.CreatedBy)
                                         .FirstOrDefaultAsync(m => m.Id == id);
@@ -125,15 +125,15 @@ namespace StackFlow.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var comment = await _context.Comments.FindAsync(id);
-            _context.Comments.Remove(comment);
+            var comment = await _context.TicketComment.FindAsync(id);
+            _context.TicketComment.Remove(comment);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
         private bool CommentExists(int id)
         {
-            return _context.Comments.Any(e => e.Id == id);
+            return _context.TicketComment.Any(e => e.Id == id);
         }
     }
 }

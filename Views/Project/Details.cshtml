@@ -1,7 +1,58 @@
+﻿@model StackFlow.Models.Project
 
-@model StackFlow.Models.Project
-<h2>@Model.Project</h2>
-<p>@Model.Description</p>
-<p>Start: @Model.StartDate.ToShortDateString()</p>
-<p>End: @Model.EndDate.ToShortDateString()</p>
-<a href="/Projects/Index">Back</a>
+@{
+    ViewData["Title"] = "Project Details";
+}
+
+<h2 class="display-4 mb-4 text-center">Project Details</h2>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow p-4 mb-4">
+            <dl class="row">
+                <dt class="col-sm-4">
+                    @Html.DisplayNameFor(model => model.Name)
+                </dt>
+                <dd class="col-sm-8">
+                    @Html.DisplayFor(model => model.Name)
+                </dd>
+                <dt class="col-sm-4">
+                    @Html.DisplayNameFor(model => model.Description)
+                </dt>
+                <dd class="col-sm-8">
+                    @Html.DisplayFor(model => model.Description)
+                </dd>
+                <dt class="col-sm-4">
+                    @Html.DisplayNameFor(model => model.Start_Date)
+                </dt>
+                <dd class="col-sm-8">
+                    @Html.DisplayFor(model => model.Start_Date)
+                </dd>
+                <dt class="col-sm-4">
+                    @Html.DisplayNameFor(model => model.Due_Date)
+                </dt>
+                <dd class="col-sm-8">
+                    @Html.DisplayFor(model => model.Due_Date)
+                </dd>
+                <dt class="col-sm-4">
+                    @Html.DisplayNameFor(model => model.Status)
+                </dt>
+                <dd class="col-sm-8">
+                    @Html.DisplayFor(model => model.Status)
+                </dd>
+                <dt class="col-sm-4">
+                    @Html.DisplayNameFor(model => model.Created_By)
+                </dt>
+                <dd class="col-sm-8">
+                    @Html.DisplayFor(model => model.Created_By)
+                    @* To display the user's name, ensure CreatedBy is eager loaded in the controller: *@
+                    @* @(Model.CreatedBy != null ? Model.CreatedBy.UserName : "N/A") *@
+                </dd>
+            </dl>
+        </div>
+        <div class="d-flex justify-content-start align-items-center gap-3">
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">Edit</a>
+            <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+        </div>
+    </div>
+</div>

@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using StackFlow.Models;
+using System.Security.Claims; // Required for ClaimTypes
+
 
 namespace StackFlow.Controllers
 {
@@ -13,8 +15,15 @@ namespace StackFlow.Controllers
             _logger = logger;
         }
 
+
         public IActionResult Index()
         {
+            // Ensure the user is authenticated
+            if (User.Identity.IsAuthenticated)
+            {
+                return RedirectToAction("Index", "Dashboard"); // or your actual login controller
+            }
+
             return View();
         }
 

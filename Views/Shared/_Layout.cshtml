@@ -74,23 +74,33 @@
             </div>
         </nav>
     </header>
+    @if (User.Identity.IsAuthenticated)
+    {
+        <!-- Sidebar Offcanvas (for mobile) and Fixed Sidebar (for desktop) -->
+        <div class="offcanvas offcanvas-start sidebar-offcanvas" tabindex="-1" id="offcanvasSidebar" aria-labelledby="offcanvasSidebarLabel">
+            <div class="offcanvas-header">
+                <h5 class="offcanvas-title" id="offcanvasSidebarLabel">
+                    <i class="bi bi-list-nested me-2"></i>Navigation
+                </h5>
+                <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            </div>
+            <div class="offcanvas-body p-0">
+                <ul class="navbar-nav sidebar-nav flex-column">
 
-    <!-- Sidebar Offcanvas (for mobile) and Fixed Sidebar (for desktop) -->
-    <div class="offcanvas offcanvas-start sidebar-offcanvas" tabindex="-1" id="offcanvasSidebar" aria-labelledby="offcanvasSidebarLabel">
-        <div class="offcanvas-header">
-            <h5 class="offcanvas-title" id="offcanvasSidebarLabel">
-                <i class="bi bi-list-nested me-2"></i>Navigation
-            </h5>
-            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-        </div>
-        <div class="offcanvas-body p-0">
-            <ul class="navbar-nav sidebar-nav flex-column">
-                @if (User.Identity.IsAuthenticated)
-                {
                     <li class="nav-item">
                         <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Dashboard" && ViewContext.RouteData.Values["Action"].ToString() == "Index" ? "active" : "")"
                            asp-area="" asp-controller="Dashboard" asp-action="Index">
                             <i class="bi bi-grid-fill me-2"></i> Dashboard
+                        </a>
+
+                        <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Projects" && ViewContext.RouteData.Values["Action"].ToString() == "Project" ? "active" : "")"
+                           asp-area="" asp-controller="Project" asp-action="Index">
+                            <i class="bi bi-grid-fill me-2"></i> Projects
+                        </a>
+
+                        <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Ticket" && ViewContext.RouteData.Values["Action"].ToString() == "Ticket" ? "active" : "")"
+                           asp-area="" asp-controller="Ticket" asp-action="Index">
+                            <i class="bi bi-grid-fill me-2"></i> Tickets
                         </a>
                     </li>
 
@@ -127,10 +137,12 @@
                             </a>
                         </li>
                     }
-                }
-            </ul>
+
+
+                </ul>
+            </div>
         </div>
-    </div>
+    }
 
     <div class="main-content">
         <main role="main" class="pb-3">
