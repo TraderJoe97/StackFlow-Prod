@@ -1,256 +1,78 @@
-﻿<h1 class="project-list-title">Project List</h1>
+﻿@model IEnumerable<StackFlow.Models.Project>
 
-<p class="create-button-container">
-    <a href="#" class="button button-primary">
-        
-        Create New Project
-    </a>
+@{
+    ViewData["Title"] = "Project List";
+}
+
+<h1 class="display-4 mb-4 text-center">Project List</h1>
+
+<p class="mb-3 text-end">
+    <a asp-action="Create" class="btn btn-primary">Create New Project</a>
 </p>
 
-<div class="table-container">
-    <table class="project-table">
-        <thead>
-            <tr>
-                <th class="table-header">
-                    Project Name 
-                </th>
-                <th class="table-header">
-                    Description 
-                </th>
-                <th class="table-header">
-                    Start Date 
-                </th>
-                <th class="table-header">
-                    
-                </th>
-                <th class="table-header">
-                    
-                </th>
-                <th class="table-header actions-header"></th>
-            </tr>
-        </thead>
-        <tbody>
-            
-            <tr class="table-row">
-                <td class="table-cell">
-                    Website Redesign
-                </td>
-                <td class="table-cell">
-                    Redesign the company website.
-                </td>
-                <td class="table-cell">
-                    1/15/2023
-                </td>
-                <td class="table-cell">
-                    3/31/2023
-                </td>
-                <td class="table-cell">
-                    Completed
-                </td>
-                <td class="table-cell actions-cell">
-                    <div class="action-links">
-                        <a href="#" class="action-link edit-link">Edit</a>
-                        <a href="#" class="action-link details-link">Details</a>
-                        <a href="#" class="action-link delete-link">Delete</a>
-                    </div>
-                </td>
-            </tr>
-            <tr class="table-row">
-                <td class="table-cell">
-                    Mobile App Development
-                </td>
-                <td class="table-cell">
-                    Develop new mobile application for iOS and Android.
-                </td>
-                <td class="table-cell">
-                    4/1/2023
-                </td>
-                <td class="table-cell">
-                    8/30/2023
-                </td>
-                <td class="table-cell">
-                    In Progress
-                </td>
-                <td class="table-cell actions-cell">
-                    <div class="action-links">
-                        <a href="#" class="action-link edit-link">Edit</a>
-                        <a href="#" class="action-link details-link">Details</a>
-                        <a href="#" class="action-link delete-link">Delete</a>
-                    </div>
-                </td>
-            </tr>
-            <tr class="table-row">
-                <td class="table-cell">
-                    Internal Tool Automation
-                </td>
-                <td class="table-cell">
-                    Automate internal reporting processes.
-                </td>
-                <td class="table-cell">
-                    2/1/2024
-                </td>
-                <td class="table-cell">
-                    6/30/2024
-                </td>
-                <td class="table-cell">
-                    Planned
-                </td>
-                <td class="table-cell actions-cell">
-                    <div class="action-links">
-                        <a href="#" class="action-link edit-link">Edit</a>
-                        <a href="#" class="action-link details-link">Details</a>
-                        <a href="#" class="action-link delete-link">Delete</a>
-                    </div>
-                </td>
-            </tr>
-        </tbody>
-    </table>
+<div class="card shadow mb-4">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th scope="col">
+                            @Html.DisplayNameFor(model => model.Name)
+                        </th>
+                        <th scope="col">
+                            @Html.DisplayNameFor(model => model.Description)
+                        </th>
+                        <th scope="col">
+                            @Html.DisplayNameFor(model => model.Start_Date)
+                        </th>
+                        <th scope="col">
+                            @Html.DisplayNameFor(model => model.Due_Date)
+                        </th>
+                        <th scope="col">
+                            @Html.DisplayNameFor(model => model.Status)
+                        </th>
+                        <th scope="col" class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>
+                                    @Html.DisplayFor(modelItem => item.Name)
+                                </td>
+                                <td>
+                                    @Html.DisplayFor(modelItem => item.Description)
+                                </td>
+                                <td>
+                                    @Html.DisplayFor(modelItem => item.Start_Date)
+                                </td>
+                                <td>
+                                    @Html.DisplayFor(modelItem => item.Due_Date)
+                                </td>
+                                <td>
+                                    @Html.DisplayFor(modelItem => item.Status)
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group" role="group" aria-label="Project Actions">
+                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-info me-1">Edit</a>
+                                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-secondary me-1">Details</a>
+                                        <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Delete</a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">No projects found. Create a new project to get started!</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
-
-<style>
-    body {
-        font-family: 'Inter', sans-serif;
-        background-color: #f3f4f6;
-        padding: 2rem;
-        margin: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        min-height: 100vh;
-    }
-
-    .project-list-title {
-        font-size: 2.25rem; /* text-3xl */
-        font-weight: 700; /* font-bold */
-        margin-bottom: 1.5rem; /* mb-6 */
-        color: #1f2937; /* text-gray-800 */
-    }
-
-    .create-button-container {
-        margin-bottom: 1rem; /* mb-4 */
-        width: 100%;
-        max-width: 60rem; /* Adjust based on table width */
-        text-align: left;
-    }
-
-    .button {
-        display: inline-block;
-        font-weight: 700; /* font-bold */
-        padding: 0.5rem 1rem; /* py-2 px-4 */
-        border-radius: 0.5rem; /* rounded-lg */
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
-        transition: background-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out; /* transition duration-300 ease-in-out */
-        cursor: pointer;
-        border: none;
-        outline: none;
-        text-decoration: none; /* For the anchor tag */
-    }
-
-    .button-primary {
-        background-color: #2563eb; /* bg-blue-600 */
-        color: #ffffff; /* text-white */
-    }
-
-        .button-primary:hover {
-            background-color: #1d4ed8; /* hover:bg-blue-700 */
-        }
-
-    .table-container {
-        overflow-x-auto;
-        background-color: #ffffff; /* bg-white */
-        border-radius: 0.5rem; /* rounded-lg */
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-lg */
-        width: 100%;
-        max-width: 60rem; /* Example max width */
-    }
-
-    .project-table {
-        min-width: 100%;
-        width: 100%; /* leading-normal */
-        border-collapse: separate;
-        border-spacing: 0;
-    }
-
-        .project-table thead tr {
-            background-color: #f9fafb; /* bg-gray-100 */
-        }
-
-    .table-header {
-        padding: 0.75rem 1.25rem; /* px-5 py-3 */
-        border-bottom: 2px solid #e5e7eb; /* border-b-2 border-gray-200 */
-        text-align: left;
-        font-size: 0.75rem; /* text-xs */
-        font-weight: 600; /* font-semibold */
-        color: #4b5563; /* text-gray-600 */
-        text-transform: uppercase; /* uppercase */
-        letter-spacing: 0.05em; /* tracking-wider */
-    }
-
-    .actions-header {
-        text-align: right;
-    }
-
-    .table-row {
-        transition: background-color 0.15s ease-in-out;
-    }
-
-        .table-row:hover {
-            background-color: #eff6ff; /* Light blue hover */
-        }
-
-    .table-cell {
-        padding: 1rem 1.25rem; /* px-5 py-5 */
-        border-bottom: 1px solid #e5e7eb; /* border-b border-gray-200 */
-        background-color: #ffffff; /* bg-white */
-        font-size: 0.875rem; /* text-sm */
-        vertical-align: top;
-    }
-
-    .table-row:nth-child(even) .table-cell {
-        background-color: #f9fafb; /* bg-gray-50 for even rows */
-    }
-
-    .actions-cell {
-        text-align: right;
-    }
-
-    .action-links {
-        display: flex;
-        justify-content: flex-end;
-        gap: 0.5rem; /* space-x-2 */
-    }
-
-    .action-link {
-        font-weight: 500; /* font-medium */
-        text-decoration: none;
-        transition: color 0.15s ease-in-out;
-        padding: 0.25rem 0.5rem; /* Added padding for better click/tap area */
-        border-radius: 0.25rem;
-    }
-
-    .edit-link {
-        color: #4f46e5; /* text-indigo-600 */
-    }
-
-        .edit-link:hover {
-            color: #4338ca; /* hover:text-indigo-900 */
-        }
-
-    .details-link {
-        color: #16a34a; /* text-green-600 */
-    }
-
-        .details-link:hover {
-            color: #15803d; /* hover:text-green-900 */
-        }
-
-    .delete-link {
-        color: #dc2626; /* text-red-600 */
-    }
-
-        .delete-link:hover {
-            color: #b91c1c; /* hover:text-red-900 */
-        }
-</style>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-

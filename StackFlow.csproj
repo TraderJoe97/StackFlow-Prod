@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Remove="Views\Project\Details.cshtml" />
+    <Compile Remove="Views\Project\Details.cshtml.cs" />
   </ItemGroup>
 
   <ItemGroup>

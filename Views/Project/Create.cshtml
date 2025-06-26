@@ -1,45 +1,70 @@
-﻿<h1 class="create-project-title">Create New Project</h1>
-<form>
-<div class="form-container">  
-        <div class="validation-summary"></div> 
+﻿@model StackFlow.Models.Project
+
+@{
+    ViewData["Title"] = "Create Project";
+}
+
+<h1 class="create-project-title">Create New Project</h1>
+
+<div class="form-container">
+    <form asp-action="Create" asp-controller="Project" method="post">
+        @* This displays all validation errors not tied to a specific field *@
+        <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+
         <div class="form-group">
-            <label for="Name" class="form-label">Project Name</label> 
-            <input type="text" id="Name" name="Name" class="form-input" placeholder="Enter project name" />
-            <span class="validation-message"></span> 
+            <label asp-for="Name" class="form-label"></label>
+            <input asp-for="Name" class="form-input" placeholder="Enter project name" />
+            <span asp-validation-for="Name" class="validation-message"></span>
         </div>
+
         <div class="form-group">
-            <label for="Description" class="form-label">Description</label> 
-            <textarea id="Description" name="Description" class="form-input textarea-input" placeholder="Enter project description"></textarea>
-            <span class="validation-message"></span> 
+            <label asp-for="Description" class="form-label"></label>
+            <textarea asp-for="Description" class="form-input textarea-input" placeholder="Enter project description"></textarea>
+            <span asp-validation-for="Description" class="validation-message"></span>
         </div>
+
         <div class="form-group">
-            <label for="Start_Date" class="form-label">Start Date</label>
-            <input type="date" id="Start_Date" name="Start_Date" class="form-input" />
-            <span class="validation-message"></span> 
+            <label asp-for="Start_Date" class="form-label"></label>
+            <input asp-for="Start_Date" class="form-input" />
+            <span asp-validation-for="Start_Date" class="validation-message"></span>
         </div>
+
         <div class="form-group">
-            <label for="Due_Date" class="form-label">Due Date</label> 
-            <input type="date" id="Due_Date" name="Due_Date" class="form-input" />
-            <span class="validation-message"></span> 
+            <label asp-for="Due_Date" class="form-label"></label>
+            <input asp-for="Due_Date" class="form-input" />
+            <span asp-validation-for="Due_Date" class="validation-message"></span>
         </div>
+
         <div class="form-group">
-            <label for="Status" class="form-label">Status</label> 
-            <select id="Status" name="Status" class="form-input">
+            <label asp-for="Status" class="form-label"></label>
+            <select asp-for="Status" class="form-input">
                 <option value="">-- Select Status --</option>
-                <option value="Active">Active</option>
-                <option value="Completed">Completed</option>
-                <option value="On Hold">On Hold</option>
+                @foreach (var status in ViewBag.ProjectStatuses as List<SelectListItem>)
+                {
+                    <option value="@status.Value">@status.Text</option>
+                }
             </select>
-            <span class="validation-message"></span> 
+            <span asp-validation-for="Status" class="validation-message"></span>
         </div>
+
         <div class="form-actions">
             <button type="submit" class="button button-primary">
                 Create
             </button>
-            <a href="#" class="button-link">Back to List</a> 
+            <a asp-action="Index" class="button-link">Back to List</a>
         </div>
     </form>
 </div>
+
+@section Scripts {
+    @{
+        // This partial view renders client-side validation scripts.
+        // It's usually placed in the _Layout.cshtml or specifically in views that need validation.
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
     body {
@@ -161,50 +186,4 @@
         .button-link:hover {
             color: #1d4ed8; /* hover:text-blue-800 */
         }
-</style>
-<form>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-lass="block text-gray-700 text-sm font-bold mb-2">Status</label> 
-            <select id="Status" name="Status" class="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <option value="">-- Select Status --</option>
-                <option value="Active">Active</option>
-                <option value="Completed">Completed</option>
-                <option value="On Hold">On Hold</option>
-            </select>
-            <span class="text-red-500 text-xs italic"></span> 
-        </div>
-        <div class="flex items-center justify-between">
-            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-md transition duration-300 ease-in-out">
-                Create
-            </button>
-            <a href="#" class="inline-block align-baseline font-bold text-sm text-blue-600 hover:text-blue-800">Back to List</a> 
-        </div>
-    </form>
-</div>
-
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-    tailwind.config = {
-        theme: {
-            extend: {
-                fontFamily: {
-                    inter: ['Inter', 'sans-serif'],
-                },
-            }
-        }
-    }
-</script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-    body {
-        font-family: 'Inter', sans-serif;
-        background-color: #f3f4f6;
-        padding: 2rem;
-    }
-    .rounded-lg {
-        border-radius: 0.5rem;
-    }
-    .shadow-lg {
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    }
 </style>
