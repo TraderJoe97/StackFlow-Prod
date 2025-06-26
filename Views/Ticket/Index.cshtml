@@ -1,5 +1,6 @@
 ﻿@model IEnumerable<StackFlow.Models.Ticket>
 
+
 @{
     ViewBag.Title = "Ticket List";
 }
@@ -46,3 +47,7 @@
         }
     </tbody>
 </table>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/Ticket.css" />
+}

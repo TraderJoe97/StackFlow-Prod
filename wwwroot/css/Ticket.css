@@ -1,0 +1,162 @@
+﻿body {
+    font-family: 'Inter', sans-serif;
+    background-color: #f3f4f6;
+    padding: 2rem;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Form Container */
+.card {
+    background-color: #ffffff;
+    border-radius: 1rem;
+    box-shadow: 0 0.125rem 1rem rgba(0, 0, 0, 0.1);
+}
+
+/* Headings */
+h2 {
+    font-weight: 700;
+    color: #1d3557;
+}
+
+/* Labels */
+.form-label {
+    font-size: 1rem;
+    color: #333;
+}
+
+/* Inputs and Selects */
+.form-control,
+.form-select {
+    border-radius: 0.5rem;
+    padding: 0.6rem 1rem;
+    font-size: 1rem;
+    border: 1px solid #ced4da;
+    transition: border-color 0.3s ease;
+}
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #457b9d;
+        box-shadow: 0 0 0 0.2rem rgba(69, 123, 157, 0.25);
+    }
+
+/* Validation messages */
+.text-danger {
+    font-size: 0.9rem;
+    margin-top: 0.25rem;
+}
+
+
+
+.btn:hover {
+    opacity: 0.9;
+}
+
+/* Spacing for validation summary */
+.alert {
+    margin-bottom: 1rem;
+    border-radius: 0.5rem;
+}
+
+
+.form-container {
+    background-color: #ffffff; /* bg-white */
+    padding: 2rem; /* p-8 */
+    border-radius: 0.5rem; /* rounded-lg */
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-lg */
+    max-width: 32rem; /* max-w-lg */
+    width: 100%; /* mx-auto, w-full */
+}
+
+.validation-summary {
+    color: #dc2626; /* text-red-600 */
+    margin-bottom: 1rem; /* mb-4 */
+}
+
+.form-group {
+    margin-bottom: 1rem; /* mb-4, mb-6 */
+}
+
+.form-label {
+    display: block;
+    color: #374151; /* text-gray-700 */
+    font-size: 0.875rem; /* text-sm */
+    font-weight: 700; /* font-bold */
+    margin-bottom: 0.5rem; /* mb-2 */
+}
+
+.form-input {
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow appearance-none */
+    border: 1px solid #d1d5db; /* border */
+    border-radius: 0.5rem; /* rounded-lg */
+    width: 100%; /* w-full */
+    padding-top: 0.5rem; /* py-2 */
+    padding-bottom: 0.5rem; /* py-2 */
+    padding-left: 0.75rem; /* px-3 */
+    padding-right: 0.75rem; /* px-3 */
+    color: #374151; /* text-gray-700 */
+    line-height: 1.25; /* leading-tight */
+    outline: none; /* focus:outline-none */
+    transition: all 0.2s ease-in-out;
+}
+
+    .form-input:focus {
+        border-color: transparent; /* focus:border-transparent */
+        box-shadow: 0 0 0 2px #3b82f6; /* focus:ring-2 focus:ring-blue-500 */
+    }
+
+.textarea-input {
+    min-height: 5rem; /* Added for textarea height */
+    resize: vertical;
+}
+
+.validation-message {
+    color: #ef4444; /* text-red-500 */
+    font-size: 0.75rem; /* text-xs */
+    font-style: italic; /* italic */
+    display: block; /* Ensures it takes full width */
+    margin-top: 0.25rem;
+}
+
+.form-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.button {
+    font-weight: 700; /* font-bold */
+    padding: 0.5rem 1rem; /* py-2 px-4 */
+    border-radius: 0.5rem; /* rounded-lg */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
+    transition: background-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out; /* transition duration-300 ease-in-out */
+    cursor: pointer;
+    border: none;
+    outline: none;
+}
+
+.button-primary {
+    background-color: #2563eb; /* bg-blue-400 */
+    color: #ffffff; /* text-white */
+}
+
+    .button-primary:hover {
+        background-color: #1d4ed8; /* hover:bg-blue-700 */
+    }
+
+    .button-primary:focus {
+        box-shadow: 0 0 0 2px #3b82f6, 0 0 0 4px #bfdbfe; /* focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 */
+    }
+
+.button-link {
+    display: inline-block; /* inline-block align-baseline */
+    font-weight: 700; /* font-bold */
+    font-size: 0.875rem; /* text-sm */
+    color: #2563eb; /* text-blue-400 */
+    text-decoration: none;
+    transition: color 0.3s ease-in-out;
+}
+
+    .button-link:hover {
+        color: #1d4ed8; /* hover:text-blue-800 */
