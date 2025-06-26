@@ -44,7 +44,11 @@ namespace StackFlow.Controllers
             var user = await _context.User
                                      .Include(u => u.Role)
                                      .FirstOrDefaultAsync(u => u.Email == email);
-
+            if (user.IsActive == false)
+            {
+                ViewData["LoginError"] = "Your account is deactivated. Please contact support.";
+                return View();
+            }
             if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
             {
                 ViewData["LoginError"] = "Invalid email or password.";
