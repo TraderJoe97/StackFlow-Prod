@@ -5,6 +5,7 @@ using StackFlow.Data;
 using StackFlow.Models;
 using System;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace StackFlow.Controllers
@@ -62,13 +63,26 @@ namespace StackFlow.Controllers
         {
             if (ModelState.IsValid)
             {
-                ticket.Created_At = DateTime.Now; // Set creation date
+                ticket.Created_At = DateTime.Now;
+
+                var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (int.TryParse(userIdString, out int userId))
+                {
+                    ticket.Created_By = userId;
+                }
+                else
+                {
+                    ModelState.AddModelError("", "Could not determine the creator of the ticket. Please log in.");
+                    PopulateDropdowns(ticket);
+                    return View("~/Views/Ticket/Create.cshtml", ticket);
+                }
+
                 _context.Add(ticket);
                 await _context.SaveChangesAsync();
+
                 return RedirectToAction(nameof(Index));
             }
 
-            // If validation fails, reload dropdowns and return view with model
             PopulateDropdowns(ticket);
             return View("~/Views/Ticket/Create.cshtml", ticket);
         }
@@ -93,6 +107,7 @@ namespace StackFlow.Controllers
         public async Task<IActionResult> Edit(int id, [Bind("Id,Title,Description,Due_Date,Priority,Status,Project_Id,Assigned_To,Created_By,Created_At,Completed_At")] Ticket ticket)
         {
             if (id != ticket.Id) return NotFound();
+
 
             if (ModelState.IsValid)
             {
