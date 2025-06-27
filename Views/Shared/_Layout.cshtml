@@ -99,7 +99,7 @@
                         </a>
 
                         <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Ticket" && ViewContext.RouteData.Values["Action"].ToString() == "Ticket" ? "active" : "")"
-                           asp-area="" asp-controller="Task" asp-action="Index">
+                           asp-area="" asp-controller="Ticket" asp-action="Index">
                             <i class="bi bi-grid-fill me-2"></i> Tickets
                         </a>
                     </li>
@@ -110,7 +110,7 @@
                     {
                         <li class="nav-item">
                             <a class="nav-link @(ViewContext.RouteData.Values["Action"].ToString() == "CreateTicket" ? "active" : "")"
-                               asp-area="" asp-controller="task" asp-action="Create">
+                               asp-area="" asp-controller="Ticket" asp-action="Create">
                                 <i class="bi bi-journal-plus me-2"></i> Create Ticket
                             </a>
                         </li>
@@ -133,7 +133,7 @@
                         </li>
                         <li class="nav-item">
                             <a class="nav-link @(ViewContext.RouteData.Values["Action"].ToString() == "UserReports" ? "active" : "")"
-                               asp-area="" asp-controller="UserReport" asp-action="index">
+                               asp-area="" asp-controller="UserReports" asp-action="index">
                                 <i class="bi bi-file-earmark-person-fill me-2"></i> User Reports
                             </a>
                         </li>

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using StackFlow.Data;
 using System;
+using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Authentication.Cookies; // Added for cookie authentication
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,6 +23,31 @@ builder.Services.AddDbContext<AppDbContext>(options =>
             sqlOptions.CommandTimeout(60);
         });
 });
+// --- START LOGGING CONFIGURATION ---
+
+// Clear default logging providers (optional, but gives you full control)
+builder.Logging.ClearProviders();
+
+// Add Console logging provider: Logs to the console window (e.g., in VS Output window, or command line)
+builder.Logging.AddConsole();
+
+// Add Debug logging provider: Logs to the debug output window (e.g., VS Output window - Debug)
+builder.Logging.AddDebug();
+
+// You can also specify minimum log levels for different providers or categories
+builder.Logging.AddConsole(options =>
+{
+    options.IncludeScopes = true; // Include scope information (e.g., HTTP request path)
+    options.TimestampFormat = "HH:mm:ss "; // Custom timestamp format
+});
+
+// Configure logging filters to control what gets logged
+builder.Logging.AddFilter("Microsoft", LogLevel.Warning) // Log Warnings and above for Microsoft namespaces
+               .AddFilter("System", LogLevel.Warning)     // Log Warnings and above for System namespaces
+               .AddFilter("StackFlow", LogLevel.Information); // Log Information and above for your application's namespaces (e.g., Controllers, Services)
+
+// --- END LOGGING CONFIGURATION ---
+
 
 // Configure Authentication services (specifically Cookie Authentication)
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
