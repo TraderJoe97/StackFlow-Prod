@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using StackFlow.Data;
@@ -10,17 +11,20 @@ using System.Threading.Tasks;
 
 namespace StackFlow.Controllers
 {
-    public class TaskController : Controller
+    [Authorize]
+    [Route("Ticket")] 
+    public class TicketController : Controller
     {
         private readonly AppDbContext _context;
 
-        public TaskController(AppDbContext context)
+        public TicketController(AppDbContext context)
         {
             _context = context;
         }
 
-        // GET: /Task
+        // GET: /Ticket
         // Displays a list of all tickets with related Project, Assigned User, and Creator
+        [HttpGet("")]
         public async Task<IActionResult> Index()
         {
             var tickets = await _context.Ticket
@@ -32,7 +36,9 @@ namespace StackFlow.Controllers
             return View("~/Views/Ticket/Index.cshtml", tickets);
         }
 
-        // GET: /Task/Details/5
+        // GET: /Ticket/Details/5
+        // Displays the details of a specific ticket based on ID
+        [HttpGet("Details/{id}")]
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null) return NotFound();
@@ -46,15 +52,18 @@ namespace StackFlow.Controllers
             return ticket == null ? NotFound() : View("~/Views/Ticket/Details.cshtml", ticket);
         }
 
-        // GET: /Task/Create
+        // GET: /Ticket/Create
+        // Displays the ticket creation form
+        [HttpGet("Create")]
         public IActionResult Create()
         {
-            PopulateDropdowns();
+            PopulateDropdowns(); // Load dropdown lists for Project and AssignedTo
             return View("~/Views/Ticket/Create.cshtml");
         }
 
-        // POST: /Task/Create
-        [HttpPost]
+        // POST: /Ticket/Create
+        // Handles ticket form submission for creating a new ticket
+        [HttpPost("Create")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Title,Description,Due_Date,Priority,Status,Project_Id,Assigned_To")] Ticket ticket)
         {
@@ -62,7 +71,6 @@ namespace StackFlow.Controllers
             {
                 ticket.Created_At = DateTime.Now;
 
-                // Get the logged-in user's ID from Claims
                 var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
                 if (int.TryParse(userIdString, out int userId))
                 {
@@ -86,7 +94,9 @@ namespace StackFlow.Controllers
             return View("~/Views/Ticket/Create.cshtml", ticket);
         }
 
-        // GET: /Task/Edit/5
+        // GET: /Ticket/Edit/5
+        // Displays the edit form for a ticket
+        [HttpGet("Edit/{id}")]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null) return NotFound();
@@ -98,8 +108,9 @@ namespace StackFlow.Controllers
             return View("~/Views/Ticket/Update.cshtml", ticket);
         }
 
-        // POST: /Task/Edit/5
-        [HttpPost]
+        // POST: /Ticket/Edit/5
+        // Handles form submission for editing an existing ticket
+        [HttpPost("Edit/{id}")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,Title,Description,Due_Date,Priority,Status,Project_Id,Assigned_To")] Ticket updatedTicket)
         {
@@ -136,11 +147,14 @@ namespace StackFlow.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            // If validation fails, reload dropdowns and return view with model
             PopulateDropdowns(updatedTicket);
             return View("~/Views/Ticket/Update.cshtml", updatedTicket);
         }
 
-        // GET: /Task/Delete/5
+        // GET: /Ticket/Delete/5
+        // Displays confirmation page for deleting a ticket
+        [HttpGet("Delete/{id}")]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null) return NotFound();
@@ -152,8 +166,9 @@ namespace StackFlow.Controllers
             return ticket == null ? NotFound() : View("~/Views/Ticket/Delete.cshtml", ticket);
         }
 
-        // POST: /Task/Delete/5
-        [HttpPost, ActionName("Delete")]
+        // POST: /Ticket/Delete/5
+        // Finalizes the ticket deletion
+        [HttpPost("Delete/{id}"), ActionName("DeleteConfirmed")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
@@ -166,14 +181,14 @@ namespace StackFlow.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // Populates dropdowns for Assigned Users and Projects
-        private void PopulateDropdowns(Ticket ticket = null)
+        // Helper method to populate dropdown lists for forms
+        private void PopulateDropdowns(Ticket? ticket = null)
         {
             ViewBag.AssignedToList = new SelectList(_context.User, "Id", "Name", ticket?.Assigned_To);
             ViewBag.ProjectList = new SelectList(_context.Project, "Id", "Name", ticket?.Project_Id);
         }
 
-        // Checks if a ticket exists
+        // Checks if a ticket exists based on ID
         private bool TicketExists(int id)
         {
             return _context.Ticket.Any(e => e.Id == id);
