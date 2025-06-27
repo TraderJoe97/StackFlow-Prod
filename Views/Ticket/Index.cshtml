@@ -8,12 +8,12 @@
 <h2>Ticket List</h2>
 
 @* Link to the Create action for adding a new ticket *@
-<p class="text-end mb-3">
+@if (User.IsInRole("Admin"))
+{
+   <p class="text-end mb-3">
     <a asp-action="Create" class="btn btn-primary">Create New Ticket</a>
 </p>
-
-
-@* Table to display the list of tickets *@
+}
 <table class="table table-bordered table-striped">
     <thead>
         <tr>

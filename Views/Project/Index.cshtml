@@ -6,7 +6,7 @@
 }
 
 <h1 class="display-4 mb-4 text-center">Project List</h1>
-@if (User.IsInRole("Admin")){
+@if (User.IsInRole("Admin") && User.IsInRole("Project Manager")){
 <p class="mb-3 text-end">
     <a asp-action="Create" class="btn btn-primary">Create New Project</a>
 </p>
