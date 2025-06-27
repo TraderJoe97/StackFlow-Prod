@@ -82,16 +82,34 @@ namespace StackFlow.Controllers
 
         public async  Task<IActionResult> ProjectLead()
         {
+            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            // Fetch all projects. In a real application, you might filter this
+            // based on user involvement (e.g., projects they created or are assigned to).
+            var userId = int.Parse(userIdString);
 
+            var allProjects = await _context.Project
+                                            .Include(p => p.CreatedBy) // Include the user who created the project
+                                            .ToListAsync();
 
-            return View();
+            var Projects = allProjects.Where(p => p.Created_By == userId).ToList();
+
+            return View(Projects);
         }
 
         public async Task<IActionResult> Admin()
         {
+            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            // Fetch all projects. In a real application, you might filter this
+            // based on user involvement (e.g., projects they created or are assigned to).
+            var userId = int.Parse(userIdString);
+
+            var allProjects = await _context.Project
+                                            .Include(p => p.CreatedBy) // Include the user who created the project
+                                            .ToListAsync();
 
 
-            return View();
+
+            return View(allProjects);
         }
 
     }
