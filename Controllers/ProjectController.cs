@@ -117,6 +117,7 @@ namespace StackFlow.Controllers
 
         // POST: Project/Edit/5
         [HttpPost]
+        [Authorize(Roles = "Admin,Project Manager")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,Start_Date,Due_Date,Status,Created_By")] Project project)
         {

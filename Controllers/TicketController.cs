@@ -39,6 +39,7 @@ namespace StackFlow.Controllers
         // GET: /Ticket/Details/5
         // Displays the details of a specific ticket based on ID
         [HttpGet("Details/{id}")]
+
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null) return NotFound();
@@ -64,6 +65,7 @@ namespace StackFlow.Controllers
         // POST: /Ticket/Create
         // Handles ticket form submission for creating a new ticket
         [HttpPost("Create")]
+        [Authorize(Roles = "Admin,Project Manager")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Title,Description,Due_Date,Priority,Status,Project_Id,Assigned_To")] Ticket ticket)
         {
@@ -97,6 +99,7 @@ namespace StackFlow.Controllers
         // GET: /Ticket/Edit/5
         // Displays the edit form for a ticket
         [HttpGet("Edit/{id}")]
+        [Authorize(Roles = "Admin,Project Manager")]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null) return NotFound();
@@ -112,6 +115,7 @@ namespace StackFlow.Controllers
         // Handles form submission for editing an existing ticket
         [HttpPost("Edit/{id}")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Project Manager")]
         public async Task<IActionResult> Edit(int id, [Bind("Id,Title,Description,Due_Date,Priority,Status,Project_Id,Assigned_To")] Ticket updatedTicket)
         {
             // Make sure the ID from the route matches the form
@@ -155,6 +159,7 @@ namespace StackFlow.Controllers
         // GET: /Ticket/Delete/5
         // Displays confirmation page for deleting a ticket
         [HttpGet("Delete/{id}")]
+        [Authorize(Roles = "Admin,Project Manager")]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null) return NotFound();
@@ -170,6 +175,7 @@ namespace StackFlow.Controllers
         // Finalizes the ticket deletion
         [HttpPost("Delete/{id}"), ActionName("DeleteConfirmed")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Project Manager")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var ticket = await _context.Ticket.FindAsync(id);
