@@ -1,4 +1,3 @@
-
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -31,10 +30,10 @@ namespace StackFlow.Controllers
             {
                 User = user,
                 TotalTicketsAssigned = user.AssignedTickets.Count,
-                ToDoTicketsAssigned = user.AssignedTickets.Count(t => t.Status == "To Do"),
-                InProgressTicketsAssigned = user.AssignedTickets.Count(t => t.Status == "In Progress"),
-                InReviewTicketsAssigned = user.AssignedTickets.Count(t => t.Status == "In Review"),
-                CompletedTicketsAssigned = user.AssignedTickets.Count(t => t.Status == "Completed")
+                ToDoTicketsAssigned = user.AssignedTickets.Count(t => t.Status == "To_Do"),
+                InProgressTicketsAssigned = user.AssignedTickets.Count(t => t.Status == "In_Progress"),
+                InReviewTicketsAssigned = user.AssignedTickets.Count(t => t.Status == "In_Review"),
+                CompletedTicketsAssigned = user.AssignedTickets.Count(t => t.Status == "Done")
             }).ToList();
 
             ViewBag.CurrentUserId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value);
