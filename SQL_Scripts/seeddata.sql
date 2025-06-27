@@ -153,15 +153,15 @@ SELECT @LegacySystemMigrationId = id FROM projects WHERE project_name = 'Legacy 
 
 
 INSERT INTO tickets (ticket_title, ticket_description, assigned_to, ticket_status, ticket_priority, ticket_created_at, ticket_due_date, ticket_completed_at, project_id, ticket_created_by) VALUES
-('Implement Header Navigation', 'Develop and style the main navigation bar for the website.', @CharlieId, 'In progress', 'high', GETDATE(), '2024-07-01', '1900-01-01', @WebsiteRedesignId, @BobId),
-('Database Schema Design', 'Design and implement the new database schema for the mobile app backend.', @AliceId, 'In progress', 'high', GETDATE(), '2024-08-15', '1900-01-01', @MobileAppId, @BobId),
-('Bug: Login Failure', 'Users are unable to log in to the internal tool after recent update.', @CharlieId, 'In review', 'high', GETDATE(), '2024-06-30', '1900-01-01', @InternalToolRefactorId, @DianaId),
-('API Integration for User Profiles', 'Integrate third-party API for richer user profile data in the mobile app.', @CharlieId, 'to do', 'medium', GETDATE(), '2024-09-30', '1900-01-01', @MobileAppId, @BobId),
-('Update Project Status Logic', 'Modify the project status update mechanism in the website backend.', @CharlieId, 'completed', 'low', '2024-05-01', '2024-05-15', '2024-05-10', @WebsiteRedesignId, @AliceId),
-('Test Mobile App Login Flow', 'Perform end-to-end testing of the mobile app login and registration process.', @DianaId, 'to do', 'medium', GETDATE(), '2024-08-01', '1900-01-01', @MobileAppId, @BobId),
-('Backend Performance Optimization', 'Optimize database queries and API response times for the e-commerce platform.', @CharlieId, 'In progress', 'high', GETDATE(), '2024-07-15', '1900-01-01', @EcommercePlatformId, @AliceId),
-('UI/UX Review for Project Module', 'Review and provide feedback on the user interface and experience of the project management module.', @DianaId, 'In review', 'medium', GETDATE(), '2024-07-05', '1900-01-01', @InternalToolRefactorId, @BobId),
-('Data Migration Script Development', 'Develop scripts for migrating historical user data to the new system.', @CharlieId, 'completed', 'high', '2024-03-01', '2024-03-15', '2024-03-12', @LegacySystemMigrationId, @AliceId);
+('Implement Header Navigation', 'Develop and style the main navigation bar for the website.', @CharlieId, 'In_Progress', 'high', GETDATE(), '2024-07-01', '1900-01-01', @WebsiteRedesignId, @BobId),
+('Database Schema Design', 'Design and implement the new database schema for the mobile app backend.', @AliceId, 'In_Progress', 'high', GETDATE(), '2024-08-15', '1900-01-01', @MobileAppId, @BobId),
+('Bug: Login Failure', 'Users are unable to log in to the internal tool after recent update.', @CharlieId, 'In_Review', 'high', GETDATE(), '2024-06-30', '1900-01-01', @InternalToolRefactorId, @DianaId),
+('API Integration for User Profiles', 'Integrate third-party API for richer user profile data in the mobile app.', @CharlieId, 'To_Do', 'medium', GETDATE(), '2024-09-30', '1900-01-01', @MobileAppId, @BobId),
+('Update Project Status Logic', 'Modify the project status update mechanism in the website backend.', @CharlieId, 'Done', 'low', '2024-05-01', '2024-05-15', '2024-05-10', @WebsiteRedesignId, @AliceId),
+('Test Mobile App Login Flow', 'Perform end-to-end testing of the mobile app login and registration process.', @DianaId, 'To_Do', 'medium', GETDATE(), '2024-08-01', '1900-01-01', @MobileAppId, @BobId),
+('Backend Performance Optimization', 'Optimize database queries and API response times for the e-commerce platform.', @CharlieId, 'In_Progress', 'high', GETDATE(), '2024-07-15', '1900-01-01', @EcommercePlatformId, @AliceId),
+('UI/UX Review for Project Module', 'Review and provide feedback on the user interface and experience of the project management module.', @DianaId, 'In_Review', 'medium', GETDATE(), '2024-07-05', '1900-01-01', @InternalToolRefactorId, @BobId),
+('Data Migration Script Development', 'Develop scripts for migrating historical user data to the new system.', @CharlieId, 'Done', 'high', '2024-03-01', '2024-03-15', '2024-03-12', @LegacySystemMigrationId, @AliceId);
 PRINT 'Tickets seeded.';
 GO
 

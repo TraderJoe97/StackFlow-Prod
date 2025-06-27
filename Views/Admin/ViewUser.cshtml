@@ -1,0 +1,81 @@
+﻿@model StackFlow.Models.User
+
+@{
+    ViewData["Title"] = "User Details";
+}
+
+<div class="card shadow-lg border-0 rounded-4 p-4 mt-4 mb-4">
+    <div class="d-flex justify-content-between align-items-start mb-3">
+        <h2 class="card-title mb-0 fw-bold text-primary display-6">
+            <i class="bi bi-person-circle me-2"></i> User Details
+        </h2>
+        @* Back button - adjust asp-controller and asp-action if needed *@
+        <a asp-action="Index" asp-controller="Admin" class="btn btn-outline-secondary rounded-pill shadow-sm animate-btn">
+            <i class="bi bi-arrow-left-circle me-1"></i> Back to User Reports
+        </a>
+    </div>
+    <hr class="mb-4" />
+
+    @if (Model == null)
+    {
+        <div class="alert alert-warning rounded-4 shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> User not found.
+        </div>
+    }
+    else
+    {
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="form-floating mb-3">
+                    <input type="text" class="form-control" id="username" value="@Model.Name" readonly>
+                    <label for="username">Username</label>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-floating mb-3">
+                    <input type="email" class="form-control" id="email" value="@Model.Email" readonly>
+                    <label for="email">Email</label>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-floating mb-3">
+                    <input type="text" class="form-control" id="role" value="@Model.Role?.Name" readonly> @* Assuming Role has a Name property *@
+                    <label for="role">Role</label>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-floating mb-3">
+                    <input type="text" class="form-control" id="activeStatus" value="@(Model.IsActive ? "Active" : "Inactive")" readonly>
+                    <label for="activeStatus">Active Status</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <h4>Assigned Tickets</h4>
+            @if (Model.AssignedTickets != null && Model.AssignedTickets.Any())
+            {
+                <ul class="list-group">
+                    @foreach (var ticket in Model.AssignedTickets)
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            @ticket.Title
+                            <span class="badge bg-primary rounded-pill">@ticket.Status</span>
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <div class="alert alert-info rounded-4 shadow-sm" role="alert">
+                    <i class="bi bi-info-circle-fill me-2"></i> No tickets assigned to this user.
+                </div>
+            }
+        </div>
+
+        <div class="mt-4">
+            <a asp-action="EditUser" asp-route-id="@Model.Id" class="btn btn-primary me-2">Edit User</a>
+            <a asp-action="DeleteUser" asp-route-id="@Model.Id" class="btn btn-danger">Delete User</a>
+        </div>
+    }
+</div>

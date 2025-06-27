@@ -22,23 +22,23 @@ namespace StackFlow.Controllers
 
         public IActionResult Index()
         {
-            var users = _context.Users
-                .Include(u => u.Tickets)
+            var users = _context.User
+                .Include(u => u.AssignedTickets)
                 .Include(u => u.Role)
                 .ToList();
 
             var userReports = users.Select(user => new UserReportViewModel
             {
                 User = user,
-                TotalTicketsAssigned = user.Tickets.Count,
-                ToDoTicketsAssigned = user.Tickets.Count(t => t.Status == "To Do"),
-                InProgressTicketsAssigned = user.Tickets.Count(t => t.Status == "In Progress"),
-                InReviewTicketsAssigned = user.Tickets.Count(t => t.Status == "In Review"),
-                CompletedTicketsAssigned = user.Tickets.Count(t => t.Status == "Completed")
+                TotalTicketsAssigned = user.AssignedTickets.Count,
+                ToDoTicketsAssigned = user.AssignedTickets.Count(t => t.Status == "To Do"),
+                InProgressTicketsAssigned = user.AssignedTickets.Count(t => t.Status == "In Progress"),
+                InReviewTicketsAssigned = user.AssignedTickets.Count(t => t.Status == "In Review"),
+                CompletedTicketsAssigned = user.AssignedTickets.Count(t => t.Status == "Completed")
             }).ToList();
 
             ViewBag.CurrentUserId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value);
-            ViewBag.Roles = new SelectList(_context.Roles, "Id", "Title");
+            ViewBag.Roles = new SelectList(_context.Role, "Id", "Title");
 
             return View(userReports);
         }
@@ -46,7 +46,7 @@ namespace StackFlow.Controllers
         [HttpPost]
         public IActionResult DeleteUser(int id)
         {
-            var userToDelete = _context.Users.Find(id);
+            var userToDelete = _context.User.Find(id);
             if (userToDelete == null)
             {
                 TempData["ErrorMessage"] = "User not found.";
@@ -63,17 +63,17 @@ namespace StackFlow.Controllers
         [HttpPost]
         public IActionResult UpdateUserRole(int userId, int newRoleId)
         {
-            var userToUpdate = _context.Users.Find(userId);
+            var userToUpdate = _context.User.Find(userId);
             if (userToUpdate == null)
             {
                 TempData["ErrorMessage"] = "User not found.";
                 return RedirectToAction(nameof(Index));
             }
 
-            userToUpdate.RoleId = newRoleId;
+            userToUpdate.Role_Id = newRoleId;
             _context.SaveChanges();
 
-            TempData["SuccessMessage"] = $"{userToUpdate.Username}'s role updated successfully.";
+            TempData["SuccessMessage"] = $"{userToUpdate.Name}'s role updated successfully.";
             return RedirectToAction(nameof(Index));
         }
 
