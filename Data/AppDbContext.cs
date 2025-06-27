@@ -12,6 +12,7 @@ namespace StackFlow.Data
         public DbSet<Project> Project { get; set; } = null!;
         public DbSet<Ticket> Ticket { get; set; } = null!;
         public DbSet<Comment> TicketComment { get; set; } = null!; // Renamed from Comment to TicketComment to match DbSet name
+        public object Projects { get; internal set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
