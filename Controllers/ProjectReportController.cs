@@ -30,9 +30,9 @@ namespace StackFlow.Controllers
                 Project = p,
                 TotalTickets = p.Tickets?.Count ?? 0,
                 CompletedTickets = p.Tickets?.Count(t => t.Status == "Done") ?? 0,
-                InProgressTickets = p.Tickets?.Count(t => t.Status == "In Progress") ?? 0,
-                ToDoTickets = p.Tickets?.Count(t => t.Status == "To Do") ?? 0,
-                InReviewTickets = p.Tickets?.Count(t => t.Status == "In Review") ?? 0
+                InProgressTickets = p.Tickets?.Count(t => t.Status == "In_Progress") ?? 0,
+                ToDoTickets = p.Tickets?.Count(t => t.Status == "To_Do") ?? 0,
+                InReviewTickets = p.Tickets?.Count(t => t.Status == "In_Review") ?? 0
             }).ToList();
 
             return View(projectReports);
