@@ -83,9 +83,14 @@
         @* Submit and Back buttons *@
         <div class="form-group">
             <div class="col-md-offset-2 col-md-10">
-                <input type="submit" value="Create" class="btn btn-primary" />
+                <input type="submit" value="Create" class="btn btn-primary button" />
                 @Html.ActionLink("Back to List", "Index", null, new { @class = "btn btn-default" })
             </div>
         </div>
     </div>
 }
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/Ticket.css" />
+}
+

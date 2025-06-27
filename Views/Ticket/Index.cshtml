@@ -1,5 +1,6 @@
 ﻿@model IEnumerable<StackFlow.Models.Ticket>
 
+
 @{
     ViewBag.Title = "Ticket List";
 }
@@ -7,9 +8,10 @@
 <h2>Ticket List</h2>
 
 @* Link to the Create action for adding a new ticket *@
-<p>
-    @Html.ActionLink("Create New Ticket", "Create")
+<p class="text-end mb-3">
+    <a asp-action="Create" class="btn btn-primary">Create New Ticket</a>
 </p>
+
 
 @* Table to display the list of tickets *@
 <table class="table table-bordered table-striped">
@@ -37,12 +39,17 @@
                 <td>@item.Project?.Name</td> @* Null check in case project is not linked *@
                 <td>@item.AssignedTo?.Name</td> @* Null check in case ticket is unassigned *@
                 <td>
-                    @* Links to Edit, Details, and Delete actions for each ticket *@
-                    @Html.ActionLink("Edit", "Edit", new { id = item.Id }) |
-                    @Html.ActionLink("Details", "Details", new { id = item.Id }) |
-                    @Html.ActionLink("Delete", "Delete", new { id = item.Id })
+                    @* Links to Edit, Details, and Delete actions for each ticket with styling *@
+                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-info me-1">Edit</a>
+                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-secondary me-1">Details</a>
+                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Delete</a>
                 </td>
+
             </tr>
         }
     </tbody>
 </table>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/Ticket.css" />
+}

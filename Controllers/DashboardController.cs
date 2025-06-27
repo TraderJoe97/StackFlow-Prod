@@ -1,7 +1,7 @@
-﻿
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using StackFlow.Data;
-using System.Security.Claims; // Required for ClaimTypes
+using System.Security.Claims;
 
 namespace StackFlow.Controllers
 {
@@ -13,6 +13,8 @@ namespace StackFlow.Controllers
         {
             _context = context;
         }
+
+
 
         public IActionResult Index()
         {
@@ -46,25 +48,70 @@ namespace StackFlow.Controllers
 
         }
 
-        public IActionResult Developer()
+        public async Task<IActionResult> Developer()
         {
-            return View();
+            // Get the current user's ID from claims
+            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var allTasks = await _context.Ticket
+                             .Include(t => t.Project)
+                             .Include(t => t.AssignedTo)
+                             .ToListAsync();
+
+            var userId = int.Parse(userIdString);
+            var AssignedToMeTasks = allTasks.Where(t => t.Assigned_To == userId).ToList();
+            return View(AssignedToMeTasks);
+
         }
 
-        public IActionResult Tester()
+
+        public async Task<ActionResult> Tester()
         {
-            return View();
+            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var allTasks = await _context.Ticket
+                             .Include(t => t.Project)
+                             .Include(t => t.AssignedTo)
+                             .ToListAsync();
+
+            var userId = int.Parse(userIdString);
+            var AssignedToMeTasks = allTasks.Where(t => t.Assigned_To == userId).ToList();
+            return View(AssignedToMeTasks);
+
         }
 
-        public IActionResult ProjectLead()
+        public async  Task<IActionResult> ProjectLead()
         {
-            return View();
+            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            // Fetch all projects. In a real application, you might filter this
+            // based on user involvement (e.g., projects they created or are assigned to).
+            var userId = int.Parse(userIdString);
+
+            var allProjects = await _context.Project
+                                            .Include(p => p.CreatedBy) // Include the user who created the project
+                                            .ToListAsync();
+
+            var Projects = allProjects.Where(p => p.Created_By == userId).ToList();
+
+            return View(Projects);
         }
 
-        public IActionResult Admin()
+        public async Task<IActionResult> Admin()
         {
-            return View();
+            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            // Fetch all projects. In a real application, you might filter this
+            // based on user involvement (e.g., projects they created or are assigned to).
+            var userId = int.Parse(userIdString);
+
+            var allProjects = await _context.Project
+                                            .Include(p => p.CreatedBy) // Include the user who created the project
+                                            .ToListAsync();
+
+
+
+            return View(allProjects);
         }
+
     }
 }
 
