@@ -54,6 +54,7 @@
                         <th scope="col">In Progress</th>
                         <th scope="col">In Review</th>
                         <th scope="col">Completed</th>
+                        <th scope="col">Active Status</th>
                         <th scope="col">Actions</th>
                     </tr>
                 </thead>
@@ -69,6 +70,7 @@
                             <td>@report.InProgressTicketsAssigned</td>
                             <td>@report.InReviewTicketsAssigned</td>
                             <td>@report.CompletedTicketsAssigned</td>
+                            <td>@report.User.IsActive</td>
                             <td>
                                 <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#taskDetailsModal" data-user-id="@report.User.Id">Details</button>
                                 <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#editUserModal" data-user-id="@report.User.Id">Edit</button>
