@@ -6,10 +6,11 @@
 }
 
 <h1 class="display-4 mb-4 text-center">Project List</h1>
-
+@if (User.IsInRole("Admin")){
 <p class="mb-3 text-end">
     <a asp-action="Create" class="btn btn-primary">Create New Project</a>
 </p>
+}
 
 <div class="card shadow mb-4">
     <div class="card-body">

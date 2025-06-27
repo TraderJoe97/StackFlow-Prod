@@ -3,7 +3,10 @@ using StackFlow.Data;
 using StackFlow.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc.Rendering; // Needed for SelectList
+using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization.Infrastructure; // Needed for SelectList
+using Microsoft.AspNetCore.Authorization;
 
 namespace StackFlow.Controllers
 {
@@ -57,6 +60,7 @@ namespace StackFlow.Controllers
 
         // POST: Project/Create
         [HttpPost]
+        [Authorize(Roles = "Admin,Project Manager")]
         [ValidateAntiForgeryToken] // Protects against Cross-Site Request Forgery attacks
         public async Task<IActionResult> Create([Bind("Name,Description,Start_Date,Due_Date,Status")] Project project)
         {
