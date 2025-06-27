@@ -47,6 +47,20 @@ h2 {
     margin-top: 0.25rem;
 }
 
+.create-task-title {
+    font-size: 1.1rem; /* text-3xl */
+    font-weight: 700; /* font-bold */
+    margin-bottom: 1.5rem; /* mb-6 */
+    color: #1f2937; /* text-gray-800 */
+    border: 1px solid black;
+    padding: 10px 10px 10px 30px;
+    margin-right: 1300px;
+    border-radius:15px;
+    background-color: black;
+    color:white;
+    text-decoration:none;
+}
+
 
 
 .btn:hover {
