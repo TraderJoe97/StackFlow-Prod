@@ -1,5 +1,9 @@
-﻿@{
-    ViewData["Title"] = "Dashboard";
+﻿@model List<StackFlow.Models.Ticket>;
+
+
+
+@{
+    ViewData["Title"] = "Tester";
 }
 
 <div class="dashboard-header mb-4">
@@ -8,112 +12,83 @@
 
 
 <div class="row">
-    <!-- Tasks Assigned to Me Section -->
-    <div class="col-lg-6 mb-4">
-        <div class="card shadow-sm border-0 rounded-4 h-100">
-            <div class="card-header bg-gradient-primary text-white rounded-top-4 py-3">
-                <h5 class="mb-0 fw-bold"><i class="bi bi-person-fill me-2"></i>Tasks Assigned to Me</h5>
+
+    <div class="row">
+        <!-- To Do Tasks -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-0 rounded-4 h-100">
+                <div class="card-header bg-gradient-info text-white rounded-top-4 py-3">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-hourglass me-2"></i>To Do Tasks</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        @foreach (var ticket in Model.OrderBy(t => t.Due_Date))
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center border-0">
+                                <div>
+                                    <h6 class="mb-1">@ticket.Title</h6>
+                                    <small class="text-muted">Due: @ticket.Due_Date.ToShortDateString()</small>
+                                </div>
+                                <a asp-action="Details" asp-controller="Ticket" asp-route-id="@ticket.Id" class="btn btn-sm btn-outline-secondary rounded-pill">View <i class="bi bi-arrow-right"></i></a>
+                            </li>
+                        }
+                    </ul>
+                </div>
             </div>
-            <div class="card-body">
-                <div class="list-group list-group-flush">
-                    <a asp-action="" asp-route-id="" class="list-group-item list-group-item-action border-0 rounded-3 mb-2 shadow-sm d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="mb-1 text-primary">Ticket Title</h6>
-                            <small class="text-muted"><i class="bi bi-tag me-1"></i>Project</small><br />
-                            <small class="text-muted"><i class="bi bi-calendar-event me-1"></i>Due</small>
-                        </div>
-                    </a>
+        </div>
+
+        <!-- In Progress Tasks -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-0 rounded-4 h-100">
+                <div class="card-header bg-gradient-warning text-white rounded-top-4 py-3">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-play-circle-fill me-2"></i>In Progress Tasks</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        @foreach (var ticket in Model.OrderBy(t => t.Due_Date))
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center border-0">
+                                <div>
+                                    <h6 class="mb-1">@ticket.Title</h6>
+                                    <small class="text-muted">Due: @ticket.Due_Date.ToShortDateString()</small>
+                                </div>
+                                <a asp-action="Details" asp-controller="Ticket" asp-route-id="@ticket.Id" class="btn btn-sm btn-outline-secondary rounded-pill">View <i class="bi bi-arrow-right"></i></a>
+                            </li>
+                        }
+                    </ul>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Completed Tasks -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-0 rounded-4 h-100">
+                <div class="card-header bg-gradient-success text-white rounded-top-4 py-3">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-check-circle-fill me-2"></i>Completed Tasks</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        @foreach (var ticket in Model.OrderByDescending(t => t.Completed_At))
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center border-0 text-muted">
+                                <div>
+                                    <h6 class="mb-1 text-decoration-line-through">@ticket.Title</h6>
+                                    <small>Completed: @ticket.Completed_At.ToShortDateString()</small>
+                                </div>
+                                <a asp-action="Details" asp-controller="Ticket" asp-route-id="@ticket.Id" class="btn btn-sm btn-outline-secondary rounded-pill">View <i class="bi bi-arrow-right"></i></a>
+                            </li>
+                        }
+                    </ul>
+
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Projects Section -->
-<div class="col-lg-6 mb-4">
-    <div class="card shadow-sm border-0 rounded-4 h-100">
-        <div class="card-header bg-gradient-success text-white rounded-top-4 py-3">
-            <h5 class="mb-0 fw-bold"><i class="bi bi-folder-fill me-2"></i>Your Projects</h5>
-        </div>
-        <div class="card-body">
-            <div class="list-group list-group-flush">
-
-                <a asp-action="ProjectReports" asp-controller="Dashboard" class="list-group-item list-group-item-action border-0 rounded-3 mb-2 shadow-sm d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="mb-1 text-success">ProjectName</h6>
-                        <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Status: ProjectStatus</small><br />
-                        <small class="text-muted"><i class="bi bi-calendar-check me-1"></i>Ends: ProjectEndDate</small>
-                    </div>
-                    <span class="badge bg-secondary rounded-pill">View Details <i class="bi bi-arrow-right"></i></span>
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
 
 
-<h3 class="mt-4 mb-3 fw-bold text-secondary">Task Status Overview</h3>
-
-<div class="row">
-    <!-- To Do Tasks -->
-    <div class="col-md-4 mb-4">
-        <div class="card shadow-sm border-0 rounded-4 h-100">
-            <div class="card-header bg-gradient-info text-white rounded-top-4 py-3">
-                <h5 class="mb-0 fw-bold"><i class="bi bi-hourglass me-2"></i>To Do Tasks</h5>
-            </div>
-            <div class="card-body">
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item d-flex justify-content-between align-items-center border-0">
-                        <div>
-                            <h6 class="mb-1">TaskTitle</h6>
-                            <small class="text-muted">Due</small>
-                        </div>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </div>
-
-    <!-- In Progress Tasks -->
-    <div class="col-md-4 mb-4">
-        <div class="card shadow-sm border-0 rounded-4 h-100">
-            <div class="card-header bg-gradient-warning text-white rounded-top-4 py-3">
-                <h5 class="mb-0 fw-bold"><i class="bi bi-play-circle-fill me-2"></i>In Progress Tasks</h5>
-            </div>
-            <div class="card-body">
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item d-flex justify-content-between align-items-center border-0">
-                        <div>
-                            <h6 class="mb-1">TaskTitle</h6>
-                            <small class="text-muted">Due: </small>
-                        </div>
-                    </li>
-                    }
-                </ul>
-                }
-            </div>
-        </div>
-    </div>
-
-    <!-- Completed Tasks -->
-    <div class="col-md-4 mb-4">
-        <div class="card shadow-sm border-0 rounded-4 h-100">
-            <div class="card-header bg-gradient-success text-white rounded-top-4 py-3">
-                <h5 class="mb-0 fw-bold"><i class="bi bi-check-circle-fill me-2"></i>Completed Tasks</h5>
-            </div>
-            <div class="card-body">
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item d-flex justify-content-between align-items-center border-0 text-muted">
-                        <div>
-                            <h6 class="mb-1 text-decoration-line-through">TaskTitle</h6>
-                            <small>Completed:</small>
-                        </div>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </div>
-</div>
 
 @section Scripts {
     <!-- Any dashboard-specific JavaScript could go here -->

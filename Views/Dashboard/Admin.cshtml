@@ -1,26 +1,32 @@
-﻿@model List<StackFlow.Models.Project>;    
+﻿@model List<StackFlow.Models.Project>;
 <!-- Projects Section -->
-<
-    <div class="card shadow-sm border-0 rounded-4 h-100">
-        <div class="card-header bg-gradient-success text-white rounded-top-4 py-3">
-            <h5 class="mb-0 fw-bold"><i class="bi bi-folder-fill me-2"></i>Your Projects</h5>
-        </div>
-        <div class="card-body">
-                <div class="list-group list-group-flush">
-                    @foreach (var project in Model)
-                    {
-                        <a asp-action="" asp-controller="" class="list-group-item list-group-item-action border-0 rounded-3 mb-2 shadow-sm d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="mb-1 text-success">@project.Name</h6>
-                                <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Status: @project.Status</small><br />
+<div class="dashboard-header mb-4">
+    <h1 class="display-4 fw-bold text-primary">Welcome, @User.Identity.Name</h1>
+</div>
+
+<div class="card shadow-sm border-0 rounded-4 h-100">
+    <div class="card-header bg-gradient-success text-white rounded-top-4 py-3">
+        <h5 class="mb-0 fw-bold"><i class="bi bi-folder-fill me-2"></i>Your Projects</h5>
+    </div>
+    <div class="card-body">
+        <div class="list-group list-group-flush">
+            @foreach (var project in Model)
+            {
+                <a asp-action="Details" asp-controller="Project" asp-route-id="@project.Id"  class="list-group-item list-group-item-action border-0 rounded-3 mb-2 shadow-sm d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1 text-success">@project.Name</h6>
+                        <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Status: @project.Status</small><br />
                         <small class="text-muted"><i class="bi bi-calendar-check me-1"></i>Ends: @project.Due_Date.ToString()</small>
-                            </div>
-                            <span class="badge bg-secondary rounded-pill">View Details <i class="bi bi-arrow-right"></i></span>
-                        </a>
-                    }
-                </div>
+                    </div>
+                    <span class="badge bg-secondary rounded-pill">
+                        <span asp-controller="Project" asp-action="Details">View Details</span>
+                         <i class="bi bi-arrow-right"></i>
+                     </span>
+                </a>
+            }
         </div>
     </div>
+</div>
 
 @section Scripts {
     <!-- Any dashboard-specific JavaScript could go here -->
