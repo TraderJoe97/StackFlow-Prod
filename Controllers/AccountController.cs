@@ -38,6 +38,11 @@ namespace StackFlow.Controllers
                 ViewData["LoginError"] = "Email and password are required.";
                 return View();
             }
+            if (!email.EndsWith("@omnitak.com", StringComparison.OrdinalIgnoreCase))
+            {
+                ViewData["LoginError"] = "Invalid email or password.";
+                return View();
+            }
 
             // Find user by email
             // Include Role to get the role name for claims
@@ -102,6 +107,12 @@ namespace StackFlow.Controllers
                 return View();
             }
 
+            if (!email.EndsWith("@omnitak.com", StringComparison.OrdinalIgnoreCase))
+            {
+
+                ViewData["RegistrationError"] = "Invalid email or password.";
+                return View();
+            }
             // Check if email already exists
             if (await _context.User.AnyAsync(u => u.Email == email))
             {
@@ -129,12 +140,18 @@ namespace StackFlow.Controllers
                 Email = email,
                 PasswordHash = passwordHash,
                 Role_Id = defaultRole.Id, // Assign the ID of the 'Developer' role
-                Created_At = DateTime.UtcNow
+                Created_At = DateTime.UtcNow,
+                IsActive = false
             };
 
             _context.User.Add(newUser);
             await _context.SaveChangesAsync();
 
+            if(newUser.IsActive == false)
+            {
+                TempData["SuccessMessage"] = "Awaiting admins login's approval...";
+                return View();
+            }
             TempData["SuccessMessage"] = "Registration successful! You can now log in.";
             return RedirectToAction("Login");
         }
