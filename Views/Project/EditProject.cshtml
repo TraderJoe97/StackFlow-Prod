@@ -1,0 +1,123 @@
+﻿@model StackFlow.Models.Project
+
+@{
+    ViewData["Title"] = "Edit Project: " + Model.Name;
+}
+
+<div class="card shadow-lg border-0 rounded-4 p-4 mt-4 mb-4">
+    <h2 class="card-title text-center mb-4 fw-bold text-warning display-6">
+        <i class="bi bi-pencil-square me-2"></i> Edit Project
+    </h2>
+    <hr class="mb-4" />
+    <div class="row justify-content-center">
+        <div class="col-md-10 col-lg-8">
+            <form asp-controller="Project" asp-action="EditProject" method="post" class="needs-validation" novalidate>
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                <input type="hidden" asp-for="Id" />
+                @* Hidden field to preserve CreatedByUserId as it's not part of the form input *@
+                <input type="hidden" asp-for="Created_By" />
+
+                <div class="mb-3">
+                    <label asp-for="Name" class="form-label fw-semibold">Project Name <span class="text-danger">*</span></label>
+                    <input asp-for="Name" class="form-control form-control-lg rounded-pill" required />
+                    <span asp-validation-for="Name" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Description" class="form-label fw-semibold">Description</label>
+                    <textarea asp-for="Description" class="form-control rounded-4" rows="6"></textarea>
+                    <span asp-validation-for="Description" class="text-danger"></span>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Start_Date" class="form-label fw-semibold">Start Date</label>
+                        <input asp-for="Start_Date" type="date" class="form-control rounded-pill" />
+                        <span asp-validation-for="Start_Date" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Due_Date" class="form-label fw-semibold">End Date</label>
+                        <input asp-for="Due_Date" type="date" class="form-control rounded-pill" />
+                        <span asp-validation-for="Due_Date" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label asp-for="Status" class="form-label fw-semibold">Status <span class="text-danger">*</span></label>
+                    <select asp-for="Status" class="form-select form-select-lg rounded-pill" asp-items="ViewBag.ProjectStatuses" required></select>
+                    <span asp-validation-for="Status" class="text-danger"></span>
+                </div>
+
+                <div class="d-grid gap-2 mt-4">
+                    <button type="submit" class="btn btn-warning btn-lg rounded-pill shadow-sm animate-btn">
+                        <i class="bi bi-save-fill me-2"></i> Save Changes
+                    </button>
+                    <a asp-action="ProjectDetails" asp-controller="Project" asp-route-id="@Model.Id" class="btn btn-outline-secondary btn-lg rounded-pill shadow-sm animate-btn">
+                        <i class="bi bi-arrow-left-circle me-2"></i> Back to Project Details
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        // Bootstrap form validation
+        (function () {
+            'use strict'
+            var forms = document.querySelectorAll('.needs-validation')
+            Array.prototype.slice.call(forms)
+                .forEach(function (form) {
+                    form.addEventListener('submit', function (event) {
+                        if (!form.checkValidity()) {
+                            event.preventDefault()
+                            event.stopPropagation()
+                        }
+                        form.classList.add('was-validated')
+                    }, false)
+                })
+        })()
+    </script>
+}
+
+@section Styles {
+    <style>
+        .animate-btn {
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .animate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        .form-control.rounded-pill,
+        .form-select.rounded-pill {
+            border-radius: 50rem !important; /* Fully rounded pill shape */
+            padding: 0.75rem 1.25rem;
+            height: auto; /* Allow content to dictate height */
+        }
+        .form-control.rounded-4,
+        .form-select.rounded-4 {
+            border-radius: 0.5rem !important; /* Slightly more rounded than default */
+        }
+
+        /* Dark mode specific adjustments for form elements */
+        [data-bs-theme="dark"] .form-control,
+        [data-bs-theme="dark"] .form-select,
+        [data-bs-theme="dark"] .form-control:focus,
+        [data-bs-theme="dark"] .form-select:focus {
+            background-color: #495057; /* Darker background for inputs */
+            color: var(--bs-body-color);
+            border-color: #6c757d;
+        }
+
+        [data-bs-theme="dark"] .form-control::placeholder,
+        [data-bs-theme="dark"] .form-select option {
+            color: rgba(255, 255, 255, 0.6);
+        }
+    </style>
+}

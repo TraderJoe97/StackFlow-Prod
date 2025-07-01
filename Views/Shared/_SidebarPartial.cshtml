@@ -1,63 +1,71 @@
-﻿<ul class="navbar-nav sidebar-nav flex-column">
+﻿@* This partial now only contains the navigation links.
+   The offcanvas container is in _Layout.cshtml, and the desktop fixed sidebar
+   container is in Dashboard/Index.cshtml. *@
+<ul class="navbar-nav sidebar-nav flex-column">
     @if (User.Identity.IsAuthenticated)
     {
-    <li class="nav-item">
-        <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Dashboard" && ViewContext.RouteData.Values["Action"].ToString() == "Index" ? "active" : "")"
-           asp-area="" asp-controller="Dashboard" asp-action="Index">
-            <i class="bi bi-grid-fill me-2"></i> Dashboard
-        </a>
-
-        <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Projects" && ViewContext.RouteData.Values["Action"].ToString() == "Project" ? "active" : "")"
-           asp-area="" asp-controller="Project" asp-action="Index">
-            <i class="bi bi-grid-fill me-2"></i> Projects
-        </a>
-
-        <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Ticket" && ViewContext.RouteData.Values["Action"].ToString() == "Ticket" ? "active" : "")"
-           asp-area="" asp-controller="Ticket" asp-action="Index">
-            <i class="bi bi-grid-fill me-2"></i> Tickets
-        </a>
-    </li>
-
-
-    @* Project Manager and Admin specific links *@
-    @if (User.IsInRole("Admin") || User.IsInRole("Project Manager"))
-    {
         <li class="nav-item">
-            <a class="nav-link @(ViewContext.RouteData.Values["Action"].ToString() == "CreateTicket" ? "active" : "")"
-               asp-area="" asp-controller="Ticket" asp-action="Create">
-                <i class="bi bi-journal-plus me-2"></i> Create Ticket
+            <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Dashboard" && ViewContext.RouteData.Values["Action"].ToString() == "Index" ? "active" : "")"
+               asp-area="" asp-controller="Dashboard" asp-action="Index">
+                <i class="bi bi-grid-fill me-2"></i> <span class="sidebar-text">Dashboard</span>
             </a>
         </li>
-    }
 
-    @* Admin specific links *@
-    @if (User.IsInRole("Admin"))
-    {
         <li class="nav-item">
-            <a class="nav-link @(ViewContext.RouteData.Values["Action"].ToString() == "CreateProject" ? "active" : "")"
-               asp-area="" asp-controller="Project" asp-action="Create">
-                <i class="bi bi-folder-plus me-2"></i> Create Project
+            <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Ticket" && ViewContext.RouteData.Values["Action"].ToString() == "TicketIndex" ? "active" : "")"
+               asp-area="" asp-controller="Ticket" asp-action="Index">
+                <i class="bi bi-journal-text me-2"></i> <span class="sidebar-text">All Tickets</span>
             </a>
         </li>
-        <li class="nav-item">
-            <a class="nav-link @(ViewContext.RouteData.Values["Action"].ToString() == "ProjectReports" ? "active" : "")"
-               asp-area="" asp-controller="ProjectReport" asp-action="index">
-                <i class="bi bi-clipboard-data-fill me-2"></i> Project Reports
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link @(ViewContext.RouteData.Values["Action"].ToString() == "UserReports" ? "active" : "")"
-               asp-area="" asp-controller="UserReports" asp-action="index">
-                <i class="bi bi-file-earmark-person-fill me-2"></i> User Reports
-            </a>
-        </li>
-    }
+
+        @* Project Manager and Admin specific links *@
+        @if (User.IsInRole("Admin") || User.IsInRole("Project Manager"))
+        {
+            <li class="nav-item">
+                <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Ticket" && ViewContext.RouteData.Values["Action"].ToString() == "CreateTicket" ? "active" : "")"
+                   asp-area="" asp-controller="Ticket" asp-action="CreateTicket">
+                    <i class="bi bi-journal-plus me-2"></i> <span class="sidebar-text">Create Ticket</span>
+                </a>
+            </li>
+        }
+
+        @* Admin specific links *@
+        @if (User.IsInRole("Admin"))
+        {
+            <li class="nav-item">
+                <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Project" && ViewContext.RouteData.Values["Action"].ToString() == "ProjectIndex" ? "active" : "")"
+                   asp-area="" asp-controller="Project" asp-action="Index">
+                    <i class="bi bi-folder-fill me-2"></i> <span class="sidebar-text">All Projects</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Project" && ViewContext.RouteData.Values["Action"].ToString() == "CreateProject" ? "active" : "")"
+                   asp-area="" asp-controller="Project" asp-action="CreateProject">
+                    <i class="bi bi-folder-plus me-2"></i> <span class="sidebar-text">Create Project</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Report" && ViewContext.RouteData.Values["Action"].ToString() == "ProjectReports" ? "active" : "")"
+                   asp-area="" asp-controller="Report" asp-action="ProjectReports">
+                    <i class="bi bi-clipboard-data-fill me-2"></i> <span class="sidebar-text">Project Reports</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Report" && ViewContext.RouteData.Values["Action"].ToString() == "UserReports" ? "active" : "")"
+                   asp-area="" asp-controller="Report" asp-action="UserReports">
+                    <i class="bi bi-file-earmark-person-fill me-2"></i> <span class="sidebar-text">User Reports</span>
+                </a>
+            </li>
+        }
+
+
 
     <li class="nav-item">
         <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Account" && ViewContext.RouteData.Values["Action"].ToString() == "ManageAccount" ? "active" : "")"
            asp-area="" asp-controller="Account" asp-action="ManageAccount">
-            <i class="bi bi-person-circle me-2"></i> Manage Account
+            <i class="bi bi-person-circle me-2"></i><span class="sidebar-text"> Manage Account</span>
         </a>
     </li>
     }
+    
 </ul>

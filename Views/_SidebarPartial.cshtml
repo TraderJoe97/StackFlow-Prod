@@ -7,7 +7,7 @@
         <li class="nav-item">
             <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Dashboard" && ViewContext.RouteData.Values["Action"].ToString() == "Index" ? "active" : "")"
                asp-area="" asp-controller="Dashboard" asp-action="Index">
-                <i class="bi bi-grid-fill me-2"></i> Dashboard
+                <i class="bi bi-grid-fill me-2"></i> <span class="sidebar-text">Dashboard</span>
             </a>
         </li>
 
@@ -15,9 +15,9 @@
         @if (User.IsInRole("Admin") || User.IsInRole("Project Manager"))
         {
             <li class="nav-item">
-                <a class="nav-link @(ViewContext.RouteData.Values["Action"].ToString() == "CreateTicket" ? "active" : "")" @* Reverted asp-action *@
-                   asp-area="" asp-controller="Ticket" asp-action="CreateTicket"> @* Updated asp-controller and asp-action *@
-                    <i class="bi bi-journal-plus me-2"></i> Create Ticket @* Reverted text *@
+                <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Ticket" && ViewContext.RouteData.Values["Action"].ToString() == "CreateTicket" ? "active" : "")"
+                   asp-area="" asp-controller="Ticket" asp-action="CreateTicket">
+                    <i class="bi bi-journal-plus me-2"></i> <span class="sidebar-text">Create Ticket</span>
                 </a>
             </li>
         }
@@ -26,21 +26,27 @@
         @if (User.IsInRole("Admin"))
         {
             <li class="nav-item">
-                <a class="nav-link @(ViewContext.RouteData.Values["Action"].ToString() == "CreateProject" ? "active" : "")"
+                <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Project" && ViewContext.RouteData.Values["Action"].ToString() == "ProjectIndex" ? "active" : "")"
+                   asp-area="" asp-controller="Project" asp-action="ProjectIndex">
+                    <i class="bi bi-folder-fill me-2"></i> <span class="sidebar-text">All Projects</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Project" && ViewContext.RouteData.Values["Action"].ToString() == "CreateProject" ? "active" : "")"
                    asp-area="" asp-controller="Project" asp-action="CreateProject">
-                    <i class="bi bi-folder-plus me-2"></i> Create Project
+                    <i class="bi bi-folder-plus me-2"></i> <span class="sidebar-text">Create Project</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link @(ViewContext.RouteData.Values["Action"].ToString() == "ProjectReports" ? "active" : "")"
+                <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Report" && ViewContext.RouteData.Values["Action"].ToString() == "ProjectReports" ? "active" : "")"
                    asp-area="" asp-controller="Report" asp-action="ProjectReports">
-                    <i class="bi bi-clipboard-data-fill me-2"></i> Project Reports
+                    <i class="bi bi-clipboard-data-fill me-2"></i> <span class="sidebar-text">Project Reports</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link @(ViewContext.RouteData.Values["Action"].ToString() == "UserReports" ? "active" : "")"
+                <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Report" && ViewContext.RouteData.Values["Action"].ToString() == "UserReports" ? "active" : "")"
                    asp-area="" asp-controller="Report" asp-action="UserReports">
-                    <i class="bi bi-file-earmark-person-fill me-2"></i> User Reports
+                    <i class="bi bi-file-earmark-person-fill me-2"></i> <span class="sidebar-text">User Reports</span>
                 </a>
             </li>
         }

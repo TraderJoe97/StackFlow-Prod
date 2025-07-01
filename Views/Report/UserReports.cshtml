@@ -1,0 +1,401 @@
+﻿@model StackFlow.ViewModels.UserReportsCombinedViewModel
+
+@{
+    ViewData["Title"] = "User Reports";
+    // Active Users Pagination Data
+    var activeCurrentPage = Model.ActiveUsersCurrentPage;
+    var activePageSize = Model.ActiveUsersPageSize;
+    var activeTotalPages = Model.ActiveUsersTotalPages;
+    var activeSearchQuery = Model.ActiveUsersSearchQuery;
+
+    // Pending Users Pagination Data
+    var pendingCurrentPage = Model.PendingUsersCurrentPage;
+    var pendingPageSize = Model.PendingUsersPageSize;
+    var pendingTotalPages = Model.PendingUsersTotalPages;
+
+    var currentUserId = ViewBag.CurrentUserId; // Still from ViewBag
+}
+
+<div class="card shadow-lg border-0 rounded-4 p-4 mt-4 mb-4">
+    <div class="d-flex justify-content-between align-items-start mb-3">
+        <h2 class="card-title mb-0 fw-bold text-primary display-6">
+            <i class="bi bi-file-earmark-person-fill me-2"></i> User Reports
+        </h2>
+        <a asp-action="Index" asp-controller="Dashboard" class="btn btn-outline-secondary rounded-pill shadow-sm animate-btn">
+            <i class="bi bi-arrow-left-circle me-1"></i> Back to Dashboard
+        </a>
+    </div>
+    <hr class="mb-4" />
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-x-circle-fill me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @* Active Users Section *@
+    <h3 class="fw-bold text-secondary mb-3 mt-4">Active Users</h3>
+    <div class="mb-3">
+        <form asp-action="UserReports" method="get" class="d-flex" id="activeUserSearchForm">
+            <input type="hidden" name="activePageSize" value="@activePageSize" />
+            <input type="hidden" name="pendingPage" value="@pendingCurrentPage" />
+            <input type="hidden" name="pendingPageSize" value="@pendingPageSize" />
+            <input type="text" name="searchQuery" class="form-control rounded-pill me-2" placeholder="Search by username, email, or role..." value="@activeSearchQuery" />
+            <button type="submit" class="btn btn-primary rounded-pill"><i class="bi bi-search"></i> Search</button>
+            @if (!string.IsNullOrWhiteSpace(activeSearchQuery))
+            {
+                <a asp-action="UserReports" class="btn btn-outline-secondary rounded-pill ms-2"
+                   asp-route-activePage="@activeCurrentPage"
+                   asp-route-activePageSize="@activePageSize"
+                   asp-route-pendingPage="@pendingCurrentPage"
+                   asp-route-pendingPageSize="@pendingPageSize">
+                    <i class="bi bi-x-circle"></i> Clear
+                </a>
+            }
+        </form>
+    </div>
+
+    @if (!Model.ActiveUsers.Any())
+    {
+        <div class="alert alert-info rounded-4 shadow-sm" role="alert">
+            <i class="bi bi-info-circle-fill me-2"></i> No active users found matching your criteria.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive rounded-4 shadow-sm mb-3">
+            <table class="table table-hover table-bordered mb-0" id="activeUserReportsTable">
+                <thead class="table-primary text-white">
+                    <tr>
+                        <th scope="col">Username</th>
+                        <th scope="col">Email</th>
+                        <th scope="col">Role</th>
+                        <th scope="col">Total Assigned Tickets</th>
+                        <th scope="col">To Do</th>
+                        <th scope="col">In Progress</th>
+                        <th scope="col">In Review</th>
+                        <th scope="col">Completed</th>
+                        <th scope="col">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var report in Model.ActiveUsers)
+                    {
+                        <tr id="user-row-@report.User.Id">
+                            <td>@report.User.Name</td>
+                            <td>@report.User.Email</td>
+                            <td id="user-role-@report.User.Id">@report.User.Role?.Name</td>
+                            <td>@report.TotalTicketsAssigned</td>
+                            <td>@report.ToDoTicketsAssigned</td>
+                            <td>@report.InProgressTicketsAssigned</td>
+                            <td>@report.InReviewTicketsAssigned</td>
+                            <td>@report.CompletedTicketsAssigned</td>
+                            <td>
+                                @* Actions for active users (excluding the current logged-in admin) *@
+                                @if (report.User.Id != currentUserId)
+                                {
+                                    <div class="d-flex flex-column flex-md-row align-items-stretch align-items-md-center gap-2">
+                                        @* Change Role Dropdown *@
+                                        <form asp-action="UpdateUserRole" asp-controller="Report" method="post" class="d-inline-flex flex-grow-1" data-user-id="@report.User.Id">
+                                            <input type="hidden" name="userId" value="@report.User.Id" />
+                                            <input type="hidden" name="activePage" value="@activeCurrentPage" />
+                                            <input type="hidden" name="activePageSize" value="@activePageSize" />
+                                            <input type="hidden" name="searchQuery" value="@activeSearchQuery" />
+                                            <select name="newRoleId" class="form-select form-select-sm rounded-pill" onchange="this.form.submit()">
+                                                @foreach (var role in ViewBag.Roles as SelectList)
+                                                {
+                                                    <option value="@role.Value" selected="@(role.Value == report.User.Role_Id.ToString())">@role.Text</option>
+                                                }
+                                            </select>
+                                        </form>
+
+                                        @* Soft Delete User Button *@
+                                        <button type="button" class="btn btn-sm btn-outline-danger rounded-pill animate-btn"
+                                                data-bs-toggle="modal" data-bs-target="#softDeleteUserModal_@report.User.Id">
+                                            <i class="bi bi-person-x"></i> Delete
+                                        </button>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="text-muted fst-italic">Current User</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @* Active Users Pagination Controls *@
+        <nav aria-label="Active Users Page navigation">
+            <ul class="pagination justify-content-center">
+                <li class="page-item @(activeCurrentPage == 1 ? "disabled" : "")">
+                    <a class="page-link rounded-pill mx-1" href="@Url.Action("UserReports", new { activePage = activeCurrentPage - 1, activePageSize = activePageSize, searchQuery = activeSearchQuery, pendingPage = pendingCurrentPage, pendingPageSize = pendingPageSize })" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                @for (int i = 1; i <= activeTotalPages; i++)
+                {
+                    <li class="page-item @(i == activeCurrentPage ? "active" : "")">
+                        <a class="page-link rounded-pill mx-1" href="@Url.Action("UserReports", new { activePage = i, activePageSize = activePageSize, searchQuery = activeSearchQuery, pendingPage = pendingCurrentPage, pendingPageSize = pendingPageSize })">@i</a>
+                    </li>
+                }
+                <li class="page-item @(activeCurrentPage == activeTotalPages ? "disabled" : "")">
+                    <a class="page-link rounded-pill mx-1" href="@Url.Action("UserReports", new { activePage = activeCurrentPage + 1, activePageSize = activePageSize, searchQuery = activeSearchQuery, pendingPage = pendingCurrentPage, pendingPageSize = pendingPageSize })" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    }
+
+    @* Pending Verification Users Section *@
+    <h3 class="fw-bold text-secondary mb-3 mt-5">Pending Verification Users</h3>
+
+    @if (!Model.PendingUsers.Any())
+    {
+        <div class="alert alert-info rounded-4 shadow-sm" role="alert">
+            <i class="bi bi-info-circle-fill me-2"></i> No users pending verification.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive rounded-4 shadow-sm mb-3">
+            <table class="table table-hover table-bordered mb-0" id="pendingUserReportsTable">
+                <thead class="table-warning text-dark">
+                    <tr>
+                        <th scope="col">Username</th>
+                        <th scope="col">Email</th>
+                        <th scope="col">Registered At</th>
+                        <th scope="col">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var report in Model.PendingUsers)
+                    {
+                        <tr id="user-row-@report.User.Id">
+                            <td>@report.User.Name</td>
+                            <td>@report.User.Email</td>
+                            <td>@report.User.Created_At.ToShortDateString()</td>
+                            <td>
+                                <div class="d-flex flex-column flex-md-row align-items-stretch align-items-md-center gap-2">
+                                    @* Verify User Button *@
+                                    <form asp-action="VerifyUser" asp-controller="Report" method="post" class="d-inline-block">
+                                        <input type="hidden" name="id" value="@report.User.Id" />
+                                        <input type="hidden" name="activePage" value="@activeCurrentPage" />
+                                        <input type="hidden" name="activePageSize" value="@activePageSize" />
+                                        <input type="hidden" name="searchQuery" value="@activeSearchQuery" />
+                                        <input type="hidden" name="pendingPage" value="@pendingCurrentPage" />
+                                        <input type="hidden" name="pendingPageSize" value="@pendingPageSize" />
+                                        <button type="submit" class="btn btn-sm btn-success rounded-pill animate-btn">
+                                            <i class="bi bi-check-circle"></i> Verify
+                                        </button>
+                                    </form>
+
+                                    @* Soft Delete User Button (for pending users) *@
+                                    <button type="button" class="btn btn-sm btn-outline-danger rounded-pill animate-btn"
+                                            data-bs-toggle="modal" data-bs-target="#softDeleteUserModal_@report.User.Id">
+                                        <i class="bi bi-person-x"></i> Delete
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @* Pending Users Pagination Controls *@
+        <nav aria-label="Pending Users Page navigation">
+            <ul class="pagination justify-content-center">
+                <li class="page-item @(pendingCurrentPage == 1 ? "disabled" : "")">
+                    <a class="page-link rounded-pill mx-1" href="@Url.Action("UserReports", new { activePage = activeCurrentPage, activePageSize = activePageSize, searchQuery = activeSearchQuery, pendingPage = pendingCurrentPage - 1, pendingPageSize = pendingPageSize })" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                @for (int i = 1; i <= pendingTotalPages; i++)
+                {
+                    <li class="page-item @(i == pendingCurrentPage ? "active" : "")">
+                        <a class="page-link rounded-pill mx-1" href="@Url.Action("UserReports", new { activePage = activeCurrentPage, activePageSize = activePageSize, searchQuery = activeSearchQuery, pendingPage = i, pendingPageSize = pendingPageSize })">@i</a>
+                    </li>
+                }
+                <li class="page-item @(pendingCurrentPage == pendingTotalPages ? "disabled" : "")">
+                    <a class="page-link rounded-pill mx-1" href="@Url.Action("UserReports", new { activePage = activeCurrentPage, activePageSize = activePageSize, searchQuery = activeSearchQuery, pendingPage = pendingCurrentPage + 1, pendingPageSize = pendingPageSize })" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    }
+</div>
+
+@* Modals for each user for soft deletion (for both active and pending users) *@
+@foreach (var report in Model.ActiveUsers.Concat(Model.PendingUsers)) @* Iterate over both lists for modals *@
+{
+    @* Only create modal if user is not the current admin *@
+    @if (report.User.Id != currentUserId)
+    {
+        <div class="modal fade" id="softDeleteUserModal_@report.User.Id" tabindex="-1" aria-labelledby="softDeleteUserModalLabel_@report.User.Id" aria-hidden="true">
+            <div class="modal-dialog modal-sm modal-dialog-centered">
+                <div class="modal-content rounded-4">
+                    <div class="modal-header bg-danger text-white rounded-top-4">
+                        <h5 class="modal-title" id="softDeleteUserModalLabel_@report.User.Id">Confirm Soft Delete</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <p>Are you sure you want to soft-delete user <strong>@report.User.Name</strong>?</p>
+                        <p class="text-danger"><strong>WARNING: Their @report.TotalTicketsAssigned assigned tickets will be reassigned to you!</strong></p>
+                    </div>
+                    <div class="modal-footer justify-content-center">
+                        <button type="button" class="btn btn-secondary rounded-pill animate-btn" data-bs-dismiss="modal">Cancel</button>
+                        <form asp-action="SoftDeleteUser" asp-controller="Report" method="post" class="d-inline">
+                            <input type="hidden" name="id" value="@report.User.Id" />
+                            <input type="hidden" name="activePage" value="@activeCurrentPage" />
+                            <input type="hidden" name="activePageSize" value="@activePageSize" />
+                            <input type="hidden" name="searchQuery" value="@activeSearchQuery" />
+                            <input type="hidden" name="pendingPage" value="@pendingCurrentPage" />
+                            <input type="hidden" name="pendingPageSize" value="@pendingPageSize" />
+                            <button type="submit" class="btn btn-danger rounded-pill animate-btn">
+                                Soft Delete
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // SignalR User Update Listener
+            document.addEventListener('userUpdate', function (event) {
+                const { action, user } = event.detail; // 'user' will be the updated user object or an object with Id for deleted
+                console.log(`User update event received: ${action} for user ID ${user.id}`);
+
+                if (action === 'roleUpdated') {
+                    const userRow = document.getElementById(`user-row-${user.id}`);
+                    if (userRow) {
+                        const roleCell = userRow.querySelector(`#user-role-${user.id}`);
+                        if (roleCell) {
+                            roleCell.textContent = user.role.title; // Update the role text
+                        }
+                        // No need to update verification status here, as role changes don't affect it
+                    }
+                } else if (action === 'verified') {
+                    // When a user is verified, they move from 'Pending' to 'Active'
+                    const pendingUserRow = document.getElementById(`user-row-${user.id}`);
+                    if (pendingUserRow) {
+                        pendingUserRow.remove(); // Remove from pending table
+
+                        // Optionally, you could dynamically add them to the active table
+                        // For simplicity and to ensure correct pagination, a full page refresh is often better
+                        // or a more complex AJAX update of the active table.
+                        // For now, we'll rely on the redirect after verification or a manual refresh.
+                    }
+                    // Since verification redirects, the page will reload, making this client-side removal less critical,
+                    // but it's good practice for real-time updates if the redirect wasn't happening.
+                } else if (action === 'deleted') {
+                    // Remove the row for the soft-deleted user from whichever table it was in
+                    const rowToRemove = document.getElementById(`user-row-${user.id}`);
+                    if (rowToRemove) {
+                        rowToRemove.remove();
+                        console.log(`User row removed for user ID ${user.id}.`);
+                    }
+                    // Similar to 'verified', the controller redirects after deletion, so this client-side removal
+                    // is a fallback or for more complex real-time scenarios without full page reloads.
+                }
+            });
+
+            // Handle search form submission to ensure all parameters are passed
+            const activeUserSearchForm = document.getElementById('activeUserSearchForm');
+            if (activeUserSearchForm) {
+                activeUserSearchForm.addEventListener('submit', function(event) {
+                    // The hidden inputs already handle passing current pendingPage and pendingPageSize
+                    // The search query is directly in the input field.
+                });
+            }
+        });
+    </script>
+}
+
+@section Styles {
+    <style>
+        .animate-btn {
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+            .animate-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+            }
+
+        .form-select.rounded-pill {
+            border-radius: 50rem !important; /* Fully rounded pill shape */
+            padding: 0.25rem 1rem; /* Smaller padding for sm select */
+            height: auto;
+            min-width: 100px; /* Ensure it doesn't get too small */
+        }
+
+        .pagination .page-link {
+            border-radius: 50rem !important;
+            margin: 0 0.25rem;
+            min-width: 38px; /* Ensure consistent width for pagination buttons */
+            text-align: center;
+        }
+
+        .pagination .page-item.active .page-link {
+            background-color: var(--bs-primary);
+            border-color: var(--bs-primary);
+            color: var(--bs-white);
+        }
+
+        [data-bs-theme="dark"] .pagination .page-item .page-link {
+            background-color: var(--bs-card-bg);
+            border-color: var(--bs-border-color);
+            color: var(--bs-body-color);
+        }
+
+            [data-bs-theme="dark"] .pagination .page-item .page-link:hover {
+                background-color: var(--bs-sidebar-active-bg);
+                border-color: var(--bs-sidebar-active-bg);
+            }
+
+        [data-bs-theme="dark"] .pagination .page-item.active .page-link {
+            background-color: var(--bs-primary);
+            border-color: var(--bs-primary);
+            color: var(--bs-white);
+        }
+
+        .form-control.rounded-pill {
+            border-radius: 50rem !important;
+            padding: 0.75rem 1.25rem;
+            height: auto;
+        }
+
+        [data-bs-theme="dark"] .form-control {
+            background-color: #495057;
+            color: var(--bs-body-color);
+            border-color: #6c757d;
+        }
+
+            [data-bs-theme="dark"] .form-control::placeholder {
+                color: rgba(255, 255, 255, 0.6);
+            }
+    </style>
+}

@@ -79,9 +79,9 @@ namespace StackFlow.Controllers
 
             var viewModel = new DashboardViewModel
             {
-                ToDoTickets = allTickets.Where(t => t.Status == "To Do").ToList(), // Reverted from TaskStatus
-                InProgressTickets = allTickets.Where(t => t.Status == "In Progress").ToList(), // Reverted from TaskStatus
-                InReviewTickets = allTickets.Where(t => t.Status == "In Review").ToList(), // Reverted from TaskStatus
+                ToDoTickets = allTickets.Where(t => t.Status == "To_Do").ToList(), // Reverted from TaskStatus
+                InProgressTickets = allTickets.Where(t => t.Status == "In_Progress").ToList(), // Reverted from TaskStatus
+                InReviewTickets = allTickets.Where(t => t.Status == "In_Review").ToList(), // Reverted from TaskStatus
                 CompletedTickets = allTickets.Where(t => t.Status == "Done").ToList() // Reverted from TaskStatus
             };
             return PartialView("_QuickInsightsPartial", viewModel);

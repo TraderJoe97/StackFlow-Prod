@@ -1,168 +1,109 @@
-﻿@model StackFlow.ViewModels.DashboardViewModel
+﻿@using System.Security.Claims
+@model StackFlow.ViewModels.DashboardViewModel
 
 @{
     ViewData["Title"] = "Dashboard";
 }
 
-<div class="container-fluid">
-    @* Use container-fluid for full width *@
-    <div class="row">
-        
-        <div class="col-lg-9 main-content-with-sidebar">
-            @* Main content area, takes remaining space on large screens, new class for margin *@
+@* The content below will directly fill the 'main-content' div from _Layout.cshtml.
+   The 'main-content' div handles its own padding and width based on the sidebar state. *@
 
-                <h1 class="display-4 fw-bold text-primary mb-4">Welcome, @Model.Username!</h1>
+<h1 class="display-4 fw-bold text-primary mb-4">Welcome, @Model.Username!</h1>
+<p class="lead text-muted mb-4">Your role: <span class="badge bg-secondary">@Model.Role</span></p>
 
-                @if (TempData["SuccessMessage"] != null)
-                {
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                }
-                @if (TempData["ErrorMessage"] != null)
-                {
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <i class="bi bi-x-circle-fill me-2"></i>@TempData["ErrorMessage"]
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                }
-
-                @* Quick Insights for Admins *@
-            @if (User.IsInRole("Admin"))
-            {
-            <h3 class="fw-bold text-secondary mb-3">Quick Insights</h3>
-            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4 mb-5">
-                <div class="col">
-                    <div class="card h-100 shadow-sm border-0 rounded-4 p-3 bg-primary text-white bg-gradient-primary">
-                        <div class="card-body">
-                            <i class="bi bi-check-circle-fill display-5 mb-2"></i>
-                            <h5 class="card-title fw-bold">Completed Tickets</h5>
-                            <p class="card-text display-6 fw-bold">@Model.CompletedTickets.Count</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100 shadow-sm border-0 rounded-4 p-3 bg-info text-white bg-gradient-info">
-                        <div class="card-body">
-                            <i class="bi bi-hourglass-split display-5 mb-2"></i>
-                            <h5 class="card-title fw-bold">In Progress Tickets</h5>
-                            <p class="card-text display-6 fw-bold">@Model.InProgressTickets.Count</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100 shadow-sm border-0 rounded-4 p-3 bg-secondary text-white bg-gradient-secondary">
-                        <div class="card-body">
-                            <i class="bi bi-list-task display-5 mb-2"></i>
-                            <h5 class="card-title fw-bold">To Do Tickets</h5>
-                            <p class="card-text display-6 fw-bold">@Model.ToDoTickets.Count</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100 shadow-sm border-0 rounded-4 p-3 bg-warning text-dark bg-gradient-warning">
-                        <div class="card-body">
-                            <i class="bi bi-eye display-5 mb-2"></i>
-                            <h5 class="card-title fw-bold">In Review Tickets</h5>
-                            <p class="card-text display-6 fw-bold">@Model.InReviewTickets.Count</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            }
-
-            <h3 class="fw-bold text-secondary mb-3">My Assigned Tickets</h3>
-            @if (!Model.AssignedToMeTickets.Any())
-            {
-            <div class="alert alert-info rounded-4 shadow-sm" role="alert">
-                <i class="bi bi-info-circle-fill me-2"></i> You currently have no tickets assigned to you. Great job!
-            </div>
-            }
-            else
-            {
-            <div class="table-responsive rounded-4 shadow-sm mb-5">
-                <table class="table table-hover table-bordered mb-0">
-                    <thead class="table-primary text-white">
-                        <tr>
-                            <th scope="col">Title</th>
-                            <th scope="col">Project</th>
-                            <th scope="col">Status</th>
-                            <th scope="col">Priority</th>
-                            <th scope="col">Due Date</th>
-                            <th scope="col">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var ticket in Model.AssignedToMeTickets)
-                            {
-                        <tr>
-                            <td>@ticket.Title</td>
-                            <td>@ticket.Project?.Name</td>
-                            <td>
-                                <span class="badge rounded-pill
-                                            @(ticket.Status == "To Do" ? "bg-secondary" :
-                                              ticket.Status == "In Progress" ? "bg-info" :
-                                              ticket.Status == "In Review" ? "bg-warning" : "bg-success")">
-                                    @ticket.Status
-                                </span>
-                            </td>
-                            <td>
-                                <span class="badge rounded-pill
-                                            @(ticket.Priority == "High" ? "bg-danger" :
-                                              ticket.Priority == "Medium" ? "bg-secondary" : "bg-primary")">
-                                    @ticket.Priority
-                                </span>
-                            </td>
-                            <td>@(ticket.Due_Date.ToShortDateString() ?? "N/A")</td>
-                            <td>
-                                <a asp-action="TicketDetails" asp-route-id="@ticket.Id" class="btn btn-sm btn-outline-primary rounded-pill">
-                                    <i class="bi bi-eye"></i> View
-                                </a>
-                            </td>
-                        </tr>
-                            }
-                    </tbody>
-                </table>
-            </div>
-            }
-
-            <h3 class="fw-bold text-secondary mb-3">All Projects Overview</h3>
-            @if (!Model.Projects.Any())
-            {
-            <div class="alert alert-info rounded-4 shadow-sm" role="alert">
-                <i class="bi bi-info-circle-fill me-2"></i> No projects have been created yet.
-            </div>
-            }
-            else
-            {
-            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-5">
-                @foreach (var project in Model.Projects)
-                    {
-                <div class="col">
-                    <div class="card h-100 shadow-sm border-0 rounded-4">
-                        <div class="card-body">
-                            <h5 class="card-title fw-bold text-primary">@project.Name</h5>
-                            <h6 class="card-subtitle mb-2 text-muted">Status: @project.Status</h6>
-                            <p class="card-text text-truncate">@project.Description</p>
-                            <ul class="list-unstyled mb-0">
-                                <li><strong>Created By:</strong> @project.CreatedBy?.Name</li>
-                                <li><strong>Start Date:</strong> @project.Start_Date?.ToShortDateString()</li>
-                                <li><strong>End Date:</strong> @(project.Due_Date?.ToShortDateString() ?? "N/A")</li>
-                            </ul>
-                        </div>
-                        <div class="card-footer bg-transparent border-top-0 d-flex justify-content-end gap-2">
-                            @* Link to Project Details *@
-                            <a asp-action="ProjectDetails" asp-route-id="@project.Id" class="btn btn-sm btn-outline-primary rounded-pill">
-                                <i class="bi bi-eye"></i> View
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                    }
-            </div>
-            }
-
-        </div>
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
-</div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-x-circle-fill me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@* Quick Insights for Admins - Render Partial *@
+@await Html.PartialAsync("_QuickInsightsPartial", Model)
+
+@* My Assigned Tickets Table - Render Partial *@
+@await Html.PartialAsync("_AssignedTicketsTablePartial", Model.AssignedToMeTickets)
+
+@* All Projects Overview - Render Partial *@
+@await Html.PartialAsync("_ProjectsOverviewPartial", Model.Projects)
+
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const currentUserId = @(User.Identity.IsAuthenticated? User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier) : "null");
+
+            // Function to dynamically load and replace a partial view via AJAX
+            async function loadPartialView(containerId, actionUrl, modelData = null) {
+                const container = document.getElementById(containerId);
+                if (!container) {
+                    console.error(`Container with ID '${containerId}' not found.`);
+                    return;
+                }
+
+                try {
+                    let url = actionUrl;
+                    if (modelData) {
+                        const params = new URLSearchParams();
+                        for (const key in modelData) {
+                            if (modelData.hasOwnProperty(key)) {
+                                params.append(key, modelData[key]);
+                            }
+                        }
+                        url = `${actionUrl}?${params.toString()}`;
+                    }
+
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const html = await response.text();
+                    container.innerHTML = html;
+                    console.log(`Partial view for ${containerId} refreshed.`);
+                } catch (error) {
+                    console.error(`Error loading partial view for ${containerId}:`, error);
+                }
+            }
+
+            // --- SignalR Event Listeners ---
+
+            // Handle Ticket Updates
+            document.addEventListener('ticketUpdate', function (event) {
+                const { action, ticketId, oldStatus } = event.detail;
+                console.log(`Ticket ${action} notification for ID: ${ticketId}. Refreshing relevant sections.`);
+
+                loadPartialView('assignedTicketsTable', '/Dashboard/GetAssignedTicketsTable', { userId: currentUserId });
+
+                if (@(User.IsInRole("Admin") ? "true" : "false")) {
+                    loadPartialView('quickInsightsContainer', '/Dashboard/GetQuickInsights');
+                }
+            });
+
+            // Handle Project Updates
+            document.addEventListener('projectUpdate', function (event) {
+                const { action, projectId } = event.detail;
+                console.log(`Project ${action} notification for ID: ${projectId}. Refreshing projects overview.`);
+
+                loadPartialView('projectsOverviewContainer', '/Dashboard/GetProjectsOverview');
+
+                if (@(User.IsInRole("Admin") ? "true" : "false")) {
+                    loadPartialView('quickInsightsContainer', '/Dashboard/GetQuickInsights');
+                }
+            });
+
+
+        });
+    </script>
+}

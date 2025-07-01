@@ -1,8 +1,9 @@
+using Microsoft.AspNetCore.Authentication.Cookies; // Added for cookie authentication
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using StackFlow.Data;
 using System;
-using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.Authentication.Cookies; // Added for cookie authentication
+using StackFlow.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -63,6 +64,9 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 // Add Authorization services
 builder.Services.AddAuthorization();
 
+builder.Services.AddSignalR();
+
+
 
 var app = builder.Build();
 
@@ -83,6 +87,8 @@ app.UseRouting();
 // This ensures that the user's identity is established before authorization checks are performed.
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapHub<DashboardHub>("/dashboardHub");
 
 app.MapControllerRoute(
     name: "default",

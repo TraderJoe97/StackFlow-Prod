@@ -51,16 +51,17 @@ SELECT @ProjectManagerRoleId = id FROM roles WHERE role_name = 'Project Manager'
 SELECT @DeveloperRoleId = id FROM roles WHERE role_name = 'Developer';
 SELECT @TesterRoleId = id FROM roles WHERE role_name = 'Tester';
 
-INSERT INTO users (name, email, password, role_id, created_at, isActive) VALUES
-('Joseph', 'Joseph@omnitak.com', '$2a$11$cIqKx7iOXNOuWdYvzVV1Ju11lfjwuK2c26lwuHLgx1z6I14i0I70W', @AdminRoleId, GETDATE(), 1),
-('Phumy', 'Phumy@omnitak.com', '$2a$11$UfIyLytVKfcgRGiEmq8F8.w2iMK27A3fHo/i5omtJVrYDhoJdX/Um', @AdminRoleId, GETDATE(), 1),
-('Siphokazim', 'siphokazi@omnitak.com', '$2a$11$NTk7vqw8XfWXBPsCGJCHM.q0eHCBW38QvwPFouL14a67j8ONFkxCW', @AdminRoleId, GETDATE(), 1),
-('Karabo', 'Karabo@omnitak.com', '$2a$11$XFJTsw/0BmU6S9yW9lxsr.qCun9fev4TID1nVM1H/b/O6ZzKpbqRi', @AdminRoleId, GETDATE(), 1),
-('Alice Admin', 'alice.admin@omnitak.com', @PasswordHash, @AdminRoleId, GETDATE(), 1),
-('Bob ProjectManager', 'bob.pm@omnitak.com', @PasswordHash, @ProjectManagerRoleId, GETDATE(), 1),
-('Charlie Developer', 'charlie.dev@omnitak.com', @PasswordHash, @DeveloperRoleId, GETDATE(), 1),
-('Diana Tester', 'diana.tester@omnitak.com', @PasswordHash, @TesterRoleId, GETDATE(), 1),
-('Eve Inactive', 'eve.inactive@omnitak.com', @PasswordHash, @DeveloperRoleId, GETDATE(), 0);
+INSERT INTO users (name, email, password, role_id, created_at, isVerified, isDeleted) VALUES
+('Joseph', 'Joseph@omnitak.com', '$2a$11$cIqKx7iOXNOuWdYvzVV1Ju11lfjwuK2c26lwuHLgx1z6I14i0I70W', @AdminRoleId, GETDATE(), 1, 0), -- Set Joseph, Phumy, Siphokazim, Karabo as verified
+('Phumy', 'Phumy@omnitak.com', '$2a$11$UfIyLytVKfcgRGiEmq8F8.w2iMK27A3fHo/i5omtJVrYDhoJdX/Um', @AdminRoleId, GETDATE(), 1, 0),
+('Siphokazim', 'siphokazi@omnitak.com', '$2a$11$NTk7vqw8XfWXBPsCGJCHM.q0eHCBW38QvwPFouL14a67j8ONFkxCW', @AdminRoleId, GETDATE(), 1, 0),
+('Karabo', 'Karabo@omnitak.com', '$2a$11$XFJTsw/0BmU6S9yW9lxsr.qCun9fev4TID1nVM1H/b/O6ZzKpbqRi', @AdminRoleId, GETDATE(), 1, 0),
+('Alice Admin', 'alice.admin@omnitak.com', @PasswordHash, @AdminRoleId, GETDATE(), 1, 0),
+('Bob ProjectManager', 'bob.pm@omnitak.com', @PasswordHash, @ProjectManagerRoleId, GETDATE(), 1, 0),
+('Charlie Developer', 'charlie.dev@omnitak.com', @PasswordHash, @DeveloperRoleId, GETDATE(), 1, 0),
+('Diana Tester', 'diana.tester@omnitak.com', @PasswordHash, @TesterRoleId, GETDATE(), 1, 0),
+('Eve Deleted', 'eve.deleted@omnitak.com', @PasswordHash, @DeveloperRoleId, GETDATE(), 0, 1), -- Set Eve as deleted and unverified
+('Frank Unverified', 'frank.unverified@omnitak.com', @PasswordHash, @DeveloperRoleId, GETDATE(), 0, 0); -- Set Frank as unverified and not deleted
 
 PRINT 'Users seeded.';
 GO
