@@ -26,14 +26,39 @@
     </div>
 }
 
-@* Quick Insights for Admins - Render Partial *@
-@await Html.PartialAsync("_QuickInsightsPartial", Model)
+@* My Assigned Tickets Table - Render Partial (This remains visible as it's likely high priority) *@
+<div id="assignedTicketsTable">
+    @await Html.PartialAsync("_AssignedTicketsTablePartial", Model.AssignedToMeTickets)
+</div>
 
-@* My Assigned Tickets Table - Render Partial *@
-@await Html.PartialAsync("_AssignedTicketsTablePartial", Model.AssignedToMeTickets)
+<hr class="my-5"> @* Separator for clarity *@
 
-@* All Projects Overview - Render Partial *@
-@await Html.PartialAsync("_ProjectsOverviewPartial", Model.Projects)
+@* Tabbed Navigation for Quick Insights and Projects Overview *@
+<ul class="nav nav-tabs mb-3" id="dashboardTabs" role="tablist">
+    @if (User.IsInRole("Admin"))
+    {
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="insights-tab" data-bs-toggle="tab" data-bs-target="#quickInsightsContainer" type="button" role="tab" aria-controls="quickInsightsContainer" aria-selected="true">Quick Insights</button>
+        </li>
+    }
+    <li class="nav-item" role="presentation">
+        <button class="nav-link @(User.IsInRole("Admin") ? "" : "active")" id="projects-tab" data-bs-toggle="tab" data-bs-target="#projectsOverviewContainer" type="button" role="tab" aria-controls="projectsOverviewContainer" aria-selected="@(User.IsInRole("Admin") ? "false" : "true")">Projects Overview</button>
+    </li>
+</ul>
+
+<div class="tab-content" id="dashboardTabsContent">
+    @if (User.IsInRole("Admin"))
+    {
+        <div class="tab-pane fade show active" id="quickInsightsContainer" role="tabpanel" aria-labelledby="insights-tab">
+            @* Quick Insights for Admins - Render Partial *@
+            @await Html.PartialAsync("_QuickInsightsPartial", Model)
+        </div>
+    }
+    <div class="tab-pane fade @(User.IsInRole("Admin") ? "" : "show active")" id="projectsOverviewContainer" role="tabpanel" aria-labelledby="projects-tab">
+        @* All Projects Overview - Render Partial *@
+        @await Html.PartialAsync("_ProjectsOverviewPartial", Model.Projects)
+    </div>
+</div>
 
 
 @section Scripts {
@@ -54,6 +79,9 @@
                 }
 
                 try {
+                    // Show a loading spinner or skeleton while content loads (optional but good for UX)
+                    container.innerHTML = '<div class="d-flex justify-content-center align-items-center" style="min-height: 100px;"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+
                     let url = actionUrl;
                     if (modelData) {
                         const params = new URLSearchParams();
@@ -74,6 +102,7 @@
                     console.log(`Partial view for ${containerId} refreshed.`);
                 } catch (error) {
                     console.error(`Error loading partial view for ${containerId}:`, error);
+                    container.innerHTML = '<div class="alert alert-danger" role="alert">Failed to load content. Please try again.</div>';
                 }
             }
 
@@ -84,9 +113,12 @@
                 const { action, ticketId, oldStatus } = event.detail;
                 console.log(`Ticket ${action} notification for ID: ${ticketId}. Refreshing relevant sections.`);
 
+                // Always refresh assigned tickets table
                 loadPartialView('assignedTicketsTable', '/Dashboard/GetAssignedTicketsTable', { userId: currentUserId });
 
-                if (@(User.IsInRole("Admin") ? "true" : "false")) {
+                // Only refresh quick insights if the tab is active and user is an admin
+                const insightsTab = document.getElementById('quickInsightsContainer');
+                if (insightsTab && insightsTab.classList.contains('show') && insightsTab.classList.contains('active') && @(User.IsInRole("Admin") ? "true" : "false")) {
                     loadPartialView('quickInsightsContainer', '/Dashboard/GetQuickInsights');
                 }
             });
@@ -96,14 +128,26 @@
                 const { action, projectId } = event.detail;
                 console.log(`Project ${action} notification for ID: ${projectId}. Refreshing projects overview.`);
 
-                loadPartialView('projectsOverviewContainer', '/Dashboard/GetProjectsOverview');
-
-                if (@(User.IsInRole("Admin") ? "true" : "false")) {
+                // Only refresh quick insights if the tab is active and user is an admin
+                const insightsTab = document.getElementById('quickInsightsContainer');
+                if (insightsTab && insightsTab.classList.contains('show') && insightsTab.classList.contains('active') && @(User.IsInRole("Admin") ? "true" : "false")) {
                     loadPartialView('quickInsightsContainer', '/Dashboard/GetQuickInsights');
+                }
+
+                // Only refresh projects overview if the tab is active
+                const projectsTab = document.getElementById('projectsOverviewContainer');
+                if (projectsTab && projectsTab.classList.contains('show') && projectsTab.classList.contains('active')) {
+                    loadPartialView('projectsOverviewContainer', '/Dashboard/GetProjectsOverview');
                 }
             });
 
-
+            // Initial load of content for the active tab (if not an admin, Projects tab will be active by default)
+            const activeTabButton = document.querySelector('#dashboardTabs .nav-link.active');
+            if (activeTabButton) {
+                const targetContainerId = activeTabButton.getAttribute('data-bs-target').substring(1); // Remove '#'
+                const actionUrl = targetContainerId === 'quickInsightsContainer' ? '/Dashboard/GetQuickInsights' : '/Dashboard/GetProjectsOverview';
+                loadPartialView(targetContainerId, actionUrl);
+            }
         });
     </script>
 }
