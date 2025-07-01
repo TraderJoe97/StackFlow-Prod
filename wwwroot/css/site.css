@@ -12,6 +12,10 @@
     --bs-sidebar-active-bg: #e9ecef;
     --bs-sidebar-active-text: #007bff;
     --bs-border-color: #dee2e6;
+    --sidebar-expanded-width: 15.625rem; /* 250px / 16 = 15.625rem */
+    --sidebar-collapsed-width: 3.75rem; /* 60px / 16 = 3.75rem */
+    --app-header-height: 3.75rem; /* 60px / 16 = 3.75rem */
+    --app-footer-height: 3.75rem; /* 60px / 16 = 3.75rem */
 }
 
 [data-bs-theme="dark"] {
@@ -22,115 +26,308 @@
     --bs-navbar-bg: #343a40;
     --bs-navbar-color: rgba(255, 255, 255, 0.55);
     --bs-navbar-hover-color: rgba(255, 255, 255, 0.7);
-    --bs-sidebar-bg: #2b3035;
+    --bs-sidebar-bg: #343a40;
     --bs-sidebar-text: #e2e6ea;
     --bs-sidebar-active-bg: #495057;
-    --bs-sidebar-active-text: #00bcd4;
+    --bs-sidebar-active-text: #66b3ff;
     --bs-border-color: #495057;
 }
 
 body {
     font-family: 'Inter', sans-serif;
+    display: flex; /* Make body a flex container */
+    flex-direction: column; /* Stack children vertically */
+    min-height: 100dvh; /* Ensure body takes full viewport height */
     background-color: var(--bs-body-bg);
     color: var(--bs-body-color);
-    display: flex;
-    min-height: 100vh;
-    flex-direction: column;
-    margin-top: 0; /* Ensures no default margin-top from browser or Bootstrap */
-    padding-top: 0; /* Resetting padding-top for body */
+    transition: background-color 0.3s ease, color 0.3s ease;
+    overflow: hidden; /* Prevent body scrollbars, let inner content scroll */
 }
 
-.navbar {
-    box-shadow: 0 2px 4px rgba(0,0,0,.04);
+.app-header {
     background-color: var(--bs-navbar-bg);
-    position: sticky; /* Make it stick to the top */
+    color: var(--bs-navbar-color);
+    position: sticky; /* Keep header sticky */
     top: 0;
-    z-index: 1030; /* Ensure it stays on top of other content */
+    width: 100%;
+    z-index: 1030;
+    height: var(--app-header-height); /* Fixed height for the header */
+    flex-shrink: 0; /* Prevent header from shrinking */
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-.offcanvas-header, .offcanvas-body {
+.app-logo {
+    height: 2.5rem; /* 40px / 16 = 2.5rem */
+    width: auto;
+}
+
+.app-brand {
+    color: var(--bs-navbar-color);
+    text-decoration: none;
+}
+
+    .app-brand:hover {
+        color: var(--bs-navbar-hover-color);
+    }
+
+/* Flex Container for Sidebar and Main Content */
+.app-body-container {
+    display: flex; /* This becomes the horizontal flex container */
+    flex-grow: 1; /* Allows it to fill vertical space between header and footer */
+    width: 100%;
+    position: relative; /* Keep relative for potential future absolute positioning if needed, or if other elements need it */
+}
+
+/* Main Content Area */
+.main-content {
+    flex-grow: 1; /* Takes remaining horizontal space */
+    padding: 1rem 2rem 5rem 2rem; /* 80px / 16 = 5rem */
+    overflow-y: auto; /* Make main content scrollable */
+    min-width: 0; /* Allow the flex item to shrink below its content size */
+    transition: padding-left 0.3s ease-in-out; /* Only padding-left transitions now */
+}
+
+/* Footer */
+.footer {
+    white-space: nowrap;
+    line-height: var(--app-footer-height); /* Use variable for height */
+    background-color: var(--bs-navbar-bg);
+    border-top: 0.0625rem solid var(--bs-border-color); /* 1px / 16 = 0.0625rem */
+    text-align: center;
+    margin-top: auto;
+    flex-shrink: 0; /* Prevent footer from shrinking */
+    transition: background-color 0.3s ease, border-top-color 0.3s ease;
+}
+
+/* Card Styling */
+.card {
+    background-color: var(--bs-card-bg);
+    border-color: var(--bs-card-border-color);
+    transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.2s ease-in-out;
+}
+
+    .card:hover {
+        box-shadow: 0 0.25rem 0.75rem rgba(0,0,0,.08); /* Converted 4px 12px */
+    }
+
+/* Table Styling */
+.table {
+    --bs-table-bg: var(--bs-card-bg);
+    --bs-table-color: var(--bs-body-color);
+    border-color: var(--bs-border-color);
+    transition: var(--bs-table-bg) 0.3s ease, var(--bs-table-color) 0.3s ease, border-color 0.3s ease;
+}
+
+.table-primary {
+    --bs-table-bg: #007bff;
+    --bs-table-color: #fff;
+    border-color: #007bff;
+}
+
+[data-bs-theme="dark"] .table-primary {
+    --bs-table-bg: #0d6efd;
+}
+
+/* Sidebar Specific Styles */
+
+/* Mobile Offcanvas Sidebar */
+.sidebar-offcanvas {
     background-color: var(--bs-sidebar-bg);
     color: var(--bs-sidebar-text);
+    width: 15.625rem; /* 250px / 16 = 15.625rem */
+    transition: transform 0.3s ease-in-out, background-color 0.3s ease, color 0.3s ease;
+}
+
+    .sidebar-offcanvas .offcanvas-header {
+        border-bottom: 0.0625rem solid var(--bs-border-color); /* 1px / 16 = 0.0625rem */
+    }
+
+    .sidebar-offcanvas .offcanvas-body {
+        padding-top: 1rem;
+    }
+
+    /* Ensure text is visible in mobile offcanvas */
+    .sidebar-offcanvas .sidebar-nav .nav-link .sidebar-text {
+        display: inline-block !important; /* Force display text */
+        opacity: 1 !important; /* Force full opacity */
+        width: auto !important; /* Allow text to take natural width */
+    }
+
+    .sidebar-offcanvas .sidebar-nav .nav-link i {
+        margin-right: 1rem !important; /* Restore margin for icon and text */
+        width: auto !important; /* Prevent icon from taking full width */
+    }
+
+    .sidebar-offcanvas .sidebar-nav .nav-link {
+        justify-content: flex-start !important; /* Align items to start */
+        padding-left: 1rem !important; /* Restore padding */
+        padding-right: 1rem !important; /* Restore padding */
+    }
+
+
+/* Desktop Fixed Sidebar (now flex item) */
+.sidebar-desktop {
+    height: 100%; /* Fill height of app-body-container */
+    padding-top: 1rem; /* Padding from the top of its container */
+    background-color: var(--bs-sidebar-bg);
+    border-right: 0.0625rem solid var(--bs-border-color); /* 1px / 16 = 0.0625rem */
+    z-index: 1020; /* Keep z-index even if static, for layering with other elements if needed */
+    overflow-x: hidden;
+    overflow-y: auto; /* Sidebar content can scroll independently */
+    flex-shrink: 0; /* Prevent sidebar from shrinking */
+    transition: width 0.3s ease-in-out, background-color 0.3s ease, border-color 0.3s ease; /* Transition width only */
 }
 
 .sidebar-nav .nav-link {
     color: var(--bs-sidebar-text);
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: background-color 0.2s ease, color 0.2s ease, padding 0.3s ease-in-out;
 }
 
-    .sidebar-nav .nav-link.active,
     .sidebar-nav .nav-link:hover {
         background-color: var(--bs-sidebar-active-bg);
         color: var(--bs-sidebar-active-text);
     }
 
-.main-content {
-    flex: 1;
-    margin-left: 0;
-    padding-left: 2rem;
-    padding-right: 2rem;
-    padding-bottom: 80px;
-    transition: margin-left 0.3s ease-in-out;
-    padding-top: calc(56px + 1rem); /* Adjust padding-top to account for fixed navbar height + some spacing.
-                                       Typical navbar height is around 56px for lg screens. */
+    .sidebar-nav .nav-link.active {
+        background-color: var(--bs-sidebar-active-bg);
+        color: var(--bs-sidebar-active-text);
+        font-weight: 600;
+    }
+
+/* Desktop Sidebar Expanded State */
+body.sidebar-expanded .sidebar-desktop {
+    width: var(--sidebar-expanded-width); /* Explicitly set width for expanded state */
 }
 
+body.sidebar-expanded .main-content {
+    padding-left: 2rem; /* Internal padding only */
+}
+
+body.sidebar-expanded .sidebar-nav .nav-link .sidebar-text {
+    opacity: 1;
+    width: auto;
+    display: inline-block;
+}
+
+body.sidebar-expanded .sidebar-nav .nav-link {
+    justify-content: flex-start;
+}
+
+body.sidebar-expanded #sidebarToggleIcon {
+    transform: rotate(0deg);
+}
+
+/* Desktop Sidebar Collapsed State */
+body.sidebar-collapsed .sidebar-desktop {
+    width: var(--sidebar-collapsed-width); /* Explicitly set width for collapsed state */
+}
+
+body.sidebar-collapsed .main-content {
+    padding-left: 2rem; /* Internal padding only */
+}
+
+body.sidebar-collapsed .sidebar-nav .nav-link .sidebar-text {
+    display: none !important;
+    opacity: 0;
+    width: 0;
+}
+
+body.sidebar-collapsed .sidebar-nav .nav-link i {
+    margin-right: 0;
+}
+
+body.sidebar-collapsed .sidebar-nav .nav-link {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+body.sidebar-collapsed #sidebarToggleIcon {
+    transform: rotate(180deg);
+}
+
+/* Media Query for Desktop (min-width: 992px) */
 @media (min-width: 992px) {
+    /* Ensure body is a column flex for desktop layout */
+    body {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .app-body-container {
+        display: flex;
+        height: calc(100dvh - var(--app-header-height) - var(--app-footer-height)); /* Explicitly set height */
+    }
+
+    .sidebar-desktop {
+        display: flex;
+        flex-direction: column;
+        position: static; /* Explicitly static for desktop (default behavior) */
+    }
+    /* Ensure main-content starts correctly on desktop */
     .main-content {
-        margin-left: 250px;
+        padding-top: 1rem; /* Ensure consistent top padding */
+        height: 100%; /* Make main-content fill the height of app-body-container */
     }
 
-    .sidebar-offcanvas {
-        visibility: visible !important;
-        transform: none !important;
-        position: fixed;
-        top: 0;
-        left: 0;
-        height: 100vh;
-        width: 250px;
-        z-index: 1040;
-        border-right: 1px solid var(--bs-border-color);
-        padding-top: 0;
+    /* Adjust main-content padding based on sidebar state on desktop */
+    body.sidebar-expanded .main-content {
+        padding-left: 2rem;
     }
 
-    .navbar-toggler-sidebar {
-        display: none;
+    body.sidebar-collapsed .main-content {
+        /* When collapsed, the sidebar takes its width, main-content takes remaining space.
+           The padding-left is just the internal padding. */
+        padding-left: 2rem;
     }
 }
 
-.footer {
-    white-space: nowrap;
-    line-height: 60px;
-    background-color: var(--bs-navbar-bg);
-    border-top: 1px solid var(--bs-border-color);
-    text-align: center;
-    margin-top: auto;
-}
+/* Media Query for Mobile (max-width: 991.98px) */
+@media (max-width: 991.98px) {
+    body {
+        display: block; /* Revert to block for mobile */
+        overflow: auto; /* Allow body to scroll on mobile */
+    }
 
-.card {
-    background-color: var(--bs-card-bg);
-    border-color: var(--bs-card-border-color);
-    transition: background-color 0.3s ease, border-color 0.3s ease;
-}
+    .app-body-container {
+        display: block; /* Revert to block for mobile */
+        height: auto; /* Remove fixed height on mobile */
+    }
 
-/* Custom Gradient Backgrounds for Card Headers (if still desired) */
-.bg-gradient-primary {
-    background: linear-gradient(45deg, var(--bs-primary), var(--bs-primary-dark));
-}
+    .main-content {
+        /* Reset padding for mobile to ensure it's centered */
+        padding-left: 1rem;
+        padding-right: 1rem;
+        max-height: unset; /* Remove max-height on mobile to allow natural scrolling */
+        overflow-y: unset; /* Remove overflow on mobile */
+    }
 
-.bg-gradient-success {
-    background: linear-gradient(45deg, var(--bs-success), var(--bs-success-dark));
-}
+    .sidebar-desktop {
+        display: none !important;
+        position: static !important; /* Override desktop positioning for mobile */
+    }
+    /* Header specific adjustments for mobile */
+    .app-brand span { /* Hide StackFlow text on mobile */
+        display: none !important;
+    }
 
-.bg-gradient-info {
-    background: linear-gradient(45deg, var(--bs-info), var(--bs-info-dark));
-}
+    .app-header .navbar-nav .nav-item .nav-link:not(#darkModeToggle) {
+        /* Target nav-links in header, excluding dark mode toggle */
+        padding-left: 0.5rem !important; /* Adjust padding for icon-only */
+        padding-right: 0.5rem !important; /* Adjust padding for icon-only */
+    }
 
-.bg-gradient-warning {
-    background: linear-gradient(45deg, var(--bs-warning), var(--bs-warning-dark));
-}
+    .app-header .navbar-nav .nav-item .nav-link i {
+        margin-right: 0 !important; /* Remove margin next to icon */
+    }
 
-/* Specific styling for select within detail-box to adjust height */
-.detail-box select.form-select.rounded-pill {
-    padding: 0.375rem 1rem; /* Smaller vertical padding */
-    height: calc(1.5em + 0.75rem + 2px); /* Standard form-control height for consistency */
+    .app-header .navbar-nav .nav-item .nav-link span { /* Hide text in user dropdown/login/register */
+        display: none !important;
+    }
 }

@@ -1,203 +1,440 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using StackFlow.Data;
+using StackFlow.Hubs;
 using StackFlow.Models;
-using System;
-using System.Linq;
+using StackFlow.ViewModels; // Ensure this is present
 using System.Security.Claims;
-using System.Threading.Tasks;
 
 namespace StackFlow.Controllers
 {
-    [Authorize]
-    [Route("Ticket")] 
-    public class TicketController : Controller
+    [Authorize] // All actions in this controller require authentication
+    public class TicketController : Controller // Reverted from TaskController, if it was named that
     {
         private readonly AppDbContext _context;
+        private readonly IHubContext<DashboardHub> _hubContext;
 
-        public TicketController(AppDbContext context)
+        public TicketController(AppDbContext context, IHubContext<DashboardHub> hubContext)
         {
             _context = context;
+            _hubContext = hubContext;
         }
 
-        // GET: /Ticket
-        // Displays a list of all tickets with related Project, Assigned User, and Creator
-        [HttpGet("")]
+        /// <summary>
+        /// Displays a list of all tickets.
+        /// Accessible to all authenticated users.
+        /// </summary>
+        [HttpGet]
         public async Task<IActionResult> Index()
         {
             var tickets = await _context.Ticket
-                .Include(t => t.Project)
-                .Include(t => t.AssignedTo)
-                .Include(t => t.CreatedBy)
-                .ToListAsync();
-
-            return View("~/Views/Ticket/Index.cshtml", tickets);
+                                        .Include(t => t.Project)
+                                        .Include(t => t.AssignedTo)
+                                        .Include(t => t.CreatedBy)
+                                        .OrderByDescending(t => t.Created_At) // Order by creation date for logical display
+                                        .ToListAsync();
+            return View(tickets);
         }
 
-        // GET: /Ticket/Details/5
-        // Displays the details of a specific ticket based on ID
-        [HttpGet("Details/{id}")]
-
-        public async Task<IActionResult> Details(int? id)
-        {
-            if (id == null) return NotFound();
-
-            var ticket = await _context.Ticket
-                .Include(t => t.Project)
-                .Include(t => t.AssignedTo)
-                .Include(t => t.CreatedBy)
-                .FirstOrDefaultAsync(m => m.Id == id);
-
-            return ticket == null ? NotFound() : View("~/Views/Ticket/Details.cshtml", ticket);
-        }
-
-        // GET: /Ticket/Create
-        // Displays the ticket creation form
-        [HttpGet("Create")]
-        public IActionResult Create()
-        {
-            PopulateDropdowns(); // Load dropdown lists for Project and AssignedTo
-            return View("~/Views/Ticket/Create.cshtml");
-        }
-
-        // POST: /Ticket/Create
-        // Handles ticket form submission for creating a new ticket
-        [HttpPost("Create")]
+        /// <summary>
+        /// Displays the form for creating a new ticket.
+        /// Accessible only to Admin and Project Managers.
+        /// </summary>
+        [HttpGet]
         [Authorize(Roles = "Admin,Project Manager")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Title,Description,Due_Date,Priority,Status,Project_Id,Assigned_To")] Ticket ticket)
+        public async Task<IActionResult> CreateTicket() // Reverted from CreateTask
         {
-            if (ModelState.IsValid)
+            ViewBag.Projects = new SelectList(await _context.Project.ToListAsync(), "Id", "Name");
+            ViewBag.Users = new SelectList(await _context.User.ToListAsync(), "Id", "Name");
+            ViewBag.TicketStatuses = new SelectList(new List<string> { "To_Do", "In_Progress", "In_Review", "Done" }); // Reverted from TaskStatuses
+            ViewBag.TicketPriorities = new SelectList(new List<string> { "Low", "Medium", "High" }); // Reverted from TaskPriorities
+            return View(new Ticket()); // Reverted from Task
+        }
+
+        /// <summary>
+        /// Handles the submission of the new ticket creation form.
+        /// Accessible only to Admin and Project Managers.
+        /// </summary>
+        /// <param name="ticket">The Ticket model populated from the form.</param>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Project Manager")]
+        public async Task<IActionResult> CreateTicket([Bind("Title,Description,Project_Id,Assigned_To,Status,Priority,Due_Date")] Ticket ticket)
+        {
+            // Remove navigation properties from ModelState validation, as they are not posted from the form
+            ModelState.Remove("Project");
+            ModelState.Remove("AssignedTo");
+            ModelState.Remove("Comments"); // Reverted from TaskComments
+            ModelState.Remove("CreatedBy"); // Reverted from TaskCreatedBy
+            ModelState.Remove("CreatedByUserId"); // Reverted from TaskCreatedByUserId
+            ModelState.Remove("CreatedAt"); // Reverted from TaskCreatedAt
+            ModelState.Remove("CompletedAt"); // Reverted from TaskCompletedAt
+
+
+            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdString, out int currentUserId))
             {
-                ticket.Created_At = DateTime.Now;
-
-                var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (int.TryParse(userIdString, out int userId))
-                {
-                    ticket.Created_By = userId;
-                }
-                else
-                {
-                    // If user not found, return with error
-                    ModelState.AddModelError("", "Could not determine the creator of the ticket. Please log in.");
-                    PopulateDropdowns(ticket);
-                    return View("~/Views/Ticket/Create.cshtml", ticket);
-                }
-
-                _context.Add(ticket);
-                await _context.SaveChangesAsync();
-
-                return RedirectToAction(nameof(Index));
+                TempData["ErrorMessage"] = "Authentication error: Could not identify user for ticket creation.";
+                return RedirectToAction("Login", "Account");
             }
 
-            PopulateDropdowns(ticket);
-            return View("~/Views/Ticket/Create.cshtml", ticket);
-        }
-
-        // GET: /Ticket/Edit/5
-        // Displays the edit form for a ticket
-        [HttpGet("Edit/{id}")]
-        [Authorize(Roles = "Admin,Project Manager")]
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null) return NotFound();
-
-            var ticket = await _context.Ticket.FindAsync(id);
-            if (ticket == null) return NotFound();
-
-            PopulateDropdowns(ticket);
-            return View("~/Views/Ticket/Update.cshtml", ticket);
-        }
-
-        // POST: /Ticket/Edit/5
-        // Handles form submission for editing an existing ticket
-        [HttpPost("Edit/{id}")]
-        [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,Project Manager")]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Title,Description,Due_Date,Priority,Status,Project_Id,Assigned_To")] Ticket updatedTicket)
-        {
-            // Make sure the ID from the route matches the form
-            if (id != updatedTicket.Id) return NotFound();
-
-            // Load the existing ticket from DB (includes Created_By)
-            var existingTicket = await _context.Ticket.FindAsync(id);
-            if (existingTicket == null) return NotFound();
+            ticket.Created_By = currentUserId;
+            ticket.Created_At = DateTime.UtcNow;
 
             if (ModelState.IsValid)
             {
                 try
                 {
-                    // Only update fields that can be changed
-                    existingTicket.Title = updatedTicket.Title;
-                    existingTicket.Description = updatedTicket.Description;
-                    existingTicket.Due_Date = updatedTicket.Due_Date;
-                    existingTicket.Priority = updatedTicket.Priority;
-                    existingTicket.Status = updatedTicket.Status;
-                    existingTicket.Project_Id = updatedTicket.Project_Id;
-                    existingTicket.Assigned_To = updatedTicket.Assigned_To;
-
-                    // Save changes without altering Created_By or Created_At
-                    _context.Update(existingTicket);
+                    _context.Add(ticket);
                     await _context.SaveChangesAsync();
+                    TempData["SuccessMessage"] = $"Ticket '{ticket.Title}' created successfully!";
+
+                    // Send minimal data: action and ticket ID
+                    await _hubContext.Clients.All.SendAsync("ReceiveTicketUpdate", "created", ticket.Id);
+
+                    return RedirectToAction("Index", "Dashboard"); // Redirect to Dashboard Index
+                }
+                catch (Exception ex)
+                {
+                    TempData["ErrorMessage"] = $"Error creating ticket: {ex.Message}";
+                    ViewBag.Projects = new SelectList(await _context.Project.ToListAsync(), "Id", "Name", ticket.Project_Id);
+                    ViewBag.Users = new SelectList(await _context.User.ToListAsync(), "Id", "Name", ticket.Assigned_To);
+                    ViewBag.TicketStatuses = new SelectList(new List<string> { "To_Do", "In_Progress", "In_Review", "Done" }, ticket.Status); // Reverted
+                    ViewBag.TicketPriorities = new SelectList(new List<string> { "Low", "Medium", "High" }, ticket.Priority); // Reverted
+                    return View(ticket);
+                }
+            }
+
+            TempData["ErrorMessage"] = "Please correct the errors in the form.";
+            ViewBag.Projects = new SelectList(await _context.Project.ToListAsync(), "Id", "Name", ticket.Project_Id);
+            ViewBag.Users = new SelectList(await _context.User.ToListAsync(), "Id", "Name", ticket.Assigned_To);
+            ViewBag.TicketStatuses = new SelectList(new List<string> { "To_Do", "In_Progress", "In_Review", "Done" }, ticket.Status); // Reverted
+            ViewBag.TicketPriorities = new SelectList(new List<string> { "Low", "Medium", "High" }, ticket.Priority); // Reverted
+
+            foreach (var modelStateEntry in ModelState.Values)
+            {
+                foreach (var error in modelStateEntry.Errors)
+                {
+                    Console.WriteLine($"Validation Error (CreateTicket): {error.ErrorMessage}");
+                }
+            }
+            return View(ticket);
+        }
+
+        /// <summary>
+        /// Displays the detailed view of a single ticket.
+        /// Accessible to all authenticated users.
+        /// </summary>
+        /// <param name="id">The ID of the ticket to view.</param>
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> TicketDetails(int id) // Reverted from TaskDetails
+        {
+            var ticket = await _context.Ticket // Reverted from Tasks
+                                     .Include(t => t.Project)
+                                     .Include(t => t.AssignedTo)
+                                     .Include(t => t.CreatedBy) // Reverted from TaskCreatedBy
+                                     .Include(t => t.TicketComments) // Reverted from TaskComments
+                                        .ThenInclude(tc => tc.CreatedBy)
+                                     .FirstOrDefaultAsync(m => m.Id == id);
+
+            if (ticket == null)
+            {
+                return NotFound();
+            }
+
+            var ticketViewModel = new TicketViewModel // Reverted from TaskViewModel
+            {
+                Id = ticket.Id,
+                Title = ticket.Title, 
+                Description = ticket.Description, 
+                ProjectId = ticket.Project_Id,
+                Project = ticket.Project,
+                AssignedToUserId = ticket.Assigned_To,
+                AssignedTo = ticket.AssignedTo,
+                Status = ticket.Status, // Reverted
+                Priority = ticket.Priority, // Reverted
+                CreatedByUserId = ticket.Created_By,
+                CreatedBy = ticket.CreatedBy, // Reverted
+                CreatedAt = ticket.Created_At, // Reverted
+                DueDate = ticket.Due_Date, // Reverted
+                CompletedAt = ticket.Completed_At, // Reverted
+                Comments = ticket.TicketComments.OrderBy(c => c.Created_At).ToList(), // Reverted
+                AssignedToUsername = ticket.AssignedTo?.Name,
+                ProjectName = ticket.Project?.Name,
+                CreatedByUsername = ticket.CreatedBy?.Name // Reverted
+            };
+
+            // Force a default selected value for the dropdown if Model.Status is null or empty
+            var currentStatus = string.IsNullOrEmpty(ticket.Status) ? "To Do" : ticket.Status;
+
+            // Create a list of SelectListItem explicitly to ensure values are set
+            var statusOptions = new List<SelectListItem>
+            {
+                new SelectListItem { Value = "To_Do", Text = "To Do", Selected = (currentStatus == "To Do") },
+                new SelectListItem { Value = "In_Progress", Text = "In Progress", Selected = (currentStatus == "In Progress") },
+                new SelectListItem { Value = "In_Review", Text = "In Review", Selected = (currentStatus == "In Review") },
+                new SelectListItem { Value = "Done", Text = "Done", Selected = (currentStatus == "Done") }
+            };
+            ViewBag.TicketStatuses = new SelectList(statusOptions, "Value", "Text", currentStatus);
+
+
+            return View(ticketViewModel);
+        }
+
+        /// <summary>
+        /// Handles the submission for updating a ticket's status from the Ticket Details page.
+        /// Accessible to all authenticated users.
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [AllowAnonymous]
+        public async Task<IActionResult> UpdateTicketStatus(int ticketId, string newStatus) // Reverted from UpdateTaskStatus
+        {
+            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdString, out int currentUserId))
+            {
+                TempData["ErrorMessage"] = "Authentication error: Could not identify user for status update.";
+                return Unauthorized();
+            }
+
+            var ticket = await _context.Ticket.FindAsync(ticketId); // Reverted from Tasks.FindAsync
+            if (ticket == null)
+            {
+                return NotFound();
+            }
+
+            // Trim whitespace from newStatus for robust comparison
+            newStatus = newStatus?.Trim();
+
+            var allowedStatuses = new List<string> { "To_Do", "In_Progress", "In_Review", "Done" };
+            if (!allowedStatuses.Contains(newStatus))
+            {
+                TempData["ErrorMessage"] = $"Invalid ticket status provided: '{newStatus}'. Expected one of: {string.Join(", ", allowedStatuses)}.";
+                return RedirectToAction(nameof(TicketDetails), new { id = ticketId });
+            }
+
+            string oldStatus = ticket.Status; // Reverted
+            ticket.Status = newStatus; // Reverted
+            if (oldStatus != newStatus)
+            {
+                if (newStatus == "Done") // Reverted
+                {
+                    ticket.Completed_At = DateTime.UtcNow; // Reverted
+                }
+            }
+
+            try
+            {
+                _context.Update(ticket);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = $"Ticket '{ticket.Title}' status updated to '{newStatus}' successfully!";
+
+                // Send minimal data: action and ticket ID
+                await _hubContext.Clients.All.SendAsync("ReceiveTicketUpdate", "updated", ticket.Id, oldStatus);
+
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error updating ticket status: {ex.Message}";
+            }
+
+            return RedirectToAction(nameof(TicketDetails), new { id = ticketId });
+        }
+
+
+        /// <summary>
+        /// Handles the submission for adding a new comment to a ticket.
+        /// Accessible to all authenticated users.
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [AllowAnonymous]
+        public async Task<IActionResult> AddComment(int ticketId, string commentText) // Reverted from AddComment
+        {
+            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdString, out int currentUserId))
+            {
+                return Unauthorized();
+            }
+
+            if (string.IsNullOrWhiteSpace(commentText))
+            {
+                ModelState.AddModelError("commentText", "Comment cannot be empty.");
+                TempData["ErrorMessage"] = "Comment cannot be empty.";
+                return RedirectToAction(nameof(TicketDetails), new { id = ticketId });
+            }
+
+            var ticket = await _context.Ticket.FirstOrDefaultAsync(t => t.Id == ticketId); // Reverted from Tasks.FirstOrDefaultAsync
+            if (ticket == null)
+            {
+                TempData["ErrorMessage"] = "Ticket not found.";
+                return RedirectToAction("Index", "Dashboard"); // Redirect to Dashboard Index
+            }
+
+            var ticketComment = new Comment // Reverted from TaskComment
+            {
+                Ticket_Id = ticketId, // Reverted
+                Created_By = currentUserId,
+                Content = commentText.Trim(),
+                Created_At = DateTime.UtcNow
+            };
+
+            _context.TicketComment.Add(ticketComment); // Reverted
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Comment added successfully!";
+            // Comments are not being updated in the main dashboard view, so a simple notification is fine.
+            await _hubContext.Clients.All.SendAsync("ReceiveTicketUpdate", "commented", ticket.Id);
+
+            return RedirectToAction(nameof(TicketDetails), new { id = ticketId });
+        }
+
+        /// <summary>
+        /// Displays the form for editing an existing ticket.
+        /// Accessible only to Admin and Project Managers.
+        /// </summary>
+        /// <param name="id">The ID of the ticket to edit.</param>
+        [HttpGet]
+        [Authorize(Roles = "Admin,Project Manager")]
+        public async Task<IActionResult> EditTicket(int id) // Reverted from EditTask
+        {
+            var ticket = await _context.Ticket.FindAsync(id); // Reverted from Tasks.FindAsync
+            if (ticket == null)
+            {
+                return NotFound();
+            }
+
+            ViewBag.Projects = new SelectList(await _context.Project.ToListAsync(), "Id", "Name", ticket.Project_Id);
+            ViewBag.Users = new SelectList(await _context.User.ToListAsync(), "Id", "Name");
+            ViewBag.TicketStatuses = new SelectList(new List<string> { "To_Do", "In_Progress", "In_Review", "Done" }, ticket.Status); // Reverted
+            ViewBag.TicketPriorities = new SelectList(new List<string> { "Low", "Medium", "High" }, ticket.Priority); // Reverted
+
+            return View(ticket);
+        }
+
+        /// <summary>
+        /// Handles the submission of the edited ticket form.
+        /// Accessible only to Admin and Project Managers.
+        /// </summary>
+        /// <param name="id">The ID of the ticket being edited.</param>
+        /// <param name="ticket">The Ticket model populated from the form.</param>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Project Manager")]
+        public async Task<IActionResult> EditTicket(int id, [Bind("Id,Title,Description,Project_Id,Assigned_To,Status,Priority,Due_Date,Completed_At")] Ticket ticket) // Reverted model binding properties
+        {
+            if (id != ticket.Id)
+            {
+                return NotFound();
+            }
+
+            // Remove navigation properties from ModelState validation, as they are not posted from the form
+            ModelState.Remove("Project");
+            ModelState.Remove("AssignedTo");
+            ModelState.Remove("Comments"); // Reverted
+            ModelState.Remove("CreatedBy"); // Reverted
+            ModelState.Remove("CreatedByUserId"); // Reverted
+            ModelState.Remove("CreatedAt"); // Reverted
+
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    // Fetch the original ticket to preserve CreatedByUserId and CreatedAt
+                    var originalTicket = await _context.Ticket.AsNoTracking().FirstOrDefaultAsync(t => t.Id == id); // Reverted
+                    if (originalTicket == null)
+                    {
+                        return NotFound();
+                    }
+                    ticket.Created_By = originalTicket.Created_By;
+                    ticket.Created_At = originalTicket.Created_At;
+
+
+                    _context.Update(ticket);
+                    await _context.SaveChangesAsync();
+                    TempData["SuccessMessage"] = $"Ticket '{ticket.Title}' updated successfully!";
+
+                    // Send minimal data: action and ticket ID
+                    await _hubContext.Clients.All.SendAsync("ReceiveTicketUpdate", "updated", ticket.Id, originalTicket.Status);
+
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!TicketExists(updatedTicket.Id)) return NotFound();
-                    throw;
+                    if (!await _context.Ticket.AnyAsync(e => e.Id == ticket.Id)) // Reverted
+                    {
+                        return NotFound();
+                    }
+                    else
+                    {
+                        throw;
+                    }
                 }
-
-                return RedirectToAction(nameof(Index));
+                catch (Exception ex)
+                {
+                    TempData["ErrorMessage"] = $"Error updating ticket: {ex.Message}";
+                    ViewBag.Projects = new SelectList(await _context.Project.ToListAsync(), "Id", "Name", ticket.Project_Id);
+                    ViewBag.Users = new SelectList(await _context.User.ToListAsync(), "Id", "Name", ticket.Assigned_To);
+                    ViewBag.TicketStatuses = new SelectList(new List<string> { "To_Do", "In_Progress", "In_Review", "Done" }, ticket.Status); // Reverted
+                    ViewBag.TicketPriorities = new SelectList(new List<string> { "Low", "Medium", "High" }, ticket.Priority); // Reverted
+                    return View(ticket);
+                }
+                return RedirectToAction("Index", "Dashboard"); // Redirect to Dashboard Index
             }
 
-            // If validation fails, reload dropdowns and return view with model
-            PopulateDropdowns(updatedTicket);
-            return View("~/Views/Ticket/Update.cshtml", updatedTicket);
+            TempData["ErrorMessage"] = "Please correct the errors in the form.";
+            ViewBag.Projects = new SelectList(await _context.Project.ToListAsync(), "Id", "Name", ticket.Project_Id);
+            ViewBag.Users = new SelectList(await _context.User.ToListAsync(), "Id", "Name", ticket.Assigned_To);
+            ViewBag.TicketStatuses = new SelectList(new List<string> { "To_Do", "In_Progress", "In_Review", "Done" }, ticket.Status); // Reverted
+            ViewBag.TicketPriorities = new SelectList(new List<string> { "Low", "Medium", "High" }, ticket.Priority); // Reverted
+
+            foreach (var modelStateEntry in ModelState.Values)
+            {
+                foreach (var error in modelStateEntry.Errors)
+                {
+                    Console.WriteLine($"Validation Error (EditTicket): {error.ErrorMessage}");
+                }
+            }
+            return View(ticket);
         }
 
-        // GET: /Ticket/Delete/5
-        // Displays confirmation page for deleting a ticket
-        [HttpGet("Delete/{id}")]
-        [Authorize(Roles = "Admin,Project Manager")]
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null) return NotFound();
-
-            var ticket = await _context.Ticket
-                .Include(t => t.Project)
-                .FirstOrDefaultAsync(m => m.Id == id);
-
-            return ticket == null ? NotFound() : View("~/Views/Ticket/Delete.cshtml", ticket);
-        }
-
-        // POST: /Ticket/Delete/5
-        // Finalizes the ticket deletion
-        [HttpPost("Delete/{id}"), ActionName("DeleteConfirmed")]
+        /// <summary>
+        /// POST action to delete a ticket.
+        /// Accessible only to Admin and Project Managers.
+        /// </summary>
+        /// <param name="id">The ID of the ticket to delete.</param>
+        [HttpPost, ActionName("DeleteTicket")] // Reverted from DeleteTask
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,Project Manager")]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteTicketConfirmed(int id) // Reverted from DeleteTaskConfirmed
         {
-            var ticket = await _context.Ticket.FindAsync(id);
-            if (ticket == null) return NotFound();
+            var ticket = await _context.Ticket.FindAsync(id); // Reverted from Tasks.FindAsync
+            if (ticket == null)
+            {
+                TempData["ErrorMessage"] = "Ticket not found.";
+                return NotFound();
+            }
 
-            _context.Ticket.Remove(ticket);
-            await _context.SaveChangesAsync();
+            string ticketTitle = ticket.Title; // Reverted
+            string oldStatus = ticket.Status; // Reverted
 
-            return RedirectToAction(nameof(Index));
-        }
-
-        // Helper method to populate dropdown lists for forms
-        private void PopulateDropdowns(Ticket? ticket = null)
-        {
-            ViewBag.AssignedToList = new SelectList(_context.User, "Id", "Name", ticket?.Assigned_To);
-            ViewBag.ProjectList = new SelectList(_context.Project, "Id", "Name", ticket?.Project_Id);
-        }
-
-        // Checks if a ticket exists based on ID
-        private bool TicketExists(int id)
-        {
-            return _context.Ticket.Any(e => e.Id == id);
+            try
+            {
+                _context.Ticket.Remove(ticket); // Reverted
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = $"Ticket '{ticketTitle}' deleted successfully.";
+                // Send minimal data: action and ticket ID
+                await _hubContext.Clients.All.SendAsync("ReceiveTicketUpdate", "deleted", id, oldStatus);
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error deleting ticket: {ex.Message}";
+            }
+            return RedirectToAction("Index", "Dashboard"); // Redirect to Dashboard Index
         }
     }
 }

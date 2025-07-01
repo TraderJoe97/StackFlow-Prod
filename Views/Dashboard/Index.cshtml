@@ -1,5 +1,109 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@using System.Security.Claims
+@model StackFlow.ViewModels.DashboardViewModel
+
 @{
+    ViewData["Title"] = "Dashboard";
+}
+
+@* The content below will directly fill the 'main-content' div from _Layout.cshtml.
+   The 'main-content' div handles its own padding and width based on the sidebar state. *@
+
+<h1 class="display-4 fw-bold text-primary mb-4">Welcome, @Model.Username!</h1>
+<p class="lead text-muted mb-4">Your role: <span class="badge bg-secondary">@Model.Role</span></p>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-x-circle-fill me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@* Quick Insights for Admins - Render Partial *@
+@await Html.PartialAsync("_QuickInsightsPartial", Model)
+
+@* My Assigned Tickets Table - Render Partial *@
+@await Html.PartialAsync("_AssignedTicketsTablePartial", Model.AssignedToMeTickets)
+
+@* All Projects Overview - Render Partial *@
+@await Html.PartialAsync("_ProjectsOverviewPartial", Model.Projects)
+
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const currentUserId = @(User.Identity.IsAuthenticated? User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier) : "null");
+
+            // Function to dynamically load and replace a partial view via AJAX
+            async function loadPartialView(containerId, actionUrl, modelData = null) {
+                const container = document.getElementById(containerId);
+                if (!container) {
+                    console.error(`Container with ID '${containerId}' not found.`);
+                    return;
+                }
+
+                try {
+                    let url = actionUrl;
+                    if (modelData) {
+                        const params = new URLSearchParams();
+                        for (const key in modelData) {
+                            if (modelData.hasOwnProperty(key)) {
+                                params.append(key, modelData[key]);
+                            }
+                        }
+                        url = `${actionUrl}?${params.toString()}`;
+                    }
+
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const html = await response.text();
+                    container.innerHTML = html;
+                    console.log(`Partial view for ${containerId} refreshed.`);
+                } catch (error) {
+                    console.error(`Error loading partial view for ${containerId}:`, error);
+                }
+            }
+
+            // --- SignalR Event Listeners ---
+
+            // Handle Ticket Updates
+            document.addEventListener('ticketUpdate', function (event) {
+                const { action, ticketId, oldStatus } = event.detail;
+                console.log(`Ticket ${action} notification for ID: ${ticketId}. Refreshing relevant sections.`);
+
+                loadPartialView('assignedTicketsTable', '/Dashboard/GetAssignedTicketsTable', { userId: currentUserId });
+
+                if (@(User.IsInRole("Admin") ? "true" : "false")) {
+                    loadPartialView('quickInsightsContainer', '/Dashboard/GetQuickInsights');
+                }
+            });
+
+            // Handle Project Updates
+            document.addEventListener('projectUpdate', function (event) {
+                const { action, projectId } = event.detail;
+                console.log(`Project ${action} notification for ID: ${projectId}. Refreshing projects overview.`);
+
+                loadPartialView('projectsOverviewContainer', '/Dashboard/GetProjectsOverview');
+
+                if (@(User.IsInRole("Admin") ? "true" : "false")) {
+                    loadPartialView('quickInsightsContainer', '/Dashboard/GetQuickInsights');
+                }
+            });
+
+
+        });
+    </script>
 }

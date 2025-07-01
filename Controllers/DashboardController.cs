@@ -1,10 +1,16 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StackFlow.Data;
+using StackFlow.ViewModels;
+using System.Linq;
 using System.Security.Claims;
+using System.Threading.Tasks;
+using System.Collections.Generic; // Added for SelectList
 
 namespace StackFlow.Controllers
 {
+    [Authorize]
     public class DashboardController : Controller
     {
         private readonly AppDbContext _context;
@@ -14,104 +20,107 @@ namespace StackFlow.Controllers
             _context = context;
         }
 
-
-
-        public IActionResult Index()
-        {
-
-            // Ensure the user is authenticated
-            if (!User.Identity.IsAuthenticated)
-            {
-                return RedirectToAction("Login", "Account"); // or your actual login controller
-            }
-
-            var role = User.FindFirstValue(ClaimTypes.Role);
-
-            if (string.IsNullOrEmpty(role))
-            {
-                return Forbid(); // Role is not found or user has no assigned role
-            }
-            else
-            {
-
-                if (User.IsInRole("Admin"))
-                    return RedirectToAction("Admin");
-                if (User.IsInRole("ProjectLead"))
-                    return RedirectToAction("ProjectLead");
-                if (User.IsInRole("Developer"))
-                    return RedirectToAction("Developer");
-                if (User.IsInRole("Tester"))
-                    return RedirectToAction("Tester");
-
-                return Forbid();
-            }
-
-        }
-
-        public async Task<IActionResult> Developer()
-        {
-            // Get the current user's ID from claims
-            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            var allTasks = await _context.Ticket
-                             .Include(t => t.Project)
-                             .Include(t => t.AssignedTo)
-                             .ToListAsync();
-
-            var userId = int.Parse(userIdString);
-            var AssignedToMeTasks = allTasks.Where(t => t.Assigned_To == userId).ToList();
-            return View(AssignedToMeTasks);
-
-        }
-
-
-        public async Task<ActionResult> Tester()
+        /// <summary>
+        /// Displays the main dashboard with an overview of tickets and projects for the current user.
+        /// Quick insights are only visible to Admin users.
+        /// </summary>
+        public async Task<IActionResult> Index()
         {
             var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdString, out int currentUserId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
 
-            var allTasks = await _context.Ticket
-                             .Include(t => t.Project)
-                             .Include(t => t.AssignedTo)
-                             .ToListAsync();
+            var currentUser = await _context.User
+                                            .Include(u => u.Role)
+                                            .FirstOrDefaultAsync(u => u.Id == currentUserId);
 
-            var userId = int.Parse(userIdString);
-            var AssignedToMeTasks = allTasks.Where(t => t.Assigned_To == userId).ToList();
-            return View(AssignedToMeTasks);
+            if (currentUser == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
 
-        }
-
-        public async  Task<IActionResult> ProjectLead()
-        {
-            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            // Fetch all projects. In a real application, you might filter this
-            // based on user involvement (e.g., projects they created or are assigned to).
-            var userId = int.Parse(userIdString);
+            // Fetch all tickets, eager loading related Project, AssignedTo, and CreatedBy users
+            var allTickets = await _context.Ticket // Reverted from Tasks
+                                         .Include(t => t.Project)
+                                         .Include(t => t.AssignedTo)
+                                         .Include(t => t.CreatedBy) // Reverted from TaskCreatedBy
+                                         .ToListAsync();
 
             var allProjects = await _context.Project
-                                            .Include(p => p.CreatedBy) // Include the user who created the project
+                                            .Include(p => p.CreatedBy)
                                             .ToListAsync();
 
-            var Projects = allProjects.Where(p => p.Created_By == userId).ToList();
+            var viewModel = new DashboardViewModel
+            {
+                Username = currentUser.Name,
+                Role = currentUser.Role?.Name ?? "Unknown Role",
+                CurrentUserId = currentUserId,
+                AssignedToMeTickets = allTickets.Where(t => t.Assigned_To == currentUserId).ToList(),
+                ToDoTickets = allTickets.Where(t => t.Status == "To_Do").ToList(), 
+                InProgressTickets = allTickets.Where(t => t.Status == "In_Progress").ToList(),
+                InReviewTickets = allTickets.Where(t => t.Status == "In_Review").ToList(), 
+                CompletedTickets = allTickets.Where(t => t.Status == "Done").ToList(), 
+                Projects = allProjects
+            };
 
-            return View(Projects);
+            return View(viewModel);
         }
 
-        public async Task<IActionResult> Admin()
+        /// <summary>
+        /// Returns the HTML content for the Quick Insights section.
+        /// </summary>
+        [HttpGet]
+        [Authorize(Roles = "Admin")] // Only admins see insights, so this should also be authorized
+        public async Task<IActionResult> GetQuickInsights()
         {
-            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            // Fetch all projects. In a real application, you might filter this
-            // based on user involvement (e.g., projects they created or are assigned to).
-            var userId = int.Parse(userIdString);
+            var allTickets = await _context.Ticket.ToListAsync(); // Reverted from Tasks
 
-            var allProjects = await _context.Project
-                                            .Include(p => p.CreatedBy) // Include the user who created the project
-                                            .ToListAsync();
-
-
-
-            return View(allProjects);
+            var viewModel = new DashboardViewModel
+            {
+                ToDoTickets = allTickets.Where(t => t.Status == "To_Do").ToList(), // Reverted from TaskStatus
+                InProgressTickets = allTickets.Where(t => t.Status == "In_Progress").ToList(), // Reverted from TaskStatus
+                InReviewTickets = allTickets.Where(t => t.Status == "In_Review").ToList(), // Reverted from TaskStatus
+                CompletedTickets = allTickets.Where(t => t.Status == "Done").ToList() // Reverted from TaskStatus
+            };
+            return PartialView("_QuickInsightsPartial", viewModel);
         }
 
+        /// <summary>
+        /// Returns the HTML content for the "My Assigned Tickets" table.
+        /// </summary>
+        /// <param name="userId">The ID of the user whose tickets to fetch.</param>
+        [HttpGet]
+        public async Task<IActionResult> GetAssignedTicketsTable(int userId)
+        {
+            var assignedTickets = await _context.Ticket // Reverted from Tasks
+                                             .Include(t => t.Project)
+                                             .Where(t => t.Assigned_To == userId)
+                                             .ToListAsync();
+            return PartialView("_AssignedTicketsTablePartial", assignedTickets);
+        }
+
+        /// <summary>
+        /// Returns the HTML content for the "All Projects Overview" section.
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetProjectsOverview()
+        {
+            var projects = await _context.Project
+                                        .Include(p => p.CreatedBy)
+                                        .ToListAsync();
+            return PartialView("_ProjectsOverviewPartial", projects);
+        }
+
+        /// <summary>
+        /// Retrieves the HTML content for the sidebar navigation.
+        /// Used for AJAX updates when user roles change.
+        /// </summary>
+        [HttpGet]
+        public IActionResult GetSidebarContent()
+        {
+            return PartialView("_SidebarPartial");
+        }
     }
 }
-

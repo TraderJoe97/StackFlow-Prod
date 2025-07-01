@@ -1,0 +1,25 @@
+﻿@{
+    ViewData["Title"] = "Account Pending Verification";
+    Layout = "_Layout"; // Ensure it uses the shared layout
+}
+
+<div class="account-page-container">
+    <div class="card shadow-lg border-0 rounded-4 p-4 account-card text-center">
+        <i class="bi bi-hourglass-split text-warning display-1 mb-3"></i>
+        <h2 class="card-title mb-3 fw-bold text-warning">Account Pending Verification</h2>
+        <p class="lead mb-4">
+            Thank you for registering! Your account is currently pending verification by an administrator.
+        </p>
+        <p class="mb-4">
+            You will receive an email notification once your account has been verified and activated.
+            Until then, you will not be able to log in.
+        </p>
+        <a asp-controller="Account" asp-action="Login" class="btn btn-primary btn-lg rounded-pill shadow-sm animate-btn">
+            <i class="bi bi-box-arrow-in-right me-2"></i> Back to Login
+        </a>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/_Account.css" />
+}

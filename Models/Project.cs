@@ -18,7 +18,7 @@ namespace StackFlow.Models
         [Required]
         [Column("project_name")]
         [StringLength(255)] // Max length based on common naming conventions, schema says varchar 255 for username/email. Adjust if you have a specific length in mind for project name.
-        public required string Name { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
 
 
         [Column("project_description", TypeName = "text")] // TypeName for 'text'

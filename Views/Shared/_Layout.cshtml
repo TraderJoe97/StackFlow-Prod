@@ -17,144 +17,95 @@
     @RenderSection("Styles", required: false)
 </head>
 <body data-bs-theme="light">
-    <header>
-        <nav class="navbar navbar-expand-lg">
-            <div class="container-fluid">
-                <!-- Toggler for mobile sidebar -->
-                <button class="btn btn-outline-secondary d-lg-none navbar-toggler-sidebar" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSidebar" aria-controls="offcanvasSidebar" aria-label="Toggle navigation">
-                    <i class="bi bi-list"></i>
-                </button>
+    @* Main application header - now fixed at the top *@
+    <div class="app-header border-bottom shadow-sm">
+        <div class="container-fluid d-flex align-items-center py-2">
+            <!-- Toggler for mobile sidebar (Offcanvas) - visible only on small devices -->
+            <button class="btn btn-outline-secondary d-block d-lg-none me-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSidebar" aria-controls="offcanvasSidebar" aria-label="Toggle mobile navigation">
+                <i class="bi bi-list"></i>
+            </button>
 
-                <a class="navbar-brand d-flex align-items-center me-auto ms-3" asp-area="" asp-controller="Dashboard" asp-action="Index">
-                    <i class="bi bi-stack me-2 text-primary" style="font-size: 1.5rem;"></i>
-                    <span class="fw-bold">StackFlow</span>
-                </a>
+            <!-- Toggler for desktop sidebar (Expand/Collapse) - visible only on large devices -->
+            <button class="btn btn-outline-secondary d-none d-lg-block me-3" type="button" id="desktopSidebarToggle" aria-label="Toggle desktop sidebar">
+                <i class="bi bi-arrow-left-square-fill" id="sidebarToggleIcon"></i>
+            </button>
 
-                <ul class="navbar-nav ms-auto">
-                    <!-- Dark Mode Toggle -->
-                    <li class="nav-item me-2">
-                        <button class="btn btn-link nav-link" id="darkModeToggle" aria-label="Toggle dark mode">
-                            <i class="bi bi-moon-fill d-none" id="moonIcon"></i>
-                            <i class="bi bi-sun-fill" id="sunIcon"></i>
-                        </button>
+            <a class="app-brand d-flex align-items-center me-auto" asp-area="" asp-controller="Dashboard" asp-action="Index">
+                @* Logo image instead of text and icon *@
+                <img src="~/images/logo.png" alt="StackFlow Logo" class="app-logo me-2" onerror="this.onerror=null;this.src='https://placehold.co/40x40/cccccc/000000?text=Logo';" />
+                <span class="fw-bold fs-4">StackFlow</span>
+            </a>
+
+            <ul class="navbar-nav flex-row align-items-center ms-auto">
+                <!-- Dark Mode Toggle -->
+                <li class="nav-item me-2">
+                    <button class="btn btn-link nav-link" id="darkModeToggle" aria-label="Toggle dark mode">
+                        <i class="bi bi-moon-fill d-none" id="moonIcon"></i>
+                        <i class="bi bi-sun-fill" id="sunIcon"></i>
+                    </button>
+                </li>
+                @if (User.Identity.IsAuthenticated)
+                {
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarUserDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle me-1"></i> Hello, @User.Identity.Name!
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarUserDropdown">
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-gear-fill me-1"></i> Settings</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                                    <button type="submit" class="dropdown-item">
+                                        <i class="bi bi-box-arrow-right me-1"></i> Logout
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
                     </li>
-                    @if (User.Identity.IsAuthenticated)
-                    {
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="navbarUserDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="bi bi-person-circle me-1"></i> Hello, @User.Identity.Name!
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarUserDropdown">
-                                <li><a class="dropdown-item" href="#"><i class="bi bi-gear-fill me-1"></i> Settings</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
-                                        <button type="submit" class="dropdown-item">
-                                            <i class="bi bi-box-arrow-right me-1"></i> Logout
-                                        </button>
-                                    </form>
-                                </li>
-                            </ul>
-                        </li>
-                    }
-                    else
-                    {
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Account" asp-action="Register">
-                                <i class="bi bi-person-add me-1"></i> Register
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Account" asp-action="Login">
-                                <i class="bi bi-box-arrow-in-right me-1"></i> Login
-                            </a>
-                        </li>
-                    }
-                </ul>
-            </div>
-        </nav>
-    </header>
-    @if (User.Identity.IsAuthenticated)
-    {
-        <!-- Sidebar Offcanvas (for mobile) and Fixed Sidebar (for desktop) -->
-        <div class="offcanvas offcanvas-start sidebar-offcanvas" tabindex="-1" id="offcanvasSidebar" aria-labelledby="offcanvasSidebarLabel">
-            <div class="offcanvas-header">
-                <h5 class="offcanvas-title" id="offcanvasSidebarLabel">
-                    <i class="bi bi-list-nested me-2"></i>Navigation
-                </h5>
-                <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-            </div>
-            <div class="offcanvas-body p-0">
-                <ul class="navbar-nav sidebar-nav flex-column">
-
+                }
+                else
+                {
                     <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Dashboard" && ViewContext.RouteData.Values["Action"].ToString() == "Index" ? "active" : "")"
-                           asp-area="" asp-controller="Dashboard" asp-action="Index">
-                            <i class="bi bi-grid-fill me-2"></i> Dashboard
-                        </a>
-
-                        <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Projects" && ViewContext.RouteData.Values["Action"].ToString() == "Project" ? "active" : "")"
-                           asp-area="" asp-controller="Project" asp-action="Index">
-                            <i class="bi bi-grid-fill me-2"></i> Projects
-                        </a>
-
-                        <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Ticket" && ViewContext.RouteData.Values["Action"].ToString() == "Ticket" ? "active" : "")"
-                           asp-area="" asp-controller="Ticket" asp-action="Index">
-                            <i class="bi bi-grid-fill me-2"></i> Tickets
+                        <a class="nav-link" asp-area="" asp-controller="Account" asp-action="Register">
+                            <i class="bi bi-person-add me-1"></i> Register
                         </a>
                     </li>
-
-
-                    @* Project Manager and Admin specific links *@
-                    @if (User.IsInRole("Admin") || User.IsInRole("Project Manager"))
-                    {
-                        <li class="nav-item">
-                            <a class="nav-link @(ViewContext.RouteData.Values["Action"].ToString() == "CreateTicket" ? "active" : "")"
-                               asp-area="" asp-controller="Ticket" asp-action="Create">
-                                <i class="bi bi-journal-plus me-2"></i> Create Ticket
-                            </a>
-                        </li>
-                    }
-
-                    @* Admin specific links *@
-                    @if (User.IsInRole("Admin"))
-                    {
-                        <li class="nav-item">
-                            <a class="nav-link @(ViewContext.RouteData.Values["Action"].ToString() == "CreateProject" ? "active" : "")"
-                               asp-area="" asp-controller="Project" asp-action="Create">
-                                <i class="bi bi-folder-plus me-2"></i> Create Project
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link @(ViewContext.RouteData.Values["Action"].ToString() == "ProjectReports" ? "active" : "")"
-                               asp-area="" asp-controller="ProjectReport" asp-action="index">
-                                <i class="bi bi-clipboard-data-fill me-2"></i> Project Reports
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link @(ViewContext.RouteData.Values["Action"].ToString() == "UserReports" ? "active" : "")"
-                               asp-area="" asp-controller="UserReports" asp-action="index">
-                                <i class="bi bi-file-earmark-person-fill me-2"></i> User Reports
-                            </a>
-                        </li>
-                    }
-
                     <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Account" && ViewContext.RouteData.Values["Action"].ToString() == "ManageAccount" ? "active" : "")"
-                           asp-area="" asp-controller="Account" asp-action="ManageAccount">
-                            <i class="bi bi-person-circle me-2"></i> Manage Account
+                        <a class="nav-link" asp-area="" asp-controller="Account" asp-action="Login">
+                            <i class="bi bi-box-arrow-in-right me-1"></i> Login
                         </a>
                     </li>
-
-                </ul>
-            </div>
+                }
+            </ul>
         </div>
-    }
+    </div>
 
-    <div class="main-content">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
+    @* The offcanvas sidebar definition (for mobile) remains here.
+       Its content is now directly included via the partial. *@
+    <div class="offcanvas offcanvas-start sidebar-offcanvas" tabindex="-1" id="offcanvasSidebar" aria-labelledby="offcanvasSidebarLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="offcanvasSidebarLabel">
+                <i class="bi bi-list-nested me-2"></i>Navigation
+            </h5>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body p-0">
+            @* Directly render the sidebar partial content here for mobile offcanvas *@
+            <partial name="_SidebarPartial" />
+        </div>
+    </div>
+
+    @* This is the main flex container for desktop sidebar and main content *@
+    <div class="app-body-container">
+        @* Desktop Sidebar - rendered via partial *@
+        <partial name="_SidebarPartial" />
+
+        @* Main content area *@
+        <div class="main-content">
+            <main role="main" class="pb-3">
+                @RenderBody()
+            </main>
+        </div>
     </div>
 
     <footer class="footer border-top text-muted">
@@ -212,6 +163,49 @@
                     setTheme('dark');
                 }
             });
+
+            // Desktop Sidebar Toggle Functionality
+            const desktopSidebarToggle = document.getElementById('desktopSidebarToggle');
+            const sidebarToggleIcon = document.getElementById('sidebarToggleIcon');
+
+            function applyDesktopSidebarState() {
+                if (window.innerWidth >= 992) { // Only apply desktop state on desktop
+                    const savedDesktopSidebarState = localStorage.getItem('desktopSidebarState');
+                    if (savedDesktopSidebarState === 'collapsed') {
+                        body.classList.add('sidebar-collapsed');
+                        body.classList.remove('sidebar-expanded');
+                    } else {
+                        body.classList.add('sidebar-expanded');
+                        body.classList.remove('sidebar-collapsed');
+                    }
+                } else {
+                    // Ensure desktop classes are not present on mobile
+                    body.classList.remove('sidebar-expanded');
+                    body.classList.remove('sidebar-collapsed');
+                }
+            }
+
+            // Initial application of desktop sidebar state
+            applyDesktopSidebarState();
+
+            // Event listener for desktop sidebar toggle button
+            if (desktopSidebarToggle) {
+                desktopSidebarToggle.addEventListener('click', function () {
+                    if (body.classList.contains('sidebar-expanded')) {
+                        body.classList.remove('sidebar-expanded');
+                        body.classList.add('sidebar-collapsed');
+                        localStorage.setItem('desktopSidebarState', 'collapsed');
+                    } else {
+                        body.classList.remove('sidebar-collapsed');
+                        body.classList.add('sidebar-expanded');
+                        localStorage.setItem('desktopSidebarState', 'expanded');
+                    }
+                });
+            }
+
+            // Re-apply sidebar state on window resize (e.g., rotating tablet, dragging desktop window)
+            window.addEventListener('resize', applyDesktopSidebarState);
+
 
             // SignalR Client Setup
             const connection = new signalR.HubConnectionBuilder()

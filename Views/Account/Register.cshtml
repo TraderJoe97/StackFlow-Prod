@@ -1,5 +1,4 @@
-﻿@* No model needed for simple register form - uses parameters in controller *@
-@{
+﻿@{
     ViewData["Title"] = "Register";
     Layout = "_Layout"; // Ensure it uses the shared layout
 }
@@ -7,24 +6,10 @@
 <div class="account-page-container">
     <div class="card shadow-lg border-0 rounded-4 p-4 account-card">
         <h2 class="card-title text-center mb-4 fw-bold text-success display-5">
-            <i class="bi bi-person-add me-2"></i> Create New Account
+            <i class="bi bi-person-plus-fill me-2"></i> Create Account
         </h2>
         <hr class="mb-4" />
 
-        @if (TempData["SuccessMessage"] != null)
-        {
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        }
-        @if (TempData["ErrorMessage"] != null)
-        {
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="bi bi-x-circle-fill me-2"></i>@TempData["ErrorMessage"]
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        }
         @if (ViewData["RegistrationError"] != null)
         {
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -47,6 +32,7 @@
                     <div class="mb-3">
                         <label for="email" class="form-label fw-semibold">Email</label>
                         <input type="email" id="email" name="email" class="form-control form-control-lg rounded-pill" placeholder="your.email@omnitak.com" required />
+                        <div class="form-text text-muted">Must be an omnitak.com email address.</div>
                         <div class="invalid-feedback">
                             Please enter a valid omnitak.com email address.
                         </div>
@@ -54,7 +40,7 @@
 
                     <div class="mb-4">
                         <label for="password" class="form-label fw-semibold">Password</label>
-                        <input type="password" id="password" name="password" class="form-control form-control-lg rounded-pill" placeholder="Choose a password" required />
+                        <input type="password" id="password" name="password" class="form-control form-control-lg rounded-pill" placeholder="Choose a strong password" required />
                         <div class="invalid-feedback">
                             Please enter a password.
                         </div>
@@ -65,7 +51,7 @@
                             <i class="bi bi-person-plus-fill me-2"></i> Register
                         </button>
                         <a asp-controller="Account" asp-action="Login" class="btn btn-outline-secondary btn-lg rounded-pill animate-btn">
-                            <i class="bi bi-box-arrow-in-right me-2"></i> Already have an account? Login
+                            <i class="bi bi-box-arrow-in-right me-2"></i> Back to Login
                         </a>
                     </div>
                 </form>

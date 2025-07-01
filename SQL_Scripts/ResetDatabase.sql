@@ -54,7 +54,8 @@ CREATE TABLE users (
     password NVARCHAR(255) NOT NULL,
     role_id INT NOT NULL,
     created_at DATE NOT NULL,
-    isActive BIT NOT NULL DEFAULT 1, -- New column: isActive (boolean, default to true)
+    isVerified BIT NOT NULL DEFAULT 0, -- New column: isVerified (boolean, default to false)
+    isDeleted BIT NOT NULL DEFAULT 0, -- New column: isDeleted (boolean, default to false)
     CONSTRAINT PK_users PRIMARY KEY (id),
     CONSTRAINT UQ_users_email UNIQUE (email),
     CONSTRAINT FK_users_roles_role_id FOREIGN KEY (role_id) REFERENCES roles (id) ON DELETE CASCADE
@@ -129,4 +130,3 @@ GO
 
 CREATE INDEX IX_users_role_id ON users (role_id);
 GO
-

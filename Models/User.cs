@@ -34,8 +34,14 @@ namespace StackFlow.Models
 
         public DateTime Created_At { get; set; } = DateTime.UtcNow;
 
-        [Column("isActive")]
-        public bool IsActive { get; set; } = true; // Default to true, can be set to false for soft delete
+        // New properties for verification and soft delete
+
+        [Column("isVerified")]
+        public bool IsVerified { get; set; } = false; // Default to unverified
+
+        [Column("isDeleted")]
+        public bool IsDeleted { get; set; } = false;  // Default to not deleted
+
 
 
         // Navigation property for Tasks created by this user

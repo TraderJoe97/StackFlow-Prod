@@ -6,8 +6,10 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authorization;
 using BCrypt.Net; // For password hashing
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace StackFlow.Controllers
 {
@@ -40,33 +42,44 @@ namespace StackFlow.Controllers
             }
 
             // Find user by email
-            // Include Role to get the role name for claims
             var user = await _context.User
                                      .Include(u => u.Role)
                                      .FirstOrDefaultAsync(u => u.Email == email);
-            if (user.IsActive == false)
-            {
-                ViewData["LoginError"] = "Your account is deactivated. Please contact support.";
-                return View();
-            }
+
             if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
             {
                 ViewData["LoginError"] = "Invalid email or password.";
                 return View();
             }
 
-            // Create claims for the user
+            // --- New Verification and Deletion Checks ---
+            if (user.IsDeleted)
+            {
+                // If the user is deleted, redirect to a specific page
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme); // Ensure they are logged out
+                return RedirectToAction("DeletedAccount");
+            }
+
+            if (!user.IsVerified)
+            {
+                // If the user is not verified, redirect to a specific page
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme); // Ensure they are logged out
+                return RedirectToAction("UnverifiedAccount");
+            }
+            // --- End New Checks ---
+
+            // Authentication successful, create claims
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.Name),
-                new Claim(ClaimTypes.Email, user.Email)
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()), // Unique identifier for the user
+                new Claim(ClaimTypes.Name, user.Name), // Primary name for the user
+                new Claim(ClaimTypes.Email, user.Email) // User's email
             };
 
             // Add role claim if user has a role
             if (user.Role != null)
             {
-                claims.Add(new Claim(ClaimTypes.Role, user.Role.Name)); // Using Name property from Role model
+                claims.Add(new Claim(ClaimTypes.Role, user.Role.Name)); // Add the role title as a role claim
             }
 
             var claimsIdentity = new ClaimsIdentity(
@@ -74,8 +87,8 @@ namespace StackFlow.Controllers
 
             var authProperties = new AuthenticationProperties
             {
-                IsPersistent = true, // For "Remember me" functionality
-                ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(30) // Set cookie expiration
+                IsPersistent = true, // Keep session alive across browser restarts
+                ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(30) // Set session expiration
             };
 
             await HttpContext.SignInAsync(
@@ -83,7 +96,15 @@ namespace StackFlow.Controllers
                 new ClaimsPrincipal(claimsIdentity),
                 authProperties);
 
-            return RedirectToLocal(returnUrl);
+            // Redirect to dashboard or returnUrl
+            if (Url.IsLocalUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
+            else
+            {
+                return RedirectToAction("Index", "Dashboard"); // Default dashboard
+            }
         }
 
         [HttpGet]
@@ -98,14 +119,26 @@ namespace StackFlow.Controllers
         {
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
             {
-                ViewData["RegistrationError"] = "Username, email, and password are required.";
+                ViewData["RegistrationError"] = "All fields are required.";
                 return View();
             }
 
-            // Check if email already exists
+            // Basic email format validation
+            if (!email.EndsWith("@omnitak.com"))
+            {
+                ViewData["RegistrationError"] = "Only @omnitak.com email addresses are allowed.";
+                return View();
+            }
+
+            // Check if user with this email or username already exists
             if (await _context.User.AnyAsync(u => u.Email == email))
             {
-                ViewData["RegistrationError"] = "Email is already registered.";
+                ViewData["RegistrationError"] = "Email already registered.";
+                return View();
+            }
+            if (await _context.User.AnyAsync(u => u.Name == username))
+            {
+                ViewData["RegistrationError"] = "Username already taken.";
                 return View();
             }
 
@@ -113,29 +146,28 @@ namespace StackFlow.Controllers
             string passwordHash = BCrypt.Net.BCrypt.HashPassword(password);
 
             // Assign default role (e.g., 'Developer')
-            // Querying by Role.Name property as per your model
             var defaultRole = await _context.Role.FirstOrDefaultAsync(r => r.Name == "Developer");
             if (defaultRole == null)
             {
-                // Fallback if 'Developer' role isn't seeded, or create it if not found
-                // For a robust system, ensure roles are seeded during app startup/migration
                 ViewData["RegistrationError"] = "Default role 'Developer' not found. Please contact support.";
                 return View();
             }
 
             var newUser = new User
             {
-                Name = username, // Changed from Username to Name to match User.cs model
+                Name = username,
                 Email = email,
                 PasswordHash = passwordHash,
                 Role_Id = defaultRole.Id, // Assign the ID of the 'Developer' role
-                Created_At = DateTime.UtcNow
+                Created_At = DateTime.UtcNow,
+                IsVerified = false, // New users are unverified by default
+                IsDeleted = false   // New users are not deleted by default
             };
 
             _context.User.Add(newUser);
             await _context.SaveChangesAsync();
 
-            TempData["SuccessMessage"] = "Registration successful! You can now log in.";
+            TempData["SuccessMessage"] = "Registration successful! Your account is pending verification by an administrator.";
             return RedirectToAction("Login");
         }
 
@@ -153,160 +185,236 @@ namespace StackFlow.Controllers
             return View();
         }
 
-        private IActionResult RedirectToLocal(string returnUrl)
+        // New action for deleted accounts
+        [HttpGet]
+        public IActionResult DeletedAccount()
         {
-            if (Url.IsLocalUrl(returnUrl))
-            {
-                return Redirect(returnUrl);
-            }
-            else
-            {
-                return RedirectToAction("Index", "Dashboard");
-            }
+            return View();
         }
 
-        [Authorize]
+        // New action for unverified accounts
         [HttpGet]
+        public IActionResult UnverifiedAccount()
+        {
+            return View();
+        }
+
+        /// <summary>
+        /// Displays the account management page for the currently logged-in user.
+        /// </summary>
+        [HttpGet]
+        [Microsoft.AspNetCore.Authorization.Authorize] // Requires authentication
         public async Task<IActionResult> ManageAccount()
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userId == null)
+            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdString, out int currentUserId))
             {
-                return Unauthorized();
+                TempData["ErrorMessage"] = "User not found. Please log in again.";
+                return RedirectToAction("Login");
             }
 
-            var user = await _context.User.FindAsync(int.Parse(userId));
+            var user = await _context.User.FindAsync(currentUserId);
             if (user == null)
             {
-                return NotFound();
+                TempData["ErrorMessage"] = "User not found. Please log in again.";
+                return RedirectToAction("Login");
             }
 
             return View(user);
         }
 
-        [Authorize]
+        /// <summary>
+        /// Handles updating the username for the currently logged-in user.
+        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UpdateUsername(string Name)
+        [Microsoft.AspNetCore.Authorization.Authorize] // Requires authentication
+        public async Task<IActionResult> UpdateUsername(int id, string Name)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userId == null)
+            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdString, out int currentUserId) || currentUserId != id)
             {
+                TempData["ErrorMessage"] = "Unauthorized attempt to update username.";
                 return Unauthorized();
             }
 
-            var user = await _context.User.FindAsync(int.Parse(userId));
-            if (user == null)
+            var userToUpdate = await _context.User.FindAsync(currentUserId);
+            if (userToUpdate == null)
             {
+                TempData["ErrorMessage"] = "User not found.";
                 return NotFound();
             }
 
-            // Only update if the username is provided and different from the current one
-            if (!string.IsNullOrWhiteSpace(Name) && user.Name != Name)
-            {
-                user.Name = Name;
-                try
-                {
-                    await _context.SaveChangesAsync(); // Save changes to the database
-                    TempData["SuccessMessage"] = "Your name has been updated successfully!";
-                }
-                catch (DbUpdateException ex)
-                {
-                    // Log the exception or handle it appropriately
-                    TempData["ErrorMessage"] = "Error updating username.";
-                }
-                TempData["SuccessMessage"] = "Your name has been updated successfully!";
-            }
-            else if (string.IsNullOrWhiteSpace(Name))
+            if (string.IsNullOrWhiteSpace(Name))
             {
                 TempData["ErrorMessage"] = "Username cannot be empty.";
+                return RedirectToAction(nameof(ManageAccount));
+            }
+
+            // Check if the new username is already taken by another user
+            if (await _context.User.AnyAsync(u => u.Name == Name && u.Id != currentUserId))
+            {
+                TempData["ErrorMessage"] = "Username is already taken by another user.";
+                return RedirectToAction(nameof(ManageAccount));
+            }
+
+            userToUpdate.Name = Name;
+
+            try
+            {
+                _context.Update(userToUpdate);
+                await _context.SaveChangesAsync();
+
+                // Re-sign in the user to update the username claim in their cookie
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.NameIdentifier, userToUpdate.Id.ToString()),
+                    new Claim(ClaimTypes.Name, userToUpdate.Name),
+                    new Claim(ClaimTypes.Email, userToUpdate.Email)
+                };
+                if (userToUpdate.Role != null)
+                {
+                    claims.Add(new Claim(ClaimTypes.Role, userToUpdate.Role.Name));
+                }
+                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var authProperties = new AuthenticationProperties { IsPersistent = true, ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(30) };
+                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity), authProperties);
+
+                TempData["SuccessMessage"] = "Username updated successfully!";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error updating username: {ex.Message}";
             }
 
             return RedirectToAction(nameof(ManageAccount));
         }
 
-        [Authorize]
+        /// <summary>
+        /// Handles updating the password for the currently logged-in user.
+        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UpdatePassword(string currentPassword, string newPassword, string confirmNewPassword)
+        [Microsoft.AspNetCore.Authorization.Authorize] // Requires authentication
+        public async Task<IActionResult> UpdatePassword(int id, string currentPassword, string newPassword, string confirmNewPassword)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userId == null)
+            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdString, out int currentUserId) || currentUserId != id)
             {
+                TempData["ErrorMessage"] = "Unauthorized attempt to update password.";
                 return Unauthorized();
             }
 
-            var user = await _context.User.FindAsync(int.Parse(userId));
-            if (user == null)
+            var userToUpdate = await _context.User.FindAsync(currentUserId);
+            if (userToUpdate == null)
             {
+                TempData["ErrorMessage"] = "User not found.";
                 return NotFound();
             }
 
-            // Only attempt password update if any password field is provided
-            if (!string.IsNullOrWhiteSpace(currentPassword) || !string.IsNullOrWhiteSpace(newPassword) || !string.IsNullOrWhiteSpace(confirmNewPassword))
+            // Verify current password
+            if (!BCrypt.Net.BCrypt.Verify(currentPassword, userToUpdate.PasswordHash))
             {
-                if (newPassword != confirmNewPassword)
-                {
-                    ViewData["PasswordErrorMessage"] = "New password and confirmation password do not match.";
-                    return View("ManageAccount", user); // Return with current user data and error message
-                }
+                TempData["ErrorMessage"] = "Current password is incorrect.";
+                return RedirectToAction(nameof(ManageAccount));
+            }
 
-                if (!BCrypt.Net.BCrypt.Verify(currentPassword, user.PasswordHash))
-                {
-                    ViewData["PasswordErrorMessage"] = "Incorrect current password.";
-                    return View(user);
-                }
+            // Validate new password
+            if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 6) // Example: minimum 6 characters
+            {
+                TempData["ErrorMessage"] = "New password must be at least 6 characters long.";
+                return RedirectToAction(nameof(ManageAccount));
+            }
+            if (newPassword != confirmNewPassword)
+            {
+                TempData["ErrorMessage"] = "New password and confirmation password do not match.";
+                return RedirectToAction(nameof(ManageAccount));
+            }
 
-                if (string.IsNullOrWhiteSpace(newPassword))
-                {
-                    ViewData["PasswordErrorMessage"] = "New password cannot be empty.";
-                    return View("ManageAccount", user);
-                }
+            // Hash and update new password
+            userToUpdate.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
 
-                // Update password
-                user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+            try
+            {
+                _context.Update(userToUpdate);
                 await _context.SaveChangesAsync();
                 TempData["SuccessMessage"] = "Password updated successfully!";
             }
-            return View("ManageAccount", user); // Return to the manage account page
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error updating password: {ex.Message}";
+            }
+
+            return RedirectToAction(nameof(ManageAccount));
         }
 
-        [Authorize]
+        /// <summary>
+        /// Handles soft-deleting the currently logged-in user's account.
+        /// Reassigns their tickets to an admin and logs them out.
+        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteAccount()
+        [Microsoft.AspNetCore.Authorization.Authorize] // Requires authentication
+        public async Task<IActionResult> DeleteAccount(int id)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var user = await _context.User.FindAsync(int.Parse(userId));
-
-            if (user != null)
+            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdString, out int currentUserId) || currentUserId != id)
             {
-                user.IsActive = false;
+                TempData["ErrorMessage"] = "Unauthorized attempt to delete account.";
+                return Unauthorized();
+            }
+
+            var userToDelete = await _context.User
+                                             .Include(u => u.AssignedTickets)
+                                             .FirstOrDefaultAsync(u => u.Id == currentUserId);
+
+            if (userToDelete == null)
+            {
+                TempData["ErrorMessage"] = "User not found.";
+                return NotFound();
+            }
+
+            try
+            {
+                // Find an Admin user to reassign tickets to
+                var adminRole = await _context.Role.FirstOrDefaultAsync(r => r.Name == "Admin");
+                if (adminRole == null)
+                {
+                    TempData["ErrorMessage"] = "Admin role not found. Cannot reassign tickets.";
+                    return RedirectToAction(nameof(ManageAccount));
+                }
+
+                var adminUser = await _context.User.FirstOrDefaultAsync(u => u.Role_Id == adminRole.Id && !u.IsDeleted && u.IsVerified);
+                if (adminUser == null)
+                {
+                    TempData["ErrorMessage"] = "No active admin found to reassign tickets. Account cannot be deleted.";
+                    return RedirectToAction(nameof(ManageAccount));
+                }
+
+                // Reassign tickets from the user being deleted to the admin
+                foreach (var ticket in userToDelete.AssignedTickets)
+                {
+                    ticket.Assigned_To = adminUser.Id;
+                }
+                _context.Ticket.UpdateRange(userToDelete.AssignedTickets);
+
+                // Set IsDeleted to true
+                userToDelete.IsDeleted = true;
+                _context.User.Update(userToDelete);
+
                 await _context.SaveChangesAsync();
-                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme); // Log user out after marking inactive
-                TempData["AccountDeletionMessage"] = "Your account has been successfully deactivated.";
-                return RedirectToAction("AccountDeletedConfirmation");
-            }
-            else
-            {
-                TempData["AccountDeletionError"] = "Could not find your account for deactivation.";
-                return RedirectToAction("ManageAccount"); // Or another appropriate page
-            }
-        }
 
-        [HttpGet]
-        public IActionResult AccountDeletedConfirmation()
-        {
-            var message = TempData["AccountDeletionMessage"] as string;
-            if (string.IsNullOrEmpty(message))
-            {
-                // Handle cases where they might land here without the TempData message
-                // e.g., direct URL access
-                return RedirectToAction("Login"); // Or another appropriate page
-            }
+                // Sign out the user immediately after deletion
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
-            ViewBag.Message = message;
-            return View("AccountDeletedConfirmation");
+                TempData["SuccessMessage"] = "Your account has been successfully deleted.";
+                return RedirectToAction("DeletedAccount"); // Redirect to the deleted account page
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error deleting account: {ex.Message}";
+                return RedirectToAction(nameof(ManageAccount));
+            }
         }
     }
 }
