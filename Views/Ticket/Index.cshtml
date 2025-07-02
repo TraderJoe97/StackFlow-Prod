@@ -1,4 +1,6 @@
-﻿@model IEnumerable<StackFlow.Models.Ticket>
+﻿@using StackFlow.Models 
+@using StackFlow.Utils
+@model PaginatedList<StackFlow.Models.Ticket> // Change the model type
 
 @{
     ViewData["Title"] = "All Tickets";
@@ -101,6 +103,32 @@
                     }
                 </tbody>
             </table>
+
+            
+@{
+    var prevDisabled = !Model.HasPreviousPage ? "disabled" : "";
+    var nextDisabled = !Model.HasNextPage ? "disabled" : "";
+}
+
+<div class="pagination-controls mt-3">
+    <a asp-action="Index"
+       asp-route-pageNumber="@(Model.PageIndex - 1)"
+       asp-route-pageSize="@Model.PageSize"
+       class="btn btn-outline-primary @prevDisabled">
+        Previous
+    </a>
+    <a asp-action="Index"
+       asp-route-pageNumber="@(Model.PageIndex + 1)"
+       asp-route-pageSize="@Model.PageSize"
+       class="btn btn-outline-primary @nextDisabled">
+        Next
+    </a>
+
+    <span class="ml-3">
+        Page @Model.PageIndex of @Model.TotalPages (Total @Model.TotalCount items)
+    </span> +66
+</div>
+
         </div>
     }
 </div>
