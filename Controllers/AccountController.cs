@@ -10,6 +10,7 @@ using BCrypt.Net; // For password hashing
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using StackFlow.Utils;
 
 namespace StackFlow.Controllers
 {
@@ -121,6 +122,13 @@ namespace StackFlow.Controllers
             {
                 ViewData["RegistrationError"] = "All fields are required.";
                 return View();
+            }
+            // Basic model validation has passed, now perform custom email validation
+            if (!EmailValidator.IsValidEmail(email))
+            {
+                ModelState.AddModelError("Email", "The email address entered is not in a valid format.");
+                ViewData["RegistrationError"] = "The email address entered is not in a valid format.";
+                return View(); // Return to view with error
             }
 
             // Basic email format validation
