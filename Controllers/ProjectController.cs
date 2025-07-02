@@ -1,11 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using StackFlow.Data;
-using StackFlow.Models;
 using StackFlow.Hubs;
-using Microsoft.AspNetCore.SignalR;
+using StackFlow.Models;
+using StackFlow.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,13 +32,24 @@ namespace StackFlow.Controllers
         /// Accessible to all authenticated users.
         /// </summary>
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int? pageNumber, int? pageSize)
         {
-            var projects = await _context.Project
-                                        .Include(p => p.CreatedBy)
-                                        .OrderByDescending(p => p.Start_Date) // Order by start date for logical display
-                                        .ToListAsync();
-            return View(projects);
+
+            int currentPage = pageNumber ?? 1; // If no pageNumber is provided, default to 1
+            int itemsPerPage = pageSize ?? 5; // If no pageSize is provided, default to 10
+
+            var projects = _context.Project
+                            .Include(p => p.CreatedBy)
+                            .OrderByDescending(p => p.Start_Date)
+                            .AsNoTracking();// Order by start date for logical display
+
+
+
+            // Create the paginated list
+            var paginatedProject = await PaginatedList<Project>.CreateAsync(
+                                        projects, currentPage, itemsPerPage);
+
+            return View(paginatedProject);
         }
 
         /// <summary>

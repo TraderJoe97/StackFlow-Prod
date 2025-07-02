@@ -32,7 +32,7 @@ namespace StackFlow.Controllers
         public async Task<IActionResult> Index(int? pageNumber, int? pageSize)
         {
             int currentPage = pageNumber ?? 1; // If no pageNumber is provided, default to 1
-            int itemsPerPage = pageSize ?? 10; // If no pageSize is provided, default to 10
+            int itemsPerPage = pageSize ?? 5; // If no pageSize is provided, default to 10
 
             var tickets =  _context.Ticket
                                         .Include(t => t.Project)
@@ -46,6 +46,7 @@ namespace StackFlow.Controllers
                                         tickets, currentPage, itemsPerPage);
 
             return View(paginatedTickets);
+
         }
 
         /// <summary>

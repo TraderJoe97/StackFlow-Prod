@@ -41,7 +41,7 @@ namespace StackFlow.Utils
         {
             // Ensure pageIndex and pageSize are valid
             if (pageIndex < 1) pageIndex = 1;
-            if (pageSize < 1) pageSize = 10; // Default page size, adjust as needed
+            if (pageSize < 1) pageSize = 5; // Default page size, adjust as needed
 
             var count = await source.CountAsync();
             var items = await source.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToListAsync();
