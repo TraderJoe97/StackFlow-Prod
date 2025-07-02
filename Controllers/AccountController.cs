@@ -150,6 +150,16 @@ namespace StackFlow.Controllers
                 return View();
             }
 
+            // Validate Password
+            if (!PasswordValidator.IsValidPassword(password))
+            {
+                // You can be more specific with the error message if you want
+                // e.g., "Password must contain only letters, numbers, and @$!%*?& symbols, and be at least 5 characters long."
+                ModelState.AddModelError("Password", "Password contains invalid characters or is too short. It must be at least 5 characters long and contain only letters, numbers, and @$!%*?&.");
+                ViewData["RegistrationError"] = "Password contains invalid characters or is too short. It must be at least 5 characters long and contain only letters, numbers, and @$!%*?&. symbols";
+                return View(); // Return to view with error
+            }
+
             // Hash password
             string passwordHash = BCrypt.Net.BCrypt.HashPassword(password);
 
