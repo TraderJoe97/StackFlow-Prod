@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using StackFlow.Data;
 using System;
 using StackFlow.Hubs;
+using StackFlow.Api.UsersApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -94,6 +95,7 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
+app.AddUserEndpoints();
 app.Run();
 
 //Remote repo
