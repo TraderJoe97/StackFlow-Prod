@@ -34,7 +34,7 @@ namespace StackFlow.ApiControllers
         public async Task<ActionResult<IEnumerable<ProjectDto>>> GetAllProjects()
         {
             var projects = await _context.Project
-                                         .Include(p => p.Created_By)
+                                         .Include(p => p.CreatedBy)
                                          .OrderByDescending(p => p.Start_Date)
                                          .ToListAsync();
 
@@ -64,7 +64,7 @@ namespace StackFlow.ApiControllers
         public async Task<ActionResult<ProjectDto>> GetProjectById(int id)
         {
             var project = await _context.Project
-                                        .Include(p => p.Created_By)
+                                        .Include(p => p.CreatedBy)
                                         .Include(p => p.Tickets) // Include tickets to count them
                                         .FirstOrDefaultAsync(p => p.Id == id);
 
