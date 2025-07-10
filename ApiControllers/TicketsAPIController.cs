@@ -24,3 +24,26 @@ namespace StackFlow.ApiControllers
     {
         _context = context;
     }
+
+    [HttpGet("/api/tickets/{ticketId}/comments")]
+    public async Task<ActionResult<IEnumerable<TicketCommentDto>>> GetCommentsForTicket(int ticketId)
+    {
+        var comments = await _context.TicketComment
+                                     .Where(tc => tc.Ticket_Id == ticketId) // FIXED: was tc.Id == ticketId
+                                     .Include(tc => tc.CreatedBy)
+                                     .OrderBy(tc => tc.Created_At)
+                                     .ToListAsync();
+
+        var commentDtos = comments.Select(tc => new TicketCommentDto
+        {
+            Id = tc.Id,
+            TicketId = tc.Ticket_Id,
+            UserId = tc.Created_By,
+            Username = tc.CreatedBy.Name,
+            CommentText = tc.Content,
+            CommentCreatedAt = tc.Created_At
+        }).ToList();
+
+        return Ok(commentDtos);
+    }
+
