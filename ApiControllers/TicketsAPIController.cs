@@ -71,4 +71,44 @@ namespace StackFlow.ApiControllers
         return Ok(commentDto);
     }
 
+    [HttpPost("/api/tickets/{ticketId}/comments")]
+    public async Task<ActionResult<TicketCommentDto>> AddCommentToTicket(int ticketId, [FromBody] CreateTicketCommentDto createDto)
+    {
+        var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdString, out int currentUserId))
+        {
+            return Unauthorized("User ID not found in claims.");
+        }
+
+        var ticketExists = await _context.Ticket.AnyAsync(t => t.Id == ticketId);
+        if (!ticketExists)
+        {
+            return NotFound($"Ticket with ID {ticketId} not found.");
+        }
+
+        var comment = new Comment
+        {
+            Ticket_Id = ticketId,
+            Created_By = currentUserId,
+            Content = createDto.CommentText.Trim(),
+            Created_At = DateTime.UtcNow
+        };
+
+        _context.TicketComment.Add(comment);
+        await _context.SaveChangesAsync();
+
+        await _context.Entry(comment).Reference(c => c.CreatedBy).LoadAsync();
+
+        var commentDto = new TicketCommentDto
+        {
+            Id = comment.Id,
+            TicketId = comment.Ticket_Id,
+            UserId = comment.Created_By,
+            Username = comment.CreatedBy?.Name,
+            CommentText = comment.Content,
+            CommentCreatedAt = comment.Created_At
+        };
+
+        return CreatedAtAction(nameof(GetTicketCommentById), new { id = comment.Id }, commentDto);
+    }
 
