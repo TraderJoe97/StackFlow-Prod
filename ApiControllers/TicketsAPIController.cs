@@ -112,3 +112,49 @@ namespace StackFlow.ApiControllers
         return CreatedAtAction(nameof(GetTicketCommentById), new { id = comment.Id }, commentDto);
     }
 
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateTicketComment(int id, [FromBody] UpdateTicketCommentDto updateDto)
+    {
+        var comment = await _context.TicketComment.FindAsync(id);
+        if (comment == null)
+        {
+            return NotFound();
+        }
+
+        var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdString, out int currentUserId))
+        {
+            return Unauthorized("User ID not found in claims.");
+        }
+
+        if (comment.Created_By != currentUserId && !User.IsInRole("Admin"))
+        {
+            return Forbid("You do not have permission to update this comment.");
+        }
+
+        comment.Content = updateDto.CommentText.Trim();
+
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!await _context.TicketComment.AnyAsync(e => e.Id == id))
+            {
+                return NotFound();
+            }
+            else
+            {
+                throw;
+            }
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Error updating comment: {ex.Message}");
+        }
+
+        return NoContent();
+    }
+
+
