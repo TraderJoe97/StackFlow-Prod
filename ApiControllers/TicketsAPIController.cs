@@ -46,4 +46,29 @@ namespace StackFlow.ApiControllers
 
         return Ok(commentDtos);
     }
+    [HttpGet("{id}")]
+    public async Task<ActionResult<TicketCommentDto>> GetTicketCommentById(int id)
+    {
+        var comment = await _context.TicketComment
+                                    .Include(tc => tc.CreatedBy)
+                                    .FirstOrDefaultAsync(tc => tc.Id == id);
+
+        if (comment == null)
+        {
+            return NotFound();
+        }
+
+        var commentDto = new TicketCommentDto
+        {
+            Id = comment.Id,
+            TicketId = comment.Ticket_Id,
+            UserId = comment.Created_By,
+            Username = comment.CreatedBy?.Name,
+            CommentText = comment.Content,
+            CommentCreatedAt = comment.Created_At
+        };
+
+        return Ok(commentDto);
+    }
+
 
