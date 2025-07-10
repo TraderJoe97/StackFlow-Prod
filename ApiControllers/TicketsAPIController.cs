@@ -157,4 +157,40 @@ namespace StackFlow.ApiControllers
         return NoContent();
     }
 
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteTicketComment(int id)
+    {
+        var comment = await _context.TicketComment.FindAsync(id);
+        if (comment == null)
+        {
+            return NotFound();
+        }
+
+        var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdString, out int currentUserId))
+        {
+            return Unauthorized("User ID not found in claims.");
+        }
+
+        if (comment.Created_By != currentUserId && !User.IsInRole("Admin"))
+        {
+            return Forbid("You do not have permission to delete this comment.");
+        }
+
+        try
+        {
+            _context.TicketComment.Remove(comment);
+            await _context.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Error deleting comment: {ex.Message}");
+        }
+
+        return NoContent();
+    }
+}
+}
+
+
 
