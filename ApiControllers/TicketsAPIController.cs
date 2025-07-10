@@ -17,3 +17,10 @@ namespace StackFlow.ApiControllers
     [Route("api/ticketcomments")]
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class TicketCommentsApiController : ControllerBase
+
+                private readonly AppDbContext _context;
+
+    public TicketCommentsApiController(AppDbContext context)
+    {
+        _context = context;
+    }
