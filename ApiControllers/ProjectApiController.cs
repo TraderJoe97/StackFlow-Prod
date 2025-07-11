@@ -134,6 +134,7 @@ namespace StackFlow.ApiControllers
                 TotalTickets = 0 // Newly created project has no tickets yet
             };
 
+            // CHANGED LINE: Using nameof(GetProjectById)
             return CreatedAtAction(nameof(GetProjectById), new { id = project.Id }, projectDto);
         }
 
