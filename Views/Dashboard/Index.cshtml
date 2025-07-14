@@ -26,40 +26,43 @@
     </div>
 }
 
-@* My Assigned Tickets Table - Render Partial (This remains visible as it's likely high priority) *@
-<div id="assignedTicketsTable">
-    @await Html.PartialAsync("_AssignedTicketsTablePartial", Model.AssignedToMeTickets)
-</div>
-
 <hr class="my-5"> @* Separator for clarity *@
 
-@* Tabbed Navigation for Quick Insights and Projects Overview *@
+@* Tabbed Navigation for Dashboard Sections *@
 <ul class="nav nav-tabs mb-3" id="dashboardTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="assigned-tickets-tab" data-bs-toggle="tab" data-bs-target="#assignedTicketsContainer" type="button" role="tab" aria-controls="assignedTicketsContainer" aria-selected="true">My Assigned Tickets</button>
+    </li>
     @if (User.IsInRole("Admin"))
     {
         <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="insights-tab" data-bs-toggle="tab" data-bs-target="#quickInsightsContainer" type="button" role="tab" aria-controls="quickInsightsContainer" aria-selected="true">Quick Insights</button>
+            <button class="nav-link" id="insights-tab" data-bs-toggle="tab" data-bs-target="#quickInsightsContainer" type="button" role="tab" aria-controls="quickInsightsContainer" aria-selected="false">Quick Insights</button>
         </li>
     }
     <li class="nav-item" role="presentation">
-        <button class="nav-link @(User.IsInRole("Admin") ? "" : "active")" id="projects-tab" data-bs-toggle="tab" data-bs-target="#projectsOverviewContainer" type="button" role="tab" aria-controls="projectsOverviewContainer" aria-selected="@(User.IsInRole("Admin") ? "false" : "true")">Projects Overview</button>
+        <button class="nav-link @(User.IsInRole("Admin") ? "" : "")" id="projects-tab" data-bs-toggle="tab" data-bs-target="#projectsOverviewContainer" type="button" role="tab" aria-controls="projectsOverviewContainer" aria-selected="false">Projects Overview</button>
     </li>
 </ul>
 
 <div class="tab-content" id="dashboardTabsContent">
+    <div class="tab-pane fade show active" id="assignedTicketsContainer" role="tabpanel" aria-labelledby="assigned-tickets-tab">
+        @* My Assigned Tickets - Will be loaded via AJAX or rendered initially *@
+        @await Html.PartialAsync("_AssignedTicketsTablePartial", Model.AssignedToMeTickets)
+    </div>
+
     @if (User.IsInRole("Admin"))
     {
-        <div class="tab-pane fade show active" id="quickInsightsContainer" role="tabpanel" aria-labelledby="insights-tab">
-            @* Quick Insights for Admins - Render Partial *@
-            @await Html.PartialAsync("_QuickInsightsPartial", Model)
+        <div class="tab-pane fade" id="quickInsightsContainer" role="tabpanel" aria-labelledby="insights-tab">
+            @* Quick Insights for Admins - Will be loaded via AJAX *@
+            @* Initial content will be empty or a spinner, loaded when tab is clicked *@
         </div>
     }
-    <div class="tab-pane fade @(User.IsInRole("Admin") ? "" : "show active")" id="projectsOverviewContainer" role="tabpanel" aria-labelledby="projects-tab">
-        @* All Projects Overview - Render Partial *@
-        @await Html.PartialAsync("_ProjectsOverviewPartial", Model.Projects)
+
+    <div class="tab-pane fade" id="projectsOverviewContainer" role="tabpanel" aria-labelledby="projects-tab">
+        @* All Projects Overview - Will be loaded via AJAX *@
+        @* Initial content will be empty or a spinner, loaded when tab is clicked *@
     </div>
 </div>
-
 
 @section Scripts {
     @{
@@ -68,7 +71,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const currentUserId = @(User.Identity.IsAuthenticated? User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier) : "null");
+            const currentUserId = @(User.Identity.IsAuthenticated ? User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier) : "null");
 
             // Function to dynamically load and replace a partial view via AJAX
             async function loadPartialView(containerId, actionUrl, modelData = null) {
@@ -78,8 +81,15 @@
                     return;
                 }
 
+                // Only load if content isn't already present (e.g., first activation)
+
+                if (container.dataset.loaded === 'true' && actionUrl !== '/Dashboard/GetAssignedTicketsTable') { // Always refresh assigned tickets if needed
+                    console.log(`Content for ${containerId} already loaded.`);
+                    return;
+                }
+
                 try {
-                    // Show a loading spinner or skeleton while content loads (optional but good for UX)
+                    // Show a loading spinner or skeleton while content loads
                     container.innerHTML = '<div class="d-flex justify-content-center align-items-center" style="min-height: 100px;"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
 
                     let url = actionUrl;
@@ -99,6 +109,7 @@
                     }
                     const html = await response.text();
                     container.innerHTML = html;
+                    container.dataset.loaded = 'true'; // Mark as loaded
                     console.log(`Partial view for ${containerId} refreshed.`);
                 } catch (error) {
                     console.error(`Error loading partial view for ${containerId}:`, error);
@@ -106,48 +117,83 @@
                 }
             }
 
-            // --- SignalR Event Listeners ---
+            // Bootstrap tab event listener
+            const dashboardTabs = document.getElementById('dashboardTabs');
+            if (dashboardTabs) {
+                dashboardTabs.addEventListener('shown.bs.tab', function (event) {
+                    const targetTabId = event.target.getAttribute('data-bs-target'); // e.g., '#quickInsightsContainer'
+                    const containerId = targetTabId.substring(1); // Remove '#'
 
-            // Handle Ticket Updates
+                    let actionUrl;
+                    switch (containerId) {
+                        case 'quickInsightsContainer':
+                            actionUrl = '/Dashboard/GetQuickInsights';
+                            break;
+                        case 'projectsOverviewContainer':
+                            actionUrl = '/Dashboard/GetProjectsOverview';
+                            break;
+                        case 'assignedTicketsContainer':
+                            actionUrl = '/Dashboard/GetAssignedTicketsTable'; // If you also want to load Assigned Tickets via AJAX on tab click
+                            break;
+                        default:
+                            console.warn('Unknown tab clicked:', containerId);
+                            return;
+                    }
+
+                    // For assigned tickets, you might pass the current user ID
+                    const modelData = (containerId === 'assignedTicketsContainer') ? { userId: currentUserId } : null;
+                    loadPartialView(containerId, actionUrl, modelData);
+                });
+            }
+
+            // --- SignalR Event Listeners ---
+            // The logic here remains largely similar, but adjust to consider which tab is active.
+
             document.addEventListener('ticketUpdate', function (event) {
                 const { action, ticketId, oldStatus } = event.detail;
                 console.log(`Ticket ${action} notification for ID: ${ticketId}. Refreshing relevant sections.`);
 
-                // Always refresh assigned tickets table
-                loadPartialView('assignedTicketsTable', '/Dashboard/GetAssignedTicketsTable', { userId: currentUserId });
+                // Check which tab is active and refresh its content
+                const activeTabPane = document.querySelector('.tab-pane.show.active');
+                if (activeTabPane) {
+                    const activeContainerId = activeTabPane.id;
 
-                // Only refresh quick insights if the tab is active and user is an admin
-                const insightsTab = document.getElementById('quickInsightsContainer');
-                if (insightsTab && insightsTab.classList.contains('show') && insightsTab.classList.contains('active') && @(User.IsInRole("Admin") ? "true" : "false")) {
-                    loadPartialView('quickInsightsContainer', '/Dashboard/GetQuickInsights');
+                    if (activeContainerId === 'assignedTicketsContainer') {
+                        loadPartialView('assignedTicketsContainer', '/Dashboard/GetAssignedTicketsTable', { userId: currentUserId });
+                    }
+                    if (activeContainerId === 'quickInsightsContainer' && @(User.IsInRole("Admin") ? "true" : "false")) {
+                        loadPartialView('quickInsightsContainer', '/Dashboard/GetQuickInsights');
+                    }
+                    // If a ticket update can affect projects overview (e.g., project completion), refresh it too if active
+                    if (activeContainerId === 'projectsOverviewContainer') {
+                         loadPartialView('projectsOverviewContainer', '/Dashboard/GetProjectsOverview');
+                    }
                 }
             });
 
-            // Handle Project Updates
             document.addEventListener('projectUpdate', function (event) {
                 const { action, projectId } = event.detail;
-                console.log(`Project ${action} notification for ID: ${projectId}. Refreshing projects overview.`);
+                console.log(`Project ${action} notification for ID: ${projectId}. Refreshing relevant sections.`);
 
-                // Only refresh quick insights if the tab is active and user is an admin
-                const insightsTab = document.getElementById('quickInsightsContainer');
-                if (insightsTab && insightsTab.classList.contains('show') && insightsTab.classList.contains('active') && @(User.IsInRole("Admin") ? "true" : "false")) {
-                    loadPartialView('quickInsightsContainer', '/Dashboard/GetQuickInsights');
-                }
+                // Check which tab is active and refresh its content
+                const activeTabPane = document.querySelector('.tab-pane.show.active');
+                if (activeTabPane) {
+                    const activeContainerId = activeTabPane.id;
 
-                // Only refresh projects overview if the tab is active
-                const projectsTab = document.getElementById('projectsOverviewContainer');
-                if (projectsTab && projectsTab.classList.contains('show') && projectsTab.classList.contains('active')) {
-                    loadPartialView('projectsOverviewContainer', '/Dashboard/GetProjectsOverview');
+                    if (activeContainerId === 'quickInsightsContainer' && @(User.IsInRole("Admin") ? "true" : "false")) {
+                        loadPartialView('quickInsightsContainer', '/Dashboard/GetQuickInsights');
+                    }
+                    if (activeContainerId === 'projectsOverviewContainer') {
+                        loadPartialView('projectsOverviewContainer', '/Dashboard/GetProjectsOverview');
+                    }
                 }
             });
 
-            // Initial load of content for the active tab (if not an admin, Projects tab will be active by default)
-            const activeTabButton = document.querySelector('#dashboardTabs .nav-link.active');
-            if (activeTabButton) {
-                const targetContainerId = activeTabButton.getAttribute('data-bs-target').substring(1); // Remove '#'
-                const actionUrl = targetContainerId === 'quickInsightsContainer' ? '/Dashboard/GetQuickInsights' : '/Dashboard/GetProjectsOverview';
-                loadPartialView(targetContainerId, actionUrl);
-            }
+            // Initial load of content for the active tab (My Assigned Tickets will be active by default)
+            // It's already rendered server-side for 'assignedTicketsContainer', so no AJAX call needed on initial load.
+            // For other tabs, content will load when they become active.
+            // You might want to explicitly mark assignedTicketsContainer as loaded if you always render it server-side initially
+            document.getElementById('assignedTicketsContainer').dataset.loaded = 'true';
         });
     </script>
 }
