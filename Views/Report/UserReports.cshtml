@@ -127,11 +127,23 @@
                                     <td>@report.User.Name</td>
                                     <td>@report.User.Email</td>
                                     <td id="user-role-@report.User.Id">@report.User.Role?.Name</td>
-                                    <td>@report.TotalTicketsAssigned</td>
-                                    <td>@report.ToDoTicketsAssigned</td>
-                                    <td>@report.InProgressTicketsAssigned</td>
-                                    <td>@report.InReviewTicketsAssigned</td>
-                                    <td>@report.CompletedTicketsAssigned</td>
+                                    @* --- COLOR CODING START --- *@
+                                    <td class="@(report.TotalTicketsAssigned == 0 ? "text-muted" : "text-primary fw-bold")">
+                                        @report.TotalTicketsAssigned
+                                    </td>
+                                    <td class="@(report.ToDoTicketsAssigned > 0 ? "text-danger fw-bold" : "text-muted")">
+                                        @report.ToDoTicketsAssigned
+                                    </td>
+                                    <td class="@(report.InProgressTicketsAssigned > 0 ? "text-warning fw-bold" : "text-muted")">
+                                        @report.InProgressTicketsAssigned
+                                    </td>
+                                    <td class="@(report.InReviewTicketsAssigned > 0 ? "text-info fw-bold" : "text-muted")">
+                                        @report.InReviewTicketsAssigned
+                                    </td>
+                                    <td class="@(report.CompletedTicketsAssigned > 0 ? "text-success fw-bold" : "text-muted")">
+                                        @report.CompletedTicketsAssigned
+                                    </td>
+                                    @* --- COLOR CODING END --- *@
                                     <td>
                                         @* Actions for active users (excluding the current logged-in admin) *@
                                         @if (report.User.Id != currentUserId)
@@ -329,7 +341,7 @@
                 const { action, user } = event.detail; // 'user' will be the updated user object or an object with Id for deleted
                 console.log(`User update event received: ${action} for user ID ${user.id}`);
 
-                // For a full page refresh scenario (as this page currently is), client-side DOM manipulation
+                // For a full page refresh scenario (as this page currently is), client-client-side DOM manipulation
                 // for SignalR updates is less critical because the page will reload anyway.
                 // However, if you switch to AJAX-loaded tabs, this logic becomes essential.
 
@@ -379,13 +391,13 @@
             // If you had dynamic tab content loading via AJAX, you'd use this:
             // var userReportsTabs = document.getElementById('userReportsTabs');
             // if (userReportsTabs) {
-            //     userReportsTabs.addEventListener('shown.bs.tab', function (event) {
-            //         const targetTabId = event.target.getAttribute('data-bs-target'); // e.g., "#activeUsersContent"
-            //         const containerId = targetTabId.substring(1); // "activeUsersContent"
-            //         const actionUrl = containerId === 'activeUsersContent' ? '/Report/GetActiveUsersTable' : '/Report/GetPendingVerificationUsersTable';
-            //         // You would then call a loadPartialView function here if these tabs were loaded via AJAX
-            //         // loadPartialView(containerId, actionUrl);
-            //     });
+            //      userReportsTabs.addEventListener('shown.bs.tab', function (event) {
+            //          const targetTabId = event.target.getAttribute('data-bs-target'); // e.g., "#activeUsersContent"
+            //          const containerId = targetTabId.substring(1); // "activeUsersContent"
+            //          const actionUrl = containerId === 'activeUsersContent' ? '/Report/GetActiveUsersTable' : '/Report/GetPendingVerificationUsersTable';
+            //          // You would then call a loadPartialView function here if these tabs were loaded via AJAX
+            //          // loadPartialView(containerId, actionUrl);
+            //      });
             // }
 
         });
