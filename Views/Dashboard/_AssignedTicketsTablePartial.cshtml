@@ -1,7 +1,8 @@
 @model IEnumerable<StackFlow.Models.Ticket>
-@* This partial view displays tickets assigned to the current user. *@
+@* This partial view displays tickets assigned to the current user, organized into swim lanes by status. *@
 
 <h3 class="fw-bold text-secondary mb-3">My Assigned Tickets</h3>
+
 @if (!Model.Any())
 {
     <div class="alert alert-info rounded-4 shadow-sm" role="alert">
@@ -10,48 +11,74 @@
 }
 else
 {
-    <div id="assignedTicketsTable" class="table-responsive rounded-4 shadow-sm mb-5">
-        <table class="table table-hover table-bordered mb-0">
-            <thead class="table-primary text-white">
-                <tr>
-                    <th scope="col">Title</th>
-                    <th scope="col">Project</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Priority</th>
-                    <th scope="col">Due Date</th>
-                    <th scope="col">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var ticket in Model)
-                {
-                    <tr>
-                        <td>@ticket.Title</td>
-                        <td>@ticket.Project?.Name</td>
-                        <td>
-                            <span class="badge rounded-pill
-                                        @(ticket.Status == "To Do" ? "bg-secondary" :
-                                                                    ticket.Status == "In_Progress" ? "bg-info" :
-                                                                    ticket.Status == "In_Review" ? "bg-warning" : "bg-success")">
-                                                                                                                             @ticket.Status
-                                                                                                                         </span>
-                                                                                                                     </td>
-                                                                                                                     <td>
-                                                                                                                         <span class="badge rounded-pill
-                                        @(ticket.Priority == "High" ? "bg-danger" :
-                                                                    ticket.Priority == "Medium" ? "bg-secondary" : "bg-primary")">
-                        @ticket.Priority
-                    </span>
-                </td>
-                <td>@(ticket.Due_Date.ToShortDateString() ?? "N/A")</td>
-                <td>
-                    <a asp-action="TicketDetails" asp-controller="Ticket" asp-route-id="@ticket.Id" class="btn btn-sm btn-outline-primary rounded-pill">
-                        <i class="bi bi-eye"></i> View
-                    </a>
-                </td>
-            </tr>
+        // Define your desired order for all possible statuses.
+        // All statuses in this list will have a lane created for them.
+        var orderedStatuses = new List<string> { "To_Do", "In_Progress", "In_Review", "Done" }; // <--- ADD ALL YOUR POSSIBLE STATUSES HERE!
+
+
+
+    <div class="row flex-nowrap overflow-auto pb-3"> @* Use flex-nowrap to keep lanes in a single row horizontally scrollable *@
+        @foreach (var status in orderedStatuses) // <--- Loop through ALL orderedStatuses
+        {
+            // Filter tickets for the current status. This list might be empty.
+            var ticketsInLane = Model.Where(t => t.Status == status)
+                                     .OrderBy(t => t.Priority == "High" ? 1 : t.Priority == "Medium" ? 2 : 3)
+                                     .ThenBy(t => t.Due_Date)
+                                     .ToList();
+
+            <div class="col-sm-6 col-md-4 col-lg-3 d-flex flex-column"> @* Each lane takes up a responsive column size and is a flex column *@
+                <h5 class="fw-bold text-capitalize text-center py-2 px-3 mb-3
+                            @(status == "To_Do" ? "text-secondary border-bottom border-secondary" :
+                              status == "In_Progress" ? "text-info border-bottom border-info" :
+                              status == "In_Review" ? "text-warning border-bottom border-warning" :
+                              status == "Done" || status == "Closed" ? "text-success border-bottom border-success" : // You can group "Done" and "Closed" for styling
+                              "text-primary border-bottom border-primary")"> @* Default style for other statuses *@
+                    @status.Replace("_", " ") @* Replace underscore for display if needed *@
+                </h5>
+                <div class="card-container flex-grow-1 d-flex flex-column gap-3"> @* Container for cards within the lane *@
+                    @if (!ticketsInLane.Any())
+                    {
+                        <div class="alert alert-light text-center small text-muted border-0" role="alert">
+                            <i class="bi bi-card-checklist me-1"></i> No tickets in this lane.
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var ticket in ticketsInLane)
+                        {
+                            <div class="card rounded-4 shadow-sm">
+                                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center rounded-top-4">
+                                    <h6 class="card-title mb-0 text-truncate" title="@ticket.Title">@ticket.Title</h6>
+                                    <span class="badge rounded-pill
+                                          @(ticket.Status == "To_Do" ? "bg-secondary" :
+                                            ticket.Status == "In_Progress" ? "bg-info" :
+                                            ticket.Status == "In_Review" ? "bg-warning" :
+                                            ticket.Status == "Done" || ticket.Status == "Closed" ? "bg-success" : "bg-primary")"> @* Update badge logic for new statuses if needed *@
+                                        @ticket.Status.Replace("_", " ")
+                                    </span>
+                                </div>
+                                <div class="card-body">
+                                    <p class="card-text mb-1 small"><strong>Project:</strong> @ticket.Project?.Name</p>
+                                    <p class="card-text mb-1 small">
+                                        <strong>Priority:</strong>
+                                        <span class="badge rounded-pill
+                                              @(ticket.Priority == "High" ? "bg-danger" :
+                                                ticket.Priority == "Medium" ? "bg-secondary" : "bg-primary")">
+                                            @ticket.Priority
+                                        </span>
+                                    </p>
+                                    <p class="card-text mb-3 small"><strong>Due Date:</strong> @(ticket.Due_Date.ToShortDateString() ?? "N/A")</p>
+                                </div>
+                                <div class="card-footer d-grid gap-2">
+                                    <a asp-action="TicketDetails" asp-controller="Ticket" asp-route-id="@ticket.Id" class="btn btn-sm btn-outline-primary rounded-pill">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
+                                </div>
+                            </div>
                         }
-            </tbody>
-        </table>
+                    }
+                </div>
+            </div>
+        }
     </div>
 }
