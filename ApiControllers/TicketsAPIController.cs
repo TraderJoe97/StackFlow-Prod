@@ -1,15 +1,16 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using StackFlow.ApiControllers.Dtos;
 using StackFlow.Data;
 using StackFlow.Models;
-using StackFlow.ApiControllers.Dtos;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace StackFlow.ApiControllers
 {
@@ -128,7 +129,29 @@ namespace StackFlow.ApiControllers
                 return BadRequest("Invalid ticket status.");
             }
 
-            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            // Check if project exists
+            var project = await _context.Project.FindAsync(createDto.ProjectId);
+            if (project == null)
+            {
+                return BadRequest("Project with ID " + createDto.ProjectId + " does not exist");
+            }
+
+            // Check if Assigned Usser exists
+
+            var AssignedUser = await _context.User.FindAsync(createDto.AssignedToUserId);
+            if (AssignedUser == null)
+            {
+                return BadRequest("Assigned user Does not Exist");
+            } else if (AssignedUser.IsDeleted) 
+            {
+                return BadRequest("Assigned user is no longer active");
+            } else if (AssignedUser.IsVerified)
+            {
+                return BadRequest("Assigned user account not Verified.");
+            }
+
+
+                var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!int.TryParse(userIdString, out int currentUserId))
             {
                 return Unauthorized("User ID not found in claims.");
@@ -200,6 +223,29 @@ namespace StackFlow.ApiControllers
             {
                 return BadRequest("Invalid ticket status.");
             }
+            // Check if project exists
+            var project = await _context.Project.FindAsync(updateDto.ProjectId);
+            if (project == null)
+            {
+                return BadRequest("Project with ID " + updateDto.ProjectId + " does not exist");
+            }
+
+            // Check if Assigned Usser exists
+
+            var AssignedUser = await _context.User.FindAsync(updateDto.AssignedToUserId);
+            if (AssignedUser == null)
+            {
+                return BadRequest("Assigned user Does not Exist");
+            }
+            else if (AssignedUser.IsDeleted)
+            {
+                return BadRequest("Assigned user is no longer active");
+            }
+            else if (AssignedUser.IsVerified)
+            {
+                return BadRequest("Assigned user account not Verified.");
+            }
+
 
             var ticket = await _context.Ticket.FindAsync(id);
             if (ticket == null)
