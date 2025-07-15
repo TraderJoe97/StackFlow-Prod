@@ -62,3 +62,84 @@
     width: 100%;
     margin: auto; /* Center horizontally */
 }
+
+.account-page-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+    min-height: 100vh;
+}
+
+.account-card {
+    background-color: #fff;
+    border-radius: 1.5rem;
+    width: 100%;
+    max-width: 450px;
+}
+
+    .account-card input::placeholder {
+        color: #aaa;
+    }
+
+.btn-outline-secondary {
+    border: 2px solid #003d99;
+    color: #003d99;
+}
+
+    .btn-outline-secondary:hover {
+        background-color: #003d99;
+        color: white;
+    }
+
+@media (max-width: 768px) {
+    .account-page-container {
+        padding: 1rem;
+    }
+
+    .account-card {
+        padding: 1rem;
+    }
+}
+.login-page-container {
+    min-height: 100vh;
+}
+
+.left-panel {
+    width: 50%;
+    background: transparent;
+}
+
+.right-panel {
+    width: 50%;
+    background-color: #ffffff;
+    border-radius: 25px 0 0 25px;
+    padding: 40px;
+}
+
+.login-card input::placeholder {
+    color: #aaa;
+}
+
+.btn-outline-secondary {
+    border: 2px solid #003d99;
+    color: #003d99;
+}
+
+    .btn-outline-secondary:hover {
+        background-color: #003d99;
+        color: #ffffff;
+    }
+
+@media (max-width: 768px) {
+    .login-page-container {
+        flex-direction: column;
+    }
+
+    .left-panel,
+    .right-panel {
+        width: 100%;
+        border-radius: 0;
+        padding: 2rem;
+    }
+}
