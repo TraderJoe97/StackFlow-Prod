@@ -112,6 +112,22 @@ namespace StackFlow.ApiControllers
         [Authorize(Roles = "Admin,Project Manager")]
         public async Task<ActionResult<TicketDto>> CreateTicket([FromBody] CreateTicketDto createDto)
         {
+
+            //validate the create DTO
+            if (createDto == null)
+            {
+                return BadRequest("Ticket creation data cannot be null.");
+            }
+            if (string.IsNullOrWhiteSpace(createDto.Title) || createDto.Title.Length > 255)
+            {
+                return BadRequest("Ticket title is required and must be less than 255 characters.");
+            }
+   
+            if (!Enum.IsDefined(typeof(TicketStatus), createDto.Status))
+            {
+                return BadRequest("Invalid ticket status.");
+            }
+
             var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!int.TryParse(userIdString, out int currentUserId))
             {
@@ -171,6 +187,20 @@ namespace StackFlow.ApiControllers
         [Authorize(Roles = "Admin,Project Manager")]
         public async Task<IActionResult> UpdateTicket(int id, [FromBody] UpdateTicketDto updateDto)
         {
+            //validate the update DTO
+            if (updateDto == null)
+            {
+                return BadRequest("Ticket update data cannot be null.");
+            }
+            if (string.IsNullOrWhiteSpace(updateDto.Title) || updateDto.Title.Length > 255)
+            {
+                return BadRequest("Ticket title is required and must be less than 255 characters.");
+            }
+            if (!Enum.IsDefined(typeof(TicketStatus), updateDto.Status))
+            {
+                return BadRequest("Invalid ticket status.");
+            }
+
             var ticket = await _context.Ticket.FindAsync(id);
             if (ticket == null)
             {
