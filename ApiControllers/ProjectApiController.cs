@@ -99,6 +99,25 @@ namespace StackFlow.ApiControllers
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<ProjectDto>> CreateProject([FromBody] CreateProjectDto createDto)
         {
+            if (createDto == null)
+            {
+                return BadRequest("Project creation data cannot be null.");
+            }
+            // Validate the create DTO
+            if (string.IsNullOrWhiteSpace(createDto.ProjectName) || createDto.ProjectName.Length > 255)
+            {
+                return BadRequest("Project name is required and cannot exceed 255 characters.");
+            }
+
+            if (string.IsNullOrWhiteSpace(createDto.ProjectDescription) || createDto.ProjectDescription.Length > 1000)
+            {
+                return BadRequest("Project description is required and cannot exceed 1000 characters.");
+            }
+            if (!Enum.IsDefined(typeof(ProjectStatus), createDto.ProjectStatus))
+            {
+                return BadRequest("Invalid project status.");
+            }
+
             var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!int.TryParse(userIdString, out int currentUserId))
             {
@@ -154,6 +173,20 @@ namespace StackFlow.ApiControllers
             {
                 return NotFound();
             }
+
+            if (updateDto == null)
+            {
+                return BadRequest("Project update data cannot be null.");
+            }
+
+
+            // Validate the update DTO
+            // only allow projetc status of 'Open', 'In Progress', or 'Closed'
+            if (!Enum.IsDefined(typeof(ProjectStatus), updateDto.ProjectStatus))
+            {
+                return BadRequest("Invalid project status.");
+            }
+
 
             // Update properties from DTO using C# model property names
             project.Name = updateDto.ProjectName;
