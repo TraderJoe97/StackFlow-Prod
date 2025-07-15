@@ -1,6 +1,7 @@
-﻿@{
+﻿@* No model needed for simple login form *@
+@{
     ViewData["Title"] = "Login";
-    Layout = "_Layout";
+    Layout = "_Layout"; // Use shared layout
 }
 
 @section Styles {
@@ -29,8 +30,10 @@
     </div>
 
     <div class="right-panel d-flex align-items-center justify-content-center py-5">
-        <div class="card shadow login-card w-100 p-4 rounded-4" style="max-width: 450px;">
-            <h2 class="card-title text-center mb-4 fw-bold text-primary display-6">Sign in</h2>
+        <div class="card shadow-lg border-0 rounded-4 p-4 account-card w-100" style="max-width: 450px;">
+            <h2 class="card-title text-center mb-4 fw-bold text-primary display-5">
+                <i class="bi bi-person-circle me-2"></i> Welcome Back!
+            </h2>
             <hr class="mb-4" />
 
             @if (TempData["SuccessMessage"] != null)
@@ -58,37 +61,29 @@
             <form asp-controller="Account" asp-action="Login" method="post" class="needs-validation" novalidate>
                 <div class="mb-3">
                     <label for="email" class="form-label fw-semibold">Email</label>
-                    <input type="email" id="email" name="email" class="form-control form-control-lg rounded-pill" placeholder="your.email@domain.com" required />
+                    <input type="email" id="email" name="email" class="form-control form-control-lg rounded-pill" placeholder="your.email@omnitak.com" required />
                     <div class="invalid-feedback">Please enter a valid email address.</div>
                 </div>
 
-                <div class="mb-3">
+                <div class="mb-4">
                     <label for="password" class="form-label fw-semibold">Password</label>
                     <input type="password" id="password" name="password" class="form-control form-control-lg rounded-pill" placeholder="Enter your password" required />
                     <div class="invalid-feedback">Please enter your password.</div>
                 </div>
 
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="rememberMe" id="rememberMe">
-                        <label class="form-check-label" for="rememberMe">Remember me</label>
-                    </div>
-                    <a href="#" class="small text-decoration-none">Forgot Password?</a>
-                </div>
-
                 <div class="d-grid gap-3">
-                    <button type="submit" class="btn btn-primary btn-lg rounded-pill shadow-sm">Sign in</button>
-                    <div class="text-center fw-bold text-muted">or</div>
-                    <button type="button" class="btn btn-outline-secondary btn-lg rounded-pill">Sign in with other</button>
-                </div>
-
-                <div class="text-center mt-3 small">
-                    Don’t have an account? <a asp-controller="Account" asp-action="Register" class="text-decoration-none fw-semibold">Sign up</a>
+                    <button type="submit" class="btn btn-primary btn-lg rounded-pill shadow-sm animate-btn">
+                        <i class="bi bi-box-arrow-in-right me-2"></i> Login
+                    </button>
+                    <a asp-controller="Account" asp-action="Register" class="btn btn-outline-secondary btn-lg rounded-pill animate-btn">
+                        <i class="bi bi-person-add me-2"></i> Register New Account
+                    </a>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
 @section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
@@ -110,7 +105,4 @@
                 })
         })()
     </script>
-}
-@section Styles {
-    <link rel="stylesheet" href="~/css/_Account.css" />
 }
