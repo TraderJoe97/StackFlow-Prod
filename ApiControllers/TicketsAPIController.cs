@@ -15,7 +15,7 @@ namespace StackFlow.ApiControllers
 {
     [ApiController]
     [Route("api/tickets")]
-    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)] // Requires authentication for all ticket API calls
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)] // Requires JWT authentication for all endpoints
     public class TicketsApiController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -26,13 +26,13 @@ namespace StackFlow.ApiControllers
         }
 
         /// <summary>
-        /// Gets a list of all tickets.
+        /// Retrieves a list of all tickets from the database.
         /// Accessible by any authenticated user.
         /// </summary>
-        /// <returns>A list of TicketDto objects.</returns>
-        [HttpGet] // GET: api/tickets
+        [HttpGet]
         public async Task<ActionResult<IEnumerable<TicketDto>>> GetAllTickets()
         {
+            // Retrieve tickets with their related project, assigned user, and creator
             var tickets = await _context.Ticket
                                         .Include(t => t.Project)
                                         .Include(t => t.AssignedTo)
@@ -40,12 +40,13 @@ namespace StackFlow.ApiControllers
                                         .OrderByDescending(t => t.Created_At)
                                         .ToListAsync();
 
+            // Convert each ticket to a DTO
             var ticketDtos = tickets.Select(t => new TicketDto
             {
                 Id = t.Id,
                 Title = t.Title,
                 Description = t.Description,
-                ProjectId = t.Id,
+                ProjectId = t.Project_Id,
                 ProjectName = t.Project?.Name,
                 AssignedToUserId = t.Assigned_To,
                 AssignedToUsername = t.AssignedTo?.Name,
@@ -62,31 +63,28 @@ namespace StackFlow.ApiControllers
         }
 
         /// <summary>
-        /// Gets a specific ticket by ID.
-        /// Accessible by any authenticated user.
+        /// Retrieves a single ticket by its ID.
         /// </summary>
-        /// <param name="id">The ID of the ticket.</param>
-        /// <returns>A TicketDto object or 404 Not Found.</returns>
-        [HttpGet("{id}")] // GET: api/tickets/{id}
+        [HttpGet("{id}")]
         public async Task<ActionResult<TicketDto>> GetTicketById(int id)
         {
+            // Find the ticket and include its related data
             var ticket = await _context.Ticket
-                                     .Include(t => t.Project)
-                                     .Include(t => t.AssignedTo)
-                                     .Include(t => t.CreatedBy)
-                                     .FirstOrDefaultAsync(t => t.Id == id);
+                                       .Include(t => t.Project)
+                                       .Include(t => t.AssignedTo)
+                                       .Include(t => t.CreatedBy)
+                                       .FirstOrDefaultAsync(t => t.Id == id);
 
             if (ticket == null)
-            {
                 return NotFound();
-            }
 
+            // Convert ticket to DTO
             var ticketDto = new TicketDto
             {
                 Id = ticket.Id,
                 Title = ticket.Title,
                 Description = ticket.Description,
-                ProjectId = ticket.Id,
+                ProjectId = ticket.Project_Id,
                 ProjectName = ticket.Project?.Name,
                 AssignedToUserId = ticket.Assigned_To,
                 AssignedToUsername = ticket.AssignedTo?.Name,
@@ -103,21 +101,19 @@ namespace StackFlow.ApiControllers
         }
 
         /// <summary>
-        /// Creates a new ticket.
-        /// Accessible by Admin and Project Manager roles.
+        /// Creates a new ticket in the system.
+        /// Only accessible by Admin and Project Manager.
         /// </summary>
-        /// <param name="createDto">The ticket data.</param>
-        /// <returns>A 201 Created response with the new ticket's data.</returns>
-        [HttpPost] // POST: api/tickets
+        [HttpPost]
         [Authorize(Roles = "Admin,Project Manager")]
         public async Task<ActionResult<TicketDto>> CreateTicket([FromBody] CreateTicketDto createDto)
         {
+            // Get the current logged-in user's ID from claims
             var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!int.TryParse(userIdString, out int currentUserId))
-            {
                 return Unauthorized("User ID not found in claims.");
-            }
 
+            // Create a new ticket entity
             var ticket = new Ticket
             {
                 Title = createDto.Title,
@@ -126,19 +122,21 @@ namespace StackFlow.ApiControllers
                 Assigned_To = createDto.AssignedToUserId,
                 Status = createDto.Status,
                 Priority = createDto.Priority,
-                Due_Date = createDto.DueDate ?? default(DateTime), // Fix for CS0266 and CS8629
+                Due_Date = createDto.DueDate ?? DateTime.UtcNow.AddDays(7),
                 Created_By = currentUserId,
                 Created_At = DateTime.UtcNow
             };
 
+            // Add ticket to database
             _context.Ticket.Add(ticket);
             await _context.SaveChangesAsync();
 
-            // Reload ticket with navigation properties to populate DTO
+            // Load related data
             await _context.Entry(ticket).Reference(t => t.Project).LoadAsync();
             await _context.Entry(ticket).Reference(t => t.AssignedTo).LoadAsync();
             await _context.Entry(ticket).Reference(t => t.CreatedBy).LoadAsync();
 
+            // Convert to DTO
             var ticketDto = new TicketDto
             {
                 Id = ticket.Id,
@@ -162,30 +160,26 @@ namespace StackFlow.ApiControllers
 
         /// <summary>
         /// Updates an existing ticket.
-        /// Accessible by Admin and Project Manager roles.
+        /// Only accessible by Admin and Project Manager.
         /// </summary>
-        /// <param name="id">The ID of the ticket to update.</param>
-        /// <param name="updateDto">The updated ticket data.</param>
-        /// <returns>204 No Content on success, or 404 Not Found.</returns>
-        [HttpPut("{id}")] // PUT: api/tickets/{id}
+        [HttpPut("{id}")]
         [Authorize(Roles = "Admin,Project Manager")]
         public async Task<IActionResult> UpdateTicket(int id, [FromBody] UpdateTicketDto updateDto)
         {
+            // Find the ticket
             var ticket = await _context.Ticket.FindAsync(id);
             if (ticket == null)
-            {
                 return NotFound();
-            }
 
-            // Update properties from DTO using C# model property names
+            // Update ticket properties from DTO
             ticket.Title = updateDto.Title;
             ticket.Description = updateDto.Description;
-            ticket.Id = updateDto.ProjectId;
+            ticket.Project_Id = updateDto.ProjectId;
             ticket.Assigned_To = updateDto.AssignedToUserId;
             ticket.Status = updateDto.Status;
             ticket.Priority = updateDto.Priority;
-            ticket.Due_Date = updateDto.DueDate ?? default(DateTime); // Handle nullable DateTime
-            ticket.Completed_At = updateDto.CompletedAt ?? default(DateTime); // Handle nullable DateTime
+            ticket.Due_Date = updateDto.DueDate ?? ticket.Due_Date;
+            ticket.Completed_At = updateDto.CompletedAt ?? ticket.Completed_At;
 
             try
             {
@@ -193,38 +187,26 @@ namespace StackFlow.ApiControllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!await _context.Ticket.AnyAsync(e => e.Id == id))
-                {
+                if (!await _context.Ticket.AnyAsync(t => t.Id == id))
                     return NotFound();
-                }
                 else
-                {
                     throw;
-                }
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Error updating ticket: {ex.Message}");
             }
 
-            return NoContent(); // 204 No Content
+            return NoContent(); // Success with no return data
         }
 
         /// <summary>
-        /// Deletes a ticket.
-        /// Accessible by Admin and Project Manager roles.
+        /// Deletes a ticket from the system.
+        /// Only accessible by Admin and Project Manager.
         /// </summary>
-        /// <param name="id">The ID of the ticket to delete.</param>
-        /// <returns>204 No Content on success, or 404 Not Found.</returns>
-        [HttpDelete("{id}")] // DELETE: api/tickets/{id}
+        [HttpDelete("{id}")]
         [Authorize(Roles = "Admin,Project Manager")]
         public async Task<IActionResult> DeleteTicket(int id)
         {
             var ticket = await _context.Ticket.FindAsync(id);
             if (ticket == null)
-            {
                 return NotFound();
-            }
 
             try
             {
@@ -236,7 +218,7 @@ namespace StackFlow.ApiControllers
                 return StatusCode(500, $"Error deleting ticket: {ex.Message}");
             }
 
-            return NoContent(); // 204 No Content
+            return NoContent();
         }
     }
 }
