@@ -73,3 +73,35 @@
         </div>
     </div>
 </div>
+@section Scripts {
+    <!-- Chart.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Chart Data from Razor
+            const roleDistributionData = {
+                // Using Json.Serialize to correctly escape strings for JavaScript
+                labels: @Html.Raw(Json.Serialize(roleDistribution.Select(r => r.Role).ToList())),
+                data: [@string.Join(", ", roleDistribution.Select(r => r.Count))]
+            };
+
+            const ticketStatusDistributionData = {
+                labels: ['To Do', 'In Progress', 'In Review', 'Completed'],
+                data: [
+                    @ticketStatusDistribution.ToDo,
+                    @ticketStatusDistribution.InProgress,
+                    @ticketStatusDistribution.InReview,
+                    @ticketStatusDistribution.Completed
+                ]
+            };
+
+            const topUsersByTicketsData = {
+                // Using Json.Serialize to correctly escape strings for JavaScript
+                labels: @Html.Raw(Json.Serialize(topUsersByTickets.Select(u => u.User.Name).ToList())),
+                totalTickets: [@string.Join(", ", topUsersByTickets.Select(u => u.TotalTicketsAssigned))],
+                toDoTickets: [@string.Join(", ", topUsersByTickets.Select(u => u.ToDoTicketsAssigned))],
+                inProgressTickets: [@string.Join(", ", topUsersByTickets.Select(u => u.InProgressTicketsAssigned))],
+                inReviewTickets: [@string.Join(", ", topUsersByTickets.Select(u => u.InReviewTicketsAssigned))],
+                completedTickets: [@string.Join(", ", topUsersByTickets.Select(u => u.CompletedTicketsAssigned))]
+            };
