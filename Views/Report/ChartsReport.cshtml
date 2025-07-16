@@ -1,0 +1,27 @@
+﻿@using System.Security.Claims
+@model StackFlow.ViewModels.UserReportsCombinedViewModel
+@inject Microsoft.AspNetCore.Mvc.Rendering.IJsonHelper Json
+
+@{
+    ViewData["Title"] = "User Charts";
+
+    // Prepare data for charts
+    var roleDistribution = Model.ActiveUsers
+        .GroupBy(u => u.User.Role?.Name ?? "No Role")
+        .Select(g => new { Role = g.Key, Count = g.Count() })
+        .OrderByDescending(r => r.Count)
+        .ToList();
+
+    var ticketStatusDistribution = new
+    {
+        ToDo = Model.ActiveUsers.Sum(u => u.ToDoTicketsAssigned),
+        InProgress = Model.ActiveUsers.Sum(u => u.InProgressTicketsAssigned),
+        InReview = Model.ActiveUsers.Sum(u => u.InReviewTicketsAssigned),
+        Completed = Model.ActiveUsers.Sum(u => u.CompletedTicketsAssigned)
+    };
+
+    var topUsersByTickets = Model.ActiveUsers
+        .OrderByDescending(u => u.TotalTicketsAssigned)
+        .Take(5)
+        .ToList();
+}
