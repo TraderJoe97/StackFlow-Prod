@@ -40,17 +40,17 @@ namespace StackFlow.Controllers
             pageSize = Math.Max(1, pageSize); // Prevent division by zero or negative pageSize
 
             var projectsQuery = _context.Project
-                                         .Include(p => p.Tickets)
-                                         .OrderBy(p => p.Name);
+                                       .Include(p => p.Tickets)
+                                       .OrderBy(p => p.Name);
 
             // Get total count for pagination
             var totalProjects = await projectsQuery.CountAsync();
 
             // Apply pagination
             var projects = await projectsQuery
-                                .Skip((page - 1) * pageSize)
-                                .Take(pageSize)
-                                .ToListAsync();
+                                 .Skip((page - 1) * pageSize)
+                                 .Take(pageSize)
+                                 .ToListAsync();
 
             var projectReports = projects.Select(p => new ProjectReportViewModel
             {
@@ -117,9 +117,9 @@ namespace StackFlow.Controllers
 
             model.ActiveUsersTotalPages = (int)Math.Ceiling(await activeUsersQuery.CountAsync() / (double)activePageSize);
             var activeUsers = await activeUsersQuery
-                                        .Skip((activePage - 1) * activePageSize)
-                                        .Take(activePageSize)
-                                        .ToListAsync();
+                                             .Skip((activePage - 1) * activePageSize)
+                                             .Take(activePageSize)
+                                             .ToListAsync();
 
             model.ActiveUsers = activeUsers.Select(u => new UserReportViewModel
             {
@@ -141,17 +141,17 @@ namespace StackFlow.Controllers
 
             // --- Pending Verification Users Query ---
             var pendingUsersQuery = _context.User
-                                            .Where(u => !u.IsDeleted && !u.IsVerified) // Filter for pending users
-                                            .Include(u => u.AssignedTickets) // Include for potential future use or consistency
-                                            .Include(u => u.Role)
-                                            .OrderBy(u => u.Created_At) // Order by creation date for pending users
-                                            .AsQueryable();
+                                             .Where(u => !u.IsDeleted && !u.IsVerified) // Filter for pending users
+                                             .Include(u => u.AssignedTickets) // Include for potential future use or consistency
+                                             .Include(u => u.Role)
+                                             .OrderBy(u => u.Created_At) // Order by creation date for pending users
+                                             .AsQueryable();
 
             model.PendingUsersTotalPages = (int)Math.Ceiling(await pendingUsersQuery.CountAsync() / (double)pendingPageSize);
             var pendingUsers = await pendingUsersQuery
-                                        .Skip((pendingPage - 1) * pendingPageSize)
-                                        .Take(pendingPageSize)
-                                        .ToListAsync();
+                                             .Skip((pendingPage - 1) * pendingPageSize)
+                                             .Take(pendingPageSize)
+                                             .ToListAsync();
 
             model.PendingUsers = pendingUsers.Select(u => new UserReportViewModel
             {
@@ -175,6 +175,40 @@ namespace StackFlow.Controllers
             // Fetch all roles for the "Change Role" dropdown (used in active users table)
             ViewBag.Roles = new SelectList(await _context.Role.ToListAsync(), "Id", "Name");
             ViewBag.CurrentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)); // Pass current user ID for UI logic
+
+            return View(model);
+        }
+
+        /// <summary>
+        /// Displays a dedicated page for user charts.
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> ChartsReport()
+        {
+            // Fetch all active users and their related data needed for the charts.
+            // This needs to be comprehensive enough to generate all chart data.
+            var allActiveUsers = await _context.User
+                                               .Where(u => !u.IsDeleted && u.IsVerified)
+                                               .Include(u => u.AssignedTickets)
+                                               .Include(u => u.Role)
+                                               .OrderBy(u => u.Name)
+                                               .ToListAsync();
+
+            var model = new UserReportsCombinedViewModel
+            {
+                ActiveUsers = allActiveUsers.Select(u => new UserReportViewModel
+                {
+                    User = u,
+                    TotalTicketsAssigned = u.AssignedTickets.Count,
+                    ToDoTicketsAssigned = u.AssignedTickets.Count(t => t.Status == "To_Do"),
+                    InProgressTicketsAssigned = u.AssignedTickets.Count(t => t.Status == "In_Progress"),
+                    InReviewTicketsAssigned = u.AssignedTickets.Count(t => t.Status == "In_Review"),
+                    CompletedTicketsAssigned = u.AssignedTickets.Count(t => t.Status == "Done")
+                }).ToList(),
+                // PendingUsers data is not strictly needed for the charts page,
+                // but the ViewModel requires it, so initialize as empty.
+                PendingUsers = new List<UserReportViewModel>()
+            };
 
             return View(model);
         }
@@ -342,8 +376,8 @@ namespace StackFlow.Controllers
 
                 // Fetch user with new status for SignalR payload
                 var verifiedUser = await _context.User
-                                                .Include(u => u.Role)
-                                                .FirstOrDefaultAsync(u => u.Id == userToVerify.Id);
+                                                 .Include(u => u.Role)
+                                                 .FirstOrDefaultAsync(u => u.Id == userToVerify.Id);
 
                 await _hubContext.Clients.All.SendAsync("ReceiveUserUpdate", "verified", verifiedUser); // SignalR for UI refresh
             }

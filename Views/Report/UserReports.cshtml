@@ -14,13 +14,13 @@
     var pendingPageSize = Model.PendingUsersPageSize;
     var pendingTotalPages = Model.PendingUsersTotalPages;
 
-    var currentUserId = ViewBag.CurrentUserId; // Still from ViewBag
+    var currentUserId = ViewBag.CurrentUserId;
 
-    // Determine which tab should be active based on current page or default to Active Users
+    // Determine which tab should be active
     var activeTab = Context.Request.Query["tab"].ToString();
     if (string.IsNullOrEmpty(activeTab))
     {
-        activeTab = "activeUsers"; // Default to active users tab
+        activeTab = "activeUsers";
     }
 }
 
@@ -29,9 +29,14 @@
         <h2 class="card-title mb-0 fw-bold text-primary display-6">
             <i class="bi bi-file-earmark-person-fill me-2"></i> User Reports
         </h2>
-        <a asp-action="Index" asp-controller="Dashboard" class="btn btn-outline-secondary rounded-pill shadow-sm animate-btn">
-            <i class="bi bi-arrow-left-circle me-1"></i> Back to Dashboard
-        </a>
+        <div class="d-flex gap-2">
+            <a asp-action="ChartsReport" asp-controller="Report" class="btn btn-primary rounded-pill shadow-sm animate-btn">
+                <i class="bi bi-bar-chart-line-fill me-1"></i> View Charts
+            </a>
+            <a asp-action="Index" asp-controller="Dashboard" class="btn btn-outline-secondary rounded-pill shadow-sm animate-btn">
+                <i class="bi bi-arrow-left-circle me-1"></i> Back to Dashboard
+            </a>
+        </div>
     </div>
     <hr class="mb-4" />
 
@@ -79,7 +84,7 @@
                     <input type="hidden" name="activePageSize" value="@activePageSize" />
                     <input type="hidden" name="pendingPage" value="@pendingCurrentPage" />
                     <input type="hidden" name="pendingPageSize" value="@pendingPageSize" />
-                    <input type="hidden" name="tab" value="activeUsers" /> @* Keep tab active on search *@
+                    <input type="hidden" name="tab" value="activeUsers" />
                     <input type="text" name="searchQuery" class="form-control rounded-pill me-2" placeholder="Search by username, email, or role..." value="@activeSearchQuery" />
                     <button type="submit" class="btn btn-primary rounded-pill"><i class="bi bi-search"></i> Search</button>
                     @if (!string.IsNullOrWhiteSpace(activeSearchQuery))
@@ -90,7 +95,6 @@
                            asp-route-pendingPage="@pendingCurrentPage"
                            asp-route-pendingPageSize="@pendingPageSize"
                            asp-route-tab="activeUsers">
-                            @* Keep tab active on clear *@
                             <i class="bi bi-x-circle"></i> Clear
                         </a>
                     }
@@ -127,7 +131,6 @@
                                     <td>@report.User.Name</td>
                                     <td>@report.User.Email</td>
                                     <td id="user-role-@report.User.Id">@report.User.Role?.Name</td>
-                                    @* --- COLOR CODING START --- *@
                                     <td class="@(report.TotalTicketsAssigned == 0 ? "text-muted" : "text-primary fw-bold")">
                                         @report.TotalTicketsAssigned
                                     </td>
@@ -143,13 +146,10 @@
                                     <td class="@(report.CompletedTicketsAssigned > 0 ? "text-success fw-bold" : "text-muted")">
                                         @report.CompletedTicketsAssigned
                                     </td>
-                                    @* --- COLOR CODING END --- *@
                                     <td>
-                                        @* Actions for active users (excluding the current logged-in admin) *@
                                         @if (report.User.Id != currentUserId)
                                         {
                                             <div class="d-flex flex-column flex-md-row align-items-stretch align-items-md-center gap-2">
-                                                @* Change Role Dropdown *@
                                                 <form asp-action="UpdateUserRole" asp-controller="Report" method="post" class="d-inline-flex flex-grow-1" data-user-id="@report.User.Id">
                                                     <input type="hidden" name="userId" value="@report.User.Id" />
                                                     <input type="hidden" name="activePage" value="@activeCurrentPage" />
@@ -157,7 +157,7 @@
                                                     <input type="hidden" name="searchQuery" value="@activeSearchQuery" />
                                                     <input type="hidden" name="pendingPage" value="@pendingCurrentPage" />
                                                     <input type="hidden" name="pendingPageSize" value="@pendingPageSize" />
-                                                    <input type="hidden" name="tab" value="activeUsers" /> @* Keep tab active after role change *@
+                                                    <input type="hidden" name="tab" value="activeUsers" />
                                                     <select name="newRoleId" class="form-select form-select-sm rounded-pill" onchange="this.form.submit()">
                                                         @foreach (var role in ViewBag.Roles as SelectList)
                                                         {
@@ -166,7 +166,6 @@
                                                     </select>
                                                 </form>
 
-                                                @* Soft Delete User Button *@
                                                 <button type="button" class="btn btn-sm btn-outline-danger rounded-pill animate-btn"
                                                         data-bs-toggle="modal" data-bs-target="#softDeleteUserModal_@report.User.Id">
                                                     <i class="bi bi-person-x"></i> Delete
@@ -239,7 +238,6 @@
                                     <td>@report.User.Created_At.ToShortDateString()</td>
                                     <td>
                                         <div class="d-flex flex-column flex-md-row align-items-stretch align-items-md-center gap-2">
-                                            @* Verify User Button *@
                                             <form asp-action="VerifyUser" asp-controller="Report" method="post" class="d-inline-block">
                                                 <input type="hidden" name="id" value="@report.User.Id" />
                                                 <input type="hidden" name="activePage" value="@activeCurrentPage" />
@@ -247,13 +245,12 @@
                                                 <input type="hidden" name="searchQuery" value="@activeSearchQuery" />
                                                 <input type="hidden" name="pendingPage" value="@pendingCurrentPage" />
                                                 <input type="hidden" name="pendingPageSize" value="@pendingPageSize" />
-                                                <input type="hidden" name="tab" value="pendingUsers" /> @* Keep tab active after verification *@
+                                                <input type="hidden" name="tab" value="pendingUsers" />
                                                 <button type="submit" class="btn btn-sm btn-success rounded-pill animate-btn">
                                                     <i class="bi bi-check-circle"></i> Verify
                                                 </button>
                                             </form>
 
-                                            @* Soft Delete User Button (for pending users) *@
                                             <button type="button" class="btn btn-sm btn-outline-danger rounded-pill animate-btn"
                                                     data-bs-toggle="modal" data-bs-target="#softDeleteUserModal_@report.User.Id">
                                                 <i class="bi bi-person-x"></i> Delete
@@ -292,10 +289,9 @@
     </div>
 </div>
 
-@* Modals for each user for soft deletion (for both active and pending users) *@
-@foreach (var report in Model.ActiveUsers.Concat(Model.PendingUsers)) @* Iterate over both lists for modals *@
+@* Modals for each user for soft deletion *@
+@foreach (var report in Model.ActiveUsers.Concat(Model.PendingUsers))
 {
-    @* Only create modal if user is not the current admin *@
     @if (report.User.Id != currentUserId)
     {
         <div class="modal fade" id="softDeleteUserModal_@report.User.Id" tabindex="-1" aria-labelledby="softDeleteUserModalLabel_@report.User.Id" aria-hidden="true">
@@ -318,7 +314,7 @@
                             <input type="hidden" name="searchQuery" value="@activeSearchQuery" />
                             <input type="hidden" name="pendingPage" value="@pendingCurrentPage" />
                             <input type="hidden" name="pendingPageSize" value="@pendingPageSize" />
-                            <input type="hidden" name="tab" value="@activeTab" /> @* Pass current active tab to maintain state after deletion *@
+                            <input type="hidden" name="tab" value="@activeTab" />
                             <button type="submit" class="btn btn-danger rounded-pill animate-btn">
                                 Soft Delete
                             </button>
@@ -334,139 +330,27 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             // SignalR User Update Listener
             document.addEventListener('userUpdate', function (event) {
-                const { action, user } = event.detail; // 'user' will be the updated user object or an object with Id for deleted
+                const { action, user } = event.detail;
                 console.log(`User update event received: ${action} for user ID ${user.id}`);
-
-                // For a full page refresh scenario (as this page currently is), client-client-side DOM manipulation
-                // for SignalR updates is less critical because the page will reload anyway.
-                // However, if you switch to AJAX-loaded tabs, this logic becomes essential.
 
                 if (action === 'roleUpdated') {
                     const userRow = document.getElementById(`user-row-${user.id}`);
                     if (userRow) {
                         const roleCell = userRow.querySelector(`#user-role-${user.id}`);
                         if (roleCell) {
-                            roleCell.textContent = user.role.title; // Update the role text
+                            roleCell.textContent = user.role.title;
                         }
                     }
                 } else if (action === 'verified') {
-                    // When a user is verified, they move from 'Pending' to 'Active'
-                    // For full page reloads, the server handles the data.
-                    // If using AJAX, you'd remove from pending table and potentially add to active table.
-                    const pendingUserRow = document.getElementById(`user-row-${user.id}`);
-                    if (pendingUserRow) {
-                        pendingUserRow.remove(); // Remove from pending table
-                    }
-                } else if (action === 'deleted') {
-                    // Remove the row for the soft-deleted user from whichever table it was in
-                    const rowToRemove = document.getElementById(`user-row-${user.id}`);
-                    if (rowToRemove) {
-                        rowToRemove.remove();
-                        console.log(`User row removed for user ID ${user.id}.`);
-                    }
+                    // Logic to handle user verification (e.g., remove from pending, add to active)
+                    console.log(`User ${user.id} has been verified.`);
                 }
-
-                // If you are using SignalR for real-time updates without full page reloads,
-                // you would typically re-fetch or manipulate the DOM for the affected tables.
-                // For this current full-page-refresh pagination setup, the server-side redirect
-                // after an action (like verify/delete/role change) will naturally update the view.
             });
-
-            // Handle search form submission to ensure all parameters are passed
-            // (This form is within the 'activeUsersContent' tab)
-            const activeUserSearchForm = document.getElementById('activeUserSearchForm');
-            if (activeUserSearchForm) {
-                activeUserSearchForm.addEventListener('submit', function(event) {
-                    // The hidden inputs already handle passing current pendingPage and pendingPageSize
-                    // The search query is directly in the input field.
-                    // The 'tab' hidden input ensures the 'activeUsers' tab remains selected.
-                });
-            }
-
-            // Bootstrap tab activation logic (optional, Bootstrap handles this by default)
-            // If you had dynamic tab content loading via AJAX, you'd use this:
-            // var userReportsTabs = document.getElementById('userReportsTabs');
-            // if (userReportsTabs) {
-            //      userReportsTabs.addEventListener('shown.bs.tab', function (event) {
-            //          const targetTabId = event.target.getAttribute('data-bs-target'); // e.g., "#activeUsersContent"
-            //          const containerId = targetTabId.substring(1); // "activeUsersContent"
-            //          const actionUrl = containerId === 'activeUsersContent' ? '/Report/GetActiveUsersTable' : '/Report/GetPendingVerificationUsersTable';
-            //          // You would then call a loadPartialView function here if these tabs were loaded via AJAX
-            //          // loadPartialView(containerId, actionUrl);
-            //      });
-            // }
-
         });
     </script>
-}
-
-@section Styles {
-    <style>
-        .animate-btn {
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-            .animate-btn:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-            }
-
-        .form-select.rounded-pill {
-            border-radius: 50rem !important; /* Fully rounded pill shape */
-            padding: 0.25rem 1rem; /* Smaller padding for sm select */
-            height: auto;
-            min-width: 100px; /* Ensure it doesn't get too small */
-        }
-
-        .pagination .page-link {
-            border-radius: 50rem !important;
-            margin: 0 0.25rem;
-            min-width: 38px; /* Ensure consistent width for pagination buttons */
-            text-align: center;
-        }
-
-        .pagination .page-item.active .page-link {
-            background-color: var(--bs-primary);
-            border-color: var(--bs-primary);
-            color: var(--bs-white);
-        }
-
-        [data-bs-theme="dark"] .pagination .page-item .page-link {
-            background-color: var(--bs-card-bg);
-            border-color: var(--bs-border-color);
-            color: var(--bs-body-color);
-        }
-
-            [data-bs-theme="dark"] .pagination .page-item .page-link:hover {
-                background-color: var(--bs-sidebar-active-bg);
-                border-color: var(--bs-sidebar-active-bg);
-            }
-
-        [data-bs-theme="dark"] .pagination .page-item.active .page-link {
-            background-color: var(--bs-primary);
-            border-color: var(--bs-primary);
-            color: var(--bs-white);
-        }
-
-        .form-control.rounded-pill {
-            border-radius: 50rem !important;
-            padding: 0.75rem 1.25rem;
-            height: auto;
-        }
-
-        [data-bs-theme="dark"] .form-control {
-            background-color: #495057;
-            color: var(--bs-body-color);
-            border-color: #6c757d;
-        }
-
-            [data-bs-theme="dark"] .form-control::placeholder {
-                color: rgba(255, 255, 255, 0.6);
-            }
-    </style>
 }
