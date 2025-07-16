@@ -25,3 +25,27 @@
         .Take(5)
         .ToList();
 }
+<div class="card shadow-lg border-0 rounded-4 p-4 mt-4 mb-4">
+    <div class="d-flex justify-content-between align-items-start mb-3">
+        <h2 class="card-title mb-0 fw-bold text-primary display-6">
+            <i class="bi bi-graph-up-arrow me-2"></i> User Charts
+        </h2>
+        <a asp-action="UserReports" asp-controller="Report" class="btn btn-outline-secondary rounded-pill shadow-sm animate-btn">
+            <i class="bi bi-arrow-left-circle me-1"></i> Back to User Reports
+        </a>
+    </div>
+    <hr class="mb-4" />
+
+    @* Visualization Section - All charts displayed *@
+    <div class="row mb-4">
+        @* Role Distribution Pie Chart *@
+        <div class="col-lg-6 mb-4 chart-container" id="chart-container-0">
+            <div class="card h-100 shadow-sm rounded-4">
+                <div class="card-header bg-primary text-white rounded-top-4">
+                    <h5 class="card-title mb-0"><i class="bi bi-pie-chart-fill me-2"></i>Role Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="roleDistributionChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
