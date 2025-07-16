@@ -165,3 +165,51 @@
                     cutout: '50%',
                 }
             });
+         // Ticket Status Distribution Bar Chart
+            const ticketStatusCtx = document.getElementById('ticketStatusChart').getContext('2d');
+            ticketStatusChart = new Chart(ticketStatusCtx, {
+                type: 'bar',
+                data: {
+                    labels: ticketStatusDistributionData.labels,
+                    datasets: [{
+                        label: 'Ticket Count',
+                        data: ticketStatusDistributionData.data,
+                        backgroundColor: [
+                            'rgba(231, 74, 59, 0.7)',
+                            'rgba(246, 194, 62, 0.7)',
+                            'rgba(54, 185, 204, 0.7)',
+                            'rgba(28, 200, 138, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(231, 74, 59, 1)',
+                            'rgba(246, 194, 62, 1)',
+                            'rgba(54, 185, 204, 1)',
+                            'rgba(28, 200, 138, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.raw}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
