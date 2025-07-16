@@ -105,3 +105,63 @@
                 inReviewTickets: [@string.Join(", ", topUsersByTickets.Select(u => u.InReviewTicketsAssigned))],
                 completedTickets: [@string.Join(", ", topUsersByTickets.Select(u => u.CompletedTicketsAssigned))]
             };
+         // Chart Instances
+        let roleChart, ticketStatusChart, topUsersChart;
+
+        // Function to initialize all charts
+        function initializeCharts() {
+            // Role Distribution Pie Chart
+            const roleCtx = document.getElementById('roleDistributionChart').getContext('2d');
+            roleChart = new Chart(roleCtx, {
+                type: 'pie',
+                data: {
+                    labels: roleDistributionData.labels,
+                    datasets: [{
+                        data: roleDistributionData.data,
+                        backgroundColor: [
+                            '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', '#858796', '#5a5c69',
+                            '#2e59d9', '#17a673', '#2c9faf', '#dda20a', '#be2617', '#666871', '#3a3b45'
+                        ],
+                        hoverBackgroundColor: [
+                            '#2e59d9', '#17a673', '#2c9faf', '#dda20a', '#be2617', '#666871', '#3a3b45',
+                            '#1a3cb0', '#0e7d56', '#1a7986', '#b38600', '#8e1c0f', '#4d4d57', '#2a2a32'
+                        ],
+                        hoverBorderColor: "rgba(234, 236, 244, 1)",
+                    }],
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            backgroundColor: "rgb(255,255,255)",
+                            bodyFontColor: "#858796",
+                            borderColor: '#dddfeb',
+                            borderWidth: 1,
+                            xPadding: 15,
+                            yPadding: 15,
+                            displayColors: false,
+                            caretPadding: 10,
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = Math.round((value / total) * 100);
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        },
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20,
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        }
+                    },
+                    cutout: '50%',
+                }
+            });
