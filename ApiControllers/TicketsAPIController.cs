@@ -1,15 +1,16 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using StackFlow.ApiControllers.Dtos;
 using StackFlow.Data;
 using StackFlow.Models;
-using StackFlow.ApiControllers.Dtos;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace StackFlow.ApiControllers
 {
@@ -112,7 +113,45 @@ namespace StackFlow.ApiControllers
         [Authorize(Roles = "Admin,Project Manager")]
         public async Task<ActionResult<TicketDto>> CreateTicket([FromBody] CreateTicketDto createDto)
         {
-            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            //validate the create DTO
+            if (createDto == null)
+            {
+                return BadRequest("Ticket creation data cannot be null.");
+            }
+            if (string.IsNullOrWhiteSpace(createDto.Title) || createDto.Title.Length > 255)
+            {
+                return BadRequest("Ticket title is required and must be less than 255 characters.");
+            }
+   
+            if (!Enum.IsDefined(typeof(TicketStatus), createDto.Status))
+            {
+                return BadRequest("Invalid ticket status.");
+            }
+
+            // Check if project exists
+            var project = await _context.Project.FindAsync(createDto.ProjectId);
+            if (project == null)
+            {
+                return BadRequest("Project with ID " + createDto.ProjectId + " does not exist");
+            }
+
+            // Check if Assigned Usser exists
+
+            var AssignedUser = await _context.User.FindAsync(createDto.AssignedToUserId);
+            if (AssignedUser == null)
+            {
+                return BadRequest("Assigned user Does not Exist");
+            } else if (AssignedUser.IsDeleted) 
+            {
+                return BadRequest("Assigned user is no longer active");
+            } else if (AssignedUser.IsVerified)
+            {
+                return BadRequest("Assigned user account not Verified.");
+            }
+
+
+                var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!int.TryParse(userIdString, out int currentUserId))
             {
                 return Unauthorized("User ID not found in claims.");
@@ -171,6 +210,43 @@ namespace StackFlow.ApiControllers
         [Authorize(Roles = "Admin,Project Manager")]
         public async Task<IActionResult> UpdateTicket(int id, [FromBody] UpdateTicketDto updateDto)
         {
+            //validate the update DTO
+            if (updateDto == null)
+            {
+                return BadRequest("Ticket update data cannot be null.");
+            }
+            if (string.IsNullOrWhiteSpace(updateDto.Title) || updateDto.Title.Length > 255)
+            {
+                return BadRequest("Ticket title is required and must be less than 255 characters.");
+            }
+            if (!Enum.IsDefined(typeof(TicketStatus), updateDto.Status))
+            {
+                return BadRequest("Invalid ticket status.");
+            }
+            // Check if project exists
+            var project = await _context.Project.FindAsync(updateDto.ProjectId);
+            if (project == null)
+            {
+                return BadRequest("Project with ID " + updateDto.ProjectId + " does not exist");
+            }
+
+            // Check if Assigned Usser exists
+
+            var AssignedUser = await _context.User.FindAsync(updateDto.AssignedToUserId);
+            if (AssignedUser == null)
+            {
+                return BadRequest("Assigned user Does not Exist");
+            }
+            else if (AssignedUser.IsDeleted)
+            {
+                return BadRequest("Assigned user is no longer active");
+            }
+            else if (AssignedUser.IsVerified)
+            {
+                return BadRequest("Assigned user account not Verified.");
+            }
+
+
             var ticket = await _context.Ticket.FindAsync(id);
             if (ticket == null)
             {
