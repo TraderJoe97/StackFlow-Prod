@@ -412,6 +412,52 @@ namespace StackFlow.Controllers
             return View(ticket);
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> StatusDragAndDrop([FromBody] ApiControllers.Dtos.UpdateTicketStatusModel model)
+        {
+            if (model == null)
+                return BadRequest(new { success = false, message = "No data received." });
+
+            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdString, out int currentUserId))
+                return Unauthorized(new { success = false, message = "User not authenticated." });
+
+            var ticket = await _context.Ticket.FindAsync(model.TicketId);
+            if (ticket == null)
+                return NotFound(new { success = false, message = $"Ticket with id {model.TicketId} not found." });
+
+            var allowedStatuses = new List<string> { "To_Do", "In_Progress", "In_Review", "Done" };
+            var newStatus = model.NewStatus?.Trim();
+
+            if (!allowedStatuses.Contains(newStatus))
+                return BadRequest(new
+                {
+                    success = false,
+                    message = $"Invalid status '{newStatus}'. Allowed: {string.Join(", ", allowedStatuses)}"
+                });
+
+            var oldStatus = ticket.Status;
+            ticket.Status = newStatus;
+            if (oldStatus != newStatus && newStatus == "Done")
+                ticket.Completed_At = DateTime.UtcNow;
+
+            try
+            {
+                _context.Update(ticket);
+                await _context.SaveChangesAsync();
+
+                // Optional: SignalR notification if you use it
+                await _hubContext.Clients.All.SendAsync("ReceiveTicketUpdate", "updated", ticket.Id, oldStatus);
+
+                return Ok(new { success = true, message = "Ticket status updated successfully." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "Server error: " + ex.Message });
+            }
+        }
+
         /// <summary>
         /// POST action to delete a ticket.
         /// Accessible only to Admin and Project Managers.

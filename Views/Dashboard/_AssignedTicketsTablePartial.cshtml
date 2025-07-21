@@ -11,31 +11,33 @@
 }
 else
 {
-        // Define your desired order for all possible statuses.
-        // All statuses in this list will have a lane created for them.
-        var orderedStatuses = new List<string> { "To_Do", "In_Progress", "In_Review", "Done" }; // <--- ADD ALL YOUR POSSIBLE STATUSES HERE!
+    // Define your desired order for all possible statuses.
+    // All statuses in this list will have a lane created for them.
+    var orderedStatuses = new List<string> { "To_Do", "In_Progress", "In_Review", "Done" };
+    @Html.AntiForgeryToken()
 
-
-
-    <div class="row flex-nowrap overflow-auto pb-3"> @* Use flex-nowrap to keep lanes in a single row horizontally scrollable *@
-        @foreach (var status in orderedStatuses) // <--- Loop through ALL orderedStatuses
+    <div class="row flex-nowrap overflow-auto pb-3 kanban-board">
+        @* Added kanban-board class here *@
+        @foreach (var status in orderedStatuses)
         {
-            // Filter tickets for the current status. This list might be empty.
             var ticketsInLane = Model.Where(t => t.Status == status)
-                                     .OrderBy(t => t.Priority == "High" ? 1 : t.Priority == "Medium" ? 2 : 3)
-                                     .ThenBy(t => t.Due_Date)
-                                     .ToList();
+            .OrderBy(t => t.Priority == "High" ? 1 : t.Priority == "Medium" ? 2 : 3)
+            .ThenBy(t => t.Due_Date)
+            .ToList();
 
-            <div class="col-sm-6 col-md-4 col-lg-3 d-flex flex-column"> @* Each lane takes up a responsive column size and is a flex column *@
+            <div class="col-sm-6 col-md-4 col-lg-3 d-flex flex-column kanban-column"
+                 id="column-@status" ondrop="drop(event)" ondragover="allowDrop(event)">
+                @* Added kanban-column class and drag/drop events *@
                 <h5 class="fw-bold text-capitalize text-center py-2 px-3 mb-3
                             @(status == "To_Do" ? "text-secondary border-bottom border-secondary" :
                               status == "In_Progress" ? "text-info border-bottom border-info" :
                               status == "In_Review" ? "text-warning border-bottom border-warning" :
-                              status == "Done" || status == "Closed" ? "text-success border-bottom border-success" : // You can group "Done" and "Closed" for styling
-                              "text-primary border-bottom border-primary")"> @* Default style for other statuses *@
-                    @status.Replace("_", " ") @* Replace underscore for display if needed *@
+                              status == "Done" || status == "Closed" ? "text-success border-bottom border-success" :
+                              "text-primary border-bottom border-primary")">
+                    @status.Replace("_", " ")
                 </h5>
-                <div class="card-container flex-grow-1 d-flex flex-column gap-3"> @* Container for cards within the lane *@
+                <div class="card-container flex-grow-1 d-flex flex-column gap-3 ticket-list">
+                    @* Added ticket-list class *@
                     @if (!ticketsInLane.Any())
                     {
                         <div class="alert alert-light text-center small text-muted border-0" role="alert">
@@ -46,14 +48,16 @@ else
                     {
                         @foreach (var ticket in ticketsInLane)
                         {
-                            <div class="card rounded-4 shadow-sm">
+                            <div class="card rounded-4 shadow-sm ticket-card" draggable="true"
+                                 ondragstart="drag(event)" id="ticket-@ticket.Id" data-ticket-id="@ticket.Id">
+                                @* Added ticket-card, draggable, ondragstart, id, and data-ticket-id *@
                                 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center rounded-top-4">
                                     <h6 class="card-title mb-0 text-truncate" title="@ticket.Title">@ticket.Title</h6>
                                     <span class="badge rounded-pill
-                                          @(ticket.Status == "To_Do" ? "bg-secondary" :
-                                            ticket.Status == "In_Progress" ? "bg-info" :
-                                            ticket.Status == "In_Review" ? "bg-warning" :
-                                            ticket.Status == "Done" || ticket.Status == "Closed" ? "bg-success" : "bg-primary")"> @* Update badge logic for new statuses if needed *@
+                                                 @(ticket.Status == "To_Do" ? "bg-secondary" :
+                                                   ticket.Status == "In_Progress" ? "bg-info" :
+                                                   ticket.Status == "In_Review" ? "bg-warning" :
+                                                   ticket.Status == "Done" || ticket.Status == "Closed" ? "bg-success" : "bg-primary")">
                                         @ticket.Status.Replace("_", " ")
                                     </span>
                                 </div>
@@ -62,8 +66,8 @@ else
                                     <p class="card-text mb-1 small">
                                         <strong>Priority:</strong>
                                         <span class="badge rounded-pill
-                                              @(ticket.Priority == "High" ? "bg-danger" :
-                                                ticket.Priority == "Medium" ? "bg-secondary" : "bg-primary")">
+                                                      @(ticket.Priority == "High" ? "bg-danger" :
+                                                        ticket.Priority == "Medium" ? "bg-secondary" : "bg-primary")">
                                             @ticket.Priority
                                         </span>
                                     </p>
@@ -82,3 +86,187 @@ else
         }
     </div>
 }
+
+<script>
+    // These functions should ideally be in a shared JS file or in the main Dashboard/Index.cshtml
+    // to avoid duplication if this partial is loaded multiple times or if other partials need it.
+
+    function allowDrop(event) {
+        event.preventDefault(); // Allows the element to be dropped
+        // Optional: Add a class to visually indicate a valid drop target
+        event.currentTarget.classList.add('drag-over');
+    }
+
+    function drag(event) {
+        // Store the ID of the dragged element (the ticket card)
+        event.dataTransfer.setData("text", event.target.id);
+        // Optional: Add a class to the dragged element
+        event.target.classList.add('dragging');
+    }
+
+    async function drop(event) {
+        event.preventDefault();
+        // Remove drag-over class when dropping or leaving
+        event.currentTarget.classList.remove('drag-over');
+
+        var ticketId = event.dataTransfer.getData("text");
+        var draggedElement = document.getElementById(ticketId);
+
+        // Find the correct drop target (the kanban-column or its child ticket-list)
+        let dropTarget = event.target;
+        while (!dropTarget.classList.contains('kanban-column') && dropTarget.parentElement) {
+            dropTarget = dropTarget.parentElement;
+        }
+
+        if (!dropTarget || !dropTarget.classList.contains('kanban-column')) {
+            // Dropped outside a valid column, revert or do nothing
+            draggedElement.classList.remove('dragging');
+            return;
+        }
+
+        // Get the new status from the ID of the column
+        const newStatus = dropTarget.id.replace('column-', '');
+
+        // Append the dragged element to the .card-container (which is also .ticket-list) inside the new column
+        const ticketList = dropTarget.querySelector('.card-container'); // Use .card-container, which we've also marked as .ticket-list
+        if (ticketList) {
+            ticketList.appendChild(draggedElement);
+            draggedElement.classList.remove('dragging'); // Remove dragging class after successful move
+
+            // Optional: Update the ticket's status text visually on the card
+            const statusBadge = draggedElement.querySelector('.card-header .badge');
+            if (statusBadge) {
+                statusBadge.textContent = newStatus.replace(/_/g, ' '); // Update text
+                // Also update badge color if needed (more complex, might require re-evaluating razor logic or separate JS logic)
+                statusBadge.className = statusBadge.className.replace(/bg-(secondary|info|warning|success|primary)/, getBadgeColorClass(newStatus));
+            }
+
+            // Call the backend to update the status in the database
+            const actualTicketDbId = draggedElement.dataset.ticketId; // Get the actual ticket ID
+               try {
+            const response = await fetch('/Ticket/StatusDragAndDrop', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'RequestVerificationToken': getAntiForgeryToken(),
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({ ticketId: parseInt(actualTicketDbId), newStatus: newStatus })
+    });
+
+    if (!response.ok) {
+        // Server returned error status, handle accordingly
+        alert(`Server error: ${response.status} ${response.statusText}`);
+        return;
+    }
+
+    // Check if content length is zero or content-type is JSON before parsing
+    const contentType = response.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+        const data = await response.json();
+        if (data.success) {
+            console.log("Ticket status updated successfully");
+        } else {
+            alert("Failed to update ticket status: " + (data.message || "Unknown error"));
+        }
+    } else {
+        // Response not JSON or empty - handle gracefully
+        alert("Unexpected server response.");
+    }
+    } catch (error) {
+        console.error("Error communicating with the server:", error);
+        alert(error);
+    }
+        }
+    }
+
+    // Helper function to get Anti-Forgery Token from cookies
+    function getAntiForgeryToken() {
+        const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+        return tokenInput ? tokenInput.value : '';
+    }
+    // Helper function to get Bootstrap badge color class based on status
+    function getBadgeColorClass(status) {
+        switch (status) {
+            case "To_Do": return "bg-secondary";
+            case "In_Progress": return "bg-info";
+            case "In_Review": return "bg-warning";
+            case "Done":
+            case "Closed": return "bg-success";
+            default: return "bg-primary";
+        }
+    }
+
+    // Optional: Add dragleave event to remove visual cues
+    document.querySelectorAll('.kanban-column').forEach(column => {
+        column.addEventListener('dragleave', (event) => {
+            event.currentTarget.classList.remove('drag-over');
+        });
+    });
+
+</script>
+
+<style>
+    /* Add this CSS to your site.css or a dedicated Kanban CSS file */
+
+    .kanban-board {
+        display: flex;
+        gap: 20px; /* Space between columns */
+        overflow-x: auto; /* Allow horizontal scrolling if columns exceed screen width */
+        padding-bottom: 15px; /* Space for scrollbar */
+        align-items: flex-start; /* Align columns at the top */
+    }
+
+    .kanban-column {
+        flex: 0 0 280px; /* Fixed width for each column */
+        /* min-width: 280px; */ /* Alternative: responsive min-width */
+        /* max-width: 350px; */ /* Alternative: responsive max-width */
+        background-color: #f4f5f7;
+        border-radius: 8px;
+        padding: 15px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        height: auto; /* Allow column to expand based on content */
+        min-height: 200px; /* Ensures a visible drop target even if empty */
+    }
+
+        .kanban-column h5 {
+            margin-top: 0; /* Adjust heading margin */
+        }
+
+    .ticket-list {
+        flex-grow: 1; /* Allows the card container to take up remaining space */
+        min-height: 50px; /* Ensure there's a droppable area even if no tickets */
+        /* overflow-y: auto; */ /* If you want scrollable lists within columns */
+        /* max-height: calc(100vh - 250px); */ /* Example: adjust height for scrollable content */
+    }
+
+    .ticket-card {
+        background-color: #fff;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 0; /* Remove padding from card itself as content has padding */
+        margin-bottom: 10px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        cursor: grab; /* Indicate draggable */
+        transition: transform 0.1s ease-in-out, box-shadow 0.1s ease-in-out;
+    }
+
+        .ticket-card:active {
+            cursor: grabbing;
+            transform: scale(1.01); /* Slight scale on active drag */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+    /* Visual cues for drag and drop */
+    .kanban-column.drag-over {
+        border: 2px dashed #007bff;
+        background-color: #e0f2f7; /* Light blue background */
+    }
+
+    .ticket-card.dragging {
+        opacity: 0.4; /* Make the dragged item semi-transparent */
+        border: 2px dashed #007bff;
+    }
+</style>
