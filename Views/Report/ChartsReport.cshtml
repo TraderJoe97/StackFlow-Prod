@@ -1,0 +1,281 @@
+﻿@using System.Security.Claims
+@model StackFlow.ViewModels.UserReportsCombinedViewModel
+@inject Microsoft.AspNetCore.Mvc.Rendering.IJsonHelper Json
+
+@{
+    ViewData["Title"] = "User Charts";
+
+    // Prepare data for charts
+    var roleDistribution = Model.ActiveUsers
+        .GroupBy(u => u.User.Role?.Name ?? "No Role")
+        .Select(g => new { Role = g.Key, Count = g.Count() })
+        .OrderByDescending(r => r.Count)
+        .ToList();
+
+    var ticketStatusDistribution = new
+    {
+        ToDo = Model.ActiveUsers.Sum(u => u.ToDoTicketsAssigned),
+        InProgress = Model.ActiveUsers.Sum(u => u.InProgressTicketsAssigned),
+        InReview = Model.ActiveUsers.Sum(u => u.InReviewTicketsAssigned),
+        Completed = Model.ActiveUsers.Sum(u => u.CompletedTicketsAssigned)
+    };
+
+    var topUsersByTickets = Model.ActiveUsers
+        .OrderByDescending(u => u.TotalTicketsAssigned)
+        .Take(5)
+        .ToList();
+}
+<div class="card shadow-lg border-0 rounded-4 p-4 mt-4 mb-4">
+    <div class="d-flex justify-content-between align-items-start mb-3">
+        <h2 class="card-title mb-0 fw-bold text-primary display-6">
+            <i class="bi bi-graph-up-arrow me-2"></i> User Charts
+        </h2>
+        <a asp-action="UserReports" asp-controller="Report" class="btn btn-outline-secondary rounded-pill shadow-sm animate-btn">
+            <i class="bi bi-arrow-left-circle me-1"></i> Back to User Reports
+        </a>
+    </div>
+    <hr class="mb-4" />
+
+    @* Visualization Section - All charts displayed *@
+    <div class="row mb-4">
+        @* Role Distribution Pie Chart *@
+        <div class="col-lg-6 mb-4 chart-container" id="chart-container-0">
+            <div class="card h-100 shadow-sm rounded-4">
+                <div class="card-header bg-primary text-white rounded-top-4">
+                    <h5 class="card-title mb-0"><i class="bi bi-pie-chart-fill me-2"></i>Role Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="roleDistributionChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        @* Ticket Status Distribution Bar Chart *@
+        <div class="col-lg-6 mb-4 chart-container" id="chart-container-1">
+            <div class="card h-100 shadow-sm rounded-4">
+                <div class="card-header bg-info text-white rounded-top-4">
+                    <h5 class="card-title mb-0"><i class="bi bi-bar-chart-fill me-2"></i>Ticket Status Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="ticketStatusChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        @* Top Users by Tickets Assigned Bar Chart *@
+        <div class="col-lg-12 mb-4 chart-container" id="chart-container-2">
+            <div class="card shadow-sm rounded-4">
+                <div class="card-header bg-warning text-dark rounded-top-4">
+                    <h5 class="card-title mb-0"><i class="bi bi-trophy-fill me-2"></i>Top Users by Tickets Assigned</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="topUsersChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <!-- Chart.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Chart Data from Razor
+            const roleDistributionData = {
+                // Using Json.Serialize to correctly escape strings for JavaScript
+                labels: @Html.Raw(Json.Serialize(roleDistribution.Select(r => r.Role).ToList())),
+                data: [@string.Join(", ", roleDistribution.Select(r => r.Count))]
+            };
+
+            const ticketStatusDistributionData = {
+                labels: ['To Do', 'In Progress', 'In Review', 'Completed'],
+                data: [
+                    @ticketStatusDistribution.ToDo,
+                    @ticketStatusDistribution.InProgress,
+                    @ticketStatusDistribution.InReview,
+                    @ticketStatusDistribution.Completed
+                ]
+            };
+
+            const topUsersByTicketsData = {
+                // Using Json.Serialize to correctly escape strings for JavaScript
+                labels: @Html.Raw(Json.Serialize(topUsersByTickets.Select(u => u.User.Name).ToList())),
+                totalTickets: [@string.Join(", ", topUsersByTickets.Select(u => u.TotalTicketsAssigned))],
+                toDoTickets: [@string.Join(", ", topUsersByTickets.Select(u => u.ToDoTicketsAssigned))],
+                inProgressTickets: [@string.Join(", ", topUsersByTickets.Select(u => u.InProgressTicketsAssigned))],
+                inReviewTickets: [@string.Join(", ", topUsersByTickets.Select(u => u.InReviewTicketsAssigned))],
+                completedTickets: [@string.Join(", ", topUsersByTickets.Select(u => u.CompletedTicketsAssigned))]
+            };
+         // Chart Instances
+        let roleChart, ticketStatusChart, topUsersChart;
+
+        // Function to initialize all charts
+        function initializeCharts() {
+            // Role Distribution Pie Chart
+            const roleCtx = document.getElementById('roleDistributionChart').getContext('2d');
+            roleChart = new Chart(roleCtx, {
+                type: 'pie',
+                data: {
+                    labels: roleDistributionData.labels,
+                    datasets: [{
+                        data: roleDistributionData.data,
+                        backgroundColor: [
+                            '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', '#858796', '#5a5c69',
+                            '#2e59d9', '#17a673', '#2c9faf', '#dda20a', '#be2617', '#666871', '#3a3b45'
+                        ],
+                        hoverBackgroundColor: [
+                            '#2e59d9', '#17a673', '#2c9faf', '#dda20a', '#be2617', '#666871', '#3a3b45',
+                            '#1a3cb0', '#0e7d56', '#1a7986', '#b38600', '#8e1c0f', '#4d4d57', '#2a2a32'
+                        ],
+                        hoverBorderColor: "rgba(234, 236, 244, 1)",
+                    }],
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            backgroundColor: "rgb(255,255,255)",
+                            bodyFontColor: "#858796",
+                            borderColor: '#dddfeb',
+                            borderWidth: 1,
+                            xPadding: 15,
+                            yPadding: 15,
+                            displayColors: false,
+                            caretPadding: 10,
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = Math.round((value / total) * 100);
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        },
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20,
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        }
+                    },
+                    cutout: '50%',
+                }
+            });
+         // Ticket Status Distribution Bar Chart
+            const ticketStatusCtx = document.getElementById('ticketStatusChart').getContext('2d');
+            ticketStatusChart = new Chart(ticketStatusCtx, {
+                type: 'bar',
+                data: {
+                    labels: ticketStatusDistributionData.labels,
+                    datasets: [{
+                        label: 'Ticket Count',
+                        data: ticketStatusDistributionData.data,
+                        backgroundColor: [
+                            'rgba(231, 74, 59, 0.7)',
+                            'rgba(246, 194, 62, 0.7)',
+                            'rgba(54, 185, 204, 0.7)',
+                            'rgba(28, 200, 138, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(231, 74, 59, 1)',
+                            'rgba(246, 194, 62, 1)',
+                            'rgba(54, 185, 204, 1)',
+                            'rgba(28, 200, 138, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.raw}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+             // Top Users by Tickets Assigned Bar Chart
+                const topUsersCtx = document.getElementById('topUsersChart').getContext('2d');
+                topUsersChart = new Chart(topUsersCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: topUsersByTicketsData.labels,
+                        datasets: [{
+                            label: 'Total Tickets',
+                            data: topUsersByTicketsData.totalTickets,
+                            backgroundColor: 'rgba(78, 115, 223, 0.7)',
+                            borderColor: 'rgba(78, 115, 223, 1)',
+                            borderWidth: 1
+                        }, {
+                            label: 'To Do',
+                            data: topUsersByTicketsData.toDoTickets,
+                            backgroundColor: 'rgba(231, 74, 59, 0.7)',
+                            borderColor: 'rgba(231, 74, 59, 1)',
+                            borderWidth: 1
+                        }, {
+                            label: 'In Progress',
+                            data: topUsersByTicketsData.inProgressTickets,
+                            backgroundColor: 'rgba(246, 194, 62, 0.7)',
+                            borderColor: 'rgba(246, 194, 62, 1)',
+                            borderWidth: 1
+                        }, {
+                            label: 'In Review',
+                            data: topUsersByTicketsData.inReviewTickets,
+                            backgroundColor: 'rgba(54, 185, 204, 0.7)',
+                            borderColor: 'rgba(54, 185, 204, 1)',
+                            borderWidth: 1
+                        }, {
+                            label: 'Completed',
+                            data: topUsersByTicketsData.completedTickets,
+                            backgroundColor: 'rgba(28, 200, 138, 0.7)',
+                            borderColor: 'rgba(28, 200, 138, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    precision: 0
+                                }
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.dataset.label}: ${context.raw}`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Initialize all charts (no pagination logic needed)
+            initializeCharts();
+        });
+    </script>
+}
