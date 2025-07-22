@@ -14,13 +14,13 @@
     var pendingPageSize = Model.PendingUsersPageSize;
     var pendingTotalPages = Model.PendingUsersTotalPages;
 
-    var currentUserId = ViewBag.CurrentUserId; // Still from ViewBag
+    var currentUserId = ViewBag.CurrentUserId;
 
-    // Determine which tab should be active based on current page or default to Active Users
+    // Determine which tab should be active
     var activeTab = Context.Request.Query["tab"].ToString();
     if (string.IsNullOrEmpty(activeTab))
     {
-        activeTab = "activeUsers"; // Default to active users tab
+        activeTab = "activeUsers";
     }
 }
 
@@ -29,9 +29,14 @@
         <h2 class="card-title mb-0 fw-bold text-primary display-6">
             <i class="bi bi-file-earmark-person-fill me-2"></i> User Reports
         </h2>
-        <a asp-action="Index" asp-controller="Dashboard" class="btn btn-outline-secondary rounded-pill shadow-sm animate-btn">
-            <i class="bi bi-arrow-left-circle me-1"></i> Back to Dashboard
-        </a>
+        <div class="d-flex gap-2">
+            <a asp-action="ChartsReport" asp-controller="Report" class="btn btn-primary rounded-pill shadow-sm animate-btn">
+                <i class="bi bi-bar-chart-line-fill me-1"></i> View Charts
+            </a>
+            <a asp-action="Index" asp-controller="Dashboard" class="btn btn-outline-secondary rounded-pill shadow-sm animate-btn">
+                <i class="bi bi-arrow-left-circle me-1"></i> Back to Dashboard
+            </a>
+        </div>
     </div>
     <hr class="mb-4" />
 
@@ -50,7 +55,7 @@
         </div>
     }
 
-    @* Tabbed Navigation for Active Users and Pending Verification Users *@
+    @* Tabbed Navigation *@
     <ul class="nav nav-tabs mb-3" id="userReportsTabs" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link @(activeTab == "activeUsers" ? "active" : "")"
@@ -71,16 +76,17 @@
     </ul>
 
     <div class="tab-content" id="userReportsTabsContent">
-        @* Active Users Tab Content *@
+        @* Active Users Tab *@
         <div class="tab-pane fade @(activeTab == "activeUsers" ? "show active" : "")" id="activeUsersContent" role="tabpanel" aria-labelledby="active-users-tab">
             <h3 class="fw-bold text-secondary mb-3 mt-4">Active Users</h3>
             <div class="mb-3">
-                <div class="d-flex">
-                    @* Removed form tag for live search *@
-                    <input type="text" id="activeUserSearchInput" class="form-control rounded-pill me-2"
-                           placeholder="Search by username, email, or role..." value="@activeSearchQuery"
-                           data-target-url="@Url.Action("GetActiveUsersPartial", "Report")" /> @* Added data-target-url *@
-                    <button type="button" id="activeUserSearchButton" class="btn btn-primary rounded-pill"><i class="bi bi-search"></i> Search</button> @* Changed to type="button" *@
+                <form asp-action="UserReports" method="get" class="d-flex" id="activeUserSearchForm">
+                    <input type="hidden" name="activePageSize" value="@activePageSize" />
+                    <input type="hidden" name="pendingPage" value="@pendingCurrentPage" />
+                    <input type="hidden" name="pendingPageSize" value="@pendingPageSize" />
+                    <input type="hidden" name="tab" value="activeUsers" />
+                    <input type="text" name="searchQuery" id="activeUserLiveSearch" class="form-control rounded-pill me-2" placeholder="Search by username, email, or role..." value="@activeSearchQuery" />
+                    <button type="submit" class="btn btn-primary rounded-pill"><i class="bi bi-search"></i> Search</button>
                     @if (!string.IsNullOrWhiteSpace(activeSearchQuery))
                     {
                         <a asp-action="UserReports" class="btn btn-outline-secondary rounded-pill ms-2"
@@ -92,16 +98,116 @@
                             <i class="bi bi-x-circle"></i> Clear
                         </a>
                     }
-                </div>
+                </form>
             </div>
 
-            <div id="activeUsersTableContainer">
-                @* Container for AJAX updates *@
-                @await Html.PartialAsync("_ActiveUsersTablePartial", Model) @* Initial load of partial view *@
-            </div>
+            @if (!Model.ActiveUsers.Any())
+            {
+                <div class="alert alert-info rounded-4 shadow-sm" role="alert">
+                    <i class="bi bi-info-circle-fill me-2"></i> No active users found matching your criteria.
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive rounded-4 shadow-sm mb-3">
+                    <table class="table table-hover table-bordered mb-0" id="activeUserReportsTable">
+                        <thead class="table-primary text-white">
+                            <tr>
+                                <th scope="col">Username</th>
+                                <th scope="col">Email</th>
+                                <th scope="col">Role</th>
+                                <th scope="col">Total Assigned Tickets</th>
+                                <th scope="col">To Do</th>
+                                <th scope="col">In Progress</th>
+                                <th scope="col">In Review</th>
+                                <th scope="col">Completed</th>
+                                <th scope="col">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var report in Model.ActiveUsers)
+                            {
+                                <tr id="user-row-@report.User.Id">
+                                    <td>@report.User.Name</td>
+                                    <td>@report.User.Email</td>
+                                    <td id="user-role-@report.User.Id">@report.User.Role?.Name</td>
+                                    <td class="@(report.TotalTicketsAssigned == 0 ? "text-muted" : "text-primary fw-bold")">
+                                        @report.TotalTicketsAssigned
+                                    </td>
+                                    <td class="@(report.ToDoTicketsAssigned > 0 ? "text-danger fw-bold" : "text-muted")">
+                                        @report.ToDoTicketsAssigned
+                                    </td>
+                                    <td class="@(report.InProgressTicketsAssigned > 0 ? "text-warning fw-bold" : "text-muted")">
+                                        @report.InProgressTicketsAssigned
+                                    </td>
+                                    <td class="@(report.InReviewTicketsAssigned > 0 ? "text-info fw-bold" : "text-muted")">
+                                        @report.InReviewTicketsAssigned
+                                    </td>
+                                    <td class="@(report.CompletedTicketsAssigned > 0 ? "text-success fw-bold" : "text-muted")">
+                                        @report.CompletedTicketsAssigned
+                                    </td>
+                                    <td>
+                                        @if (report.User.Id != currentUserId)
+                                        {
+                                            <div class="d-flex flex-column flex-md-row align-items-stretch align-items-md-center gap-2">
+                                                <form asp-action="UpdateUserRole" asp-controller="Report" method="post" class="d-inline-flex flex-grow-1" data-user-id="@report.User.Id">
+                                                    <input type="hidden" name="userId" value="@report.User.Id" />
+                                                    <input type="hidden" name="activePage" value="@activeCurrentPage" />
+                                                    <input type="hidden" name="activePageSize" value="@activePageSize" />
+                                                    <input type="hidden" name="searchQuery" value="@activeSearchQuery" />
+                                                    <input type="hidden" name="pendingPage" value="@pendingCurrentPage" />
+                                                    <input type="hidden" name="pendingPageSize" value="@pendingPageSize" />
+                                                    <input type="hidden" name="tab" value="activeUsers" />
+                                                    <select name="newRoleId" class="form-select form-select-sm rounded-pill" onchange="this.form.submit()">
+                                                        @foreach (var role in ViewBag.Roles as SelectList)
+                                                        {
+                                                            <option value="@role.Value" selected="@(role.Value == report.User.Role_Id.ToString())">@role.Text</option>
+                                                        }
+                                                    </select>
+                                                </form>
+
+                                                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill animate-btn"
+                                                        data-bs-toggle="modal" data-bs-target="#softDeleteUserModal_@report.User.Id">
+                                                    <i class="bi bi-person-x"></i> Delete
+                                                </button>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted fst-italic">Current User</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                @* Pagination *@
+                <nav aria-label="Active Users Page navigation">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item @(activeCurrentPage == 1 ? "disabled" : "")">
+                            <a class="page-link rounded-pill mx-1" href="@Url.Action("UserReports", new { activePage = activeCurrentPage - 1, activePageSize = activePageSize, searchQuery = activeSearchQuery, pendingPage = pendingCurrentPage, pendingPageSize = pendingPageSize, tab = "activeUsers" })" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                        @for (int i = 1; i <= activeTotalPages; i++)
+                        {
+                            <li class="page-item @(i == activeCurrentPage ? "active" : "")">
+                                <a class="page-link rounded-pill mx-1" href="@Url.Action("UserReports", new { activePage = i, activePageSize = activePageSize, searchQuery = activeSearchQuery, pendingPage = pendingCurrentPage, pendingPageSize = pendingPageSize, tab = "activeUsers" })">@i</a>
+                            </li>
+                        }
+                        <li class="page-item @(activeCurrentPage == activeTotalPages ? "disabled" : "")">
+                            <a class="page-link rounded-pill mx-1" href="@Url.Action("UserReports", new { activePage = activeCurrentPage + 1, activePageSize = activePageSize, searchQuery = activeSearchQuery, pendingPage = pendingCurrentPage, pendingPageSize = pendingPageSize, tab = "activeUsers" })" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            }
         </div>
 
-        @* Pending Verification Users Tab Content (No changes needed for this section for live search) *@
+        @* Pending Users Tab *@
         <div class="tab-pane fade @(activeTab == "pendingUsers" ? "show active" : "")" id="pendingUsersContent" role="tabpanel" aria-labelledby="pending-users-tab">
             <h3 class="fw-bold text-secondary mb-3 mt-5">Pending Verification Users</h3>
 
@@ -113,6 +219,10 @@
             }
             else
             {
+                <div class="mb-3">
+                    <input type="text" id="pendingUserLiveSearch" class="form-control rounded-pill" placeholder="Search pending users..." />
+                </div>
+
                 <div class="table-responsive rounded-4 shadow-sm mb-3">
                     <table class="table table-hover table-bordered mb-0" id="pendingUserReportsTable">
                         <thead class="table-warning text-dark">
@@ -132,7 +242,6 @@
                                     <td>@report.User.Created_At.ToShortDateString()</td>
                                     <td>
                                         <div class="d-flex flex-column flex-md-row align-items-stretch align-items-md-center gap-2">
-                                            @* Verify User Button *@
                                             <form asp-action="VerifyUser" asp-controller="Report" method="post" class="d-inline-block">
                                                 <input type="hidden" name="id" value="@report.User.Id" />
                                                 <input type="hidden" name="activePage" value="@activeCurrentPage" />
@@ -140,13 +249,12 @@
                                                 <input type="hidden" name="searchQuery" value="@activeSearchQuery" />
                                                 <input type="hidden" name="pendingPage" value="@pendingCurrentPage" />
                                                 <input type="hidden" name="pendingPageSize" value="@pendingPageSize" />
-                                                <input type="hidden" name="tab" value="pendingUsers" /> @* Keep tab active after verification *@
+                                                <input type="hidden" name="tab" value="pendingUsers" />
                                                 <button type="submit" class="btn btn-sm btn-success rounded-pill animate-btn">
                                                     <i class="bi bi-check-circle"></i> Verify
                                                 </button>
                                             </form>
 
-                                            @* Soft Delete User Button (for pending users) *@
                                             <button type="button" class="btn btn-sm btn-outline-danger rounded-pill animate-btn"
                                                     data-bs-toggle="modal" data-bs-target="#softDeleteUserModal_@report.User.Id">
                                                 <i class="bi bi-person-x"></i> Delete
@@ -159,7 +267,7 @@
                     </table>
                 </div>
 
-                @* Pending Users Pagination Controls *@
+                @* Pagination *@
                 <nav aria-label="Pending Users Page navigation">
                     <ul class="pagination justify-content-center">
                         <li class="page-item @(pendingCurrentPage == 1 ? "disabled" : "")">
@@ -185,10 +293,9 @@
     </div>
 </div>
 
-@* Modals for each user for soft deletion (for both active and pending users) *@
-@foreach (var report in Model.ActiveUsers.Concat(Model.PendingUsers)) @* Iterate over both lists for modals *@
+@* Modals for soft deletion *@
+@foreach (var report in Model.ActiveUsers.Concat(Model.PendingUsers))
 {
-    @* Only create modal if user is not the current admin *@
     @if (report.User.Id != currentUserId)
     {
         <div class="modal fade" id="softDeleteUserModal_@report.User.Id" tabindex="-1" aria-labelledby="softDeleteUserModalLabel_@report.User.Id" aria-hidden="true">
@@ -211,7 +318,7 @@
                             <input type="hidden" name="searchQuery" value="@activeSearchQuery" />
                             <input type="hidden" name="pendingPage" value="@pendingCurrentPage" />
                             <input type="hidden" name="pendingPageSize" value="@pendingPageSize" />
-                            <input type="hidden" name="tab" value="@activeTab" /> @* Pass current active tab to maintain state after deletion *@
+                            <input type="hidden" name="tab" value="@activeTab" />
                             <button type="submit" class="btn btn-danger rounded-pill animate-btn">
                                 Soft Delete
                             </button>
@@ -227,223 +334,5 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // SignalR User Update Listener
-            document.addEventListener('userUpdate', function (event) {
-                const { action, user } = event.detail;
-                console.log(`User update event received: ${action} for user ID ${user.id}`);
 
-                // For a full page refresh scenario (as this page currently is), client-side DOM manipulation
-                // for SignalR updates is less critical because the page will reload anyway.
-                // However, if you switch to AJAX-loaded tabs, this logic becomes essential.
-
-                if (action === 'roleUpdated') {
-                    const userRow = document.getElementById(`user-row-${user.id}`);
-                    if (userRow) {
-                        const roleCell = userRow.querySelector(`#user-role-${user.id}`);
-                        if (roleCell) {
-                            roleCell.textContent = user.role.title; // Update the role text
-                        }
-                    }
-                } else if (action === 'verified') {
-                    const pendingUserRow = document.getElementById(`user-row-${user.id}`);
-                    if (pendingUserRow) {
-                        pendingUserRow.remove(); // Remove from pending table
-                        // You might want to re-fetch the active users table here
-                        // to see the newly verified user appear.
-                        loadActiveUsersTable();
-                    }
-                } else if (action === 'deleted') {
-                    const rowToRemove = document.getElementById(`user-row-${user.id}`);
-                    if (rowToRemove) {
-                        rowToRemove.remove();
-                        console.log(`User row removed for user ID ${user.id}.`);
-                        // Re-fetch the current active tab's data after a deletion
-                        const activeTabId = document.querySelector('.nav-link.active').getAttribute('id');
-                        if (activeTabId === 'active-users-tab') {
-                            loadActiveUsersTable();
-                        } else if (activeTabId === 'pending-users-tab') {
-                            loadPendingUsersTable(); // You'll need to implement this for pending
-                        }
-                    }
-                }
-            });
-
-            // --- Live Search for Active Users ---
-            const activeUserSearchInput = document.getElementById('activeUserSearchInput');
-            const activeUsersTableContainer = document.getElementById('activeUsersTableContainer');
-            const activeUserSearchButton = document.getElementById('activeUserSearchButton');
-
-            let searchTimeout;
-            const debounceDelay = 300; // milliseconds
-
-            function loadActiveUsersTable(page = 1, pageSize = @activePageSize) {
-                const searchQuery = activeUserSearchInput.value;
-                const url = activeUserSearchInput.dataset.targetUrl; // Get the URL from data attribute
-
-                if (!url) {
-                    console.error("Data target URL not found for active user search input.");
-                    return;
-                }
-
-                const params = new URLSearchParams({
-                    activePage: page,
-                    activePageSize: pageSize,
-                    searchQuery: searchQuery
-                    // Do not pass pendingPage/pendingPageSize or tab here, as this partial only cares about active users
-                }).toString();
-
-                fetch(`${url}?${params}`)
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-                        return response.text();
-                    })
-                    .then(html => {
-                        activeUsersTableContainer.innerHTML = html;
-                        // Re-attach event listeners for dynamically loaded content if needed
-                        attachEventListenersToActiveUsersTable();
-                    })
-                    .catch(error => console.error('Error loading active users table:', error));
-            }
-
-            // Function to attach event listeners to dynamically loaded elements
-            function attachEventListenersToActiveUsersTable() {
-                // Example: Re-attach onchange for role dropdowns if they are part of the partial view
-                activeUsersTableContainer.querySelectorAll('select[name="newRoleId"]').forEach(select => {
-                    select.onchange = function() {
-                        this.form.submit(); // This will still cause a full page reload for role changes
-                    };
-                });
-
-                // Example: Re-attach modal triggers if they are part of the partial view
-                activeUsersTableContainer.querySelectorAll('[data-bs-toggle="modal"]').forEach(button => {
-                    new bootstrap.Modal(document.getElementById(button.dataset.bsTarget.substring(1)));
-                });
-
-                // Re-attach pagination links for AJAX calls
-                activeUsersTableContainer.querySelectorAll('.pagination a.page-link').forEach(link => {
-                    link.removeEventListener('click', handleActiveUsersPaginationClick); // Avoid duplicate listeners
-                    link.addEventListener('click', handleActiveUsersPaginationClick);
-                });
-            }
-
-            function handleActiveUsersPaginationClick(event) {
-                event.preventDefault(); // Prevent default link behavior
-                const url = new URL(event.currentTarget.href);
-                const page = url.searchParams.get('activePage');
-                const pageSize = url.searchParams.get('activePageSize');
-                loadActiveUsersTable(page, pageSize);
-            }
-
-            if (activeUserSearchInput) {
-                activeUserSearchInput.addEventListener('keyup', function () {
-                    clearTimeout(searchTimeout);
-                    searchTimeout = setTimeout(() => {
-                        loadActiveUsersTable();
-                    }, debounceDelay);
-                });
-
-                activeUserSearchButton.addEventListener('click', function () {
-                    clearTimeout(searchTimeout); // Clear any pending debounced calls
-                    loadActiveUsersTable();
-                });
-            }
-
-            // --- Initial attachment of event listeners ---
-            attachEventListenersToActiveUsersTable(); // Call this once on DOMContentLoaded
-            // (Note: If your pagination links are also part of the partial view, this initial call
-            // might not fully cover them after the initial partial load. Consider putting a
-            // call to attachEventListenersToActiveUsersTable() inside loadActiveUsersTable's .then() block.)
-
-            // This function would be similar for pending users if you wanted live search there too
-            function loadPendingUsersTable(page = 1, pageSize = @pendingPageSize) {
-                // Implement similar AJAX logic for pending users
-                console.log("Loading pending users table (AJAX functionality not fully implemented in example)");
-            }
-
-            // Handle tab switching to trigger initial load of table if it's not the default tab
-            var userReportsTabs = document.getElementById('userReportsTabs');
-            if (userReportsTabs) {
-                userReportsTabs.addEventListener('shown.bs.tab', function (event) {
-                    const targetTabId = event.target.getAttribute('data-bs-target');
-                    if (targetTabId === '#activeUsersContent') {
-                        // This ensures the active users table is loaded when the tab is switched to it
-                        loadActiveUsersTable();
-                    } else if (targetTabId === '#pendingUsersContent') {
-                        loadPendingUsersTable();
-                    }
-                });
-            }
-        });
-    </script>
-}
-
-@section Styles {
-    <style>
-        .animate-btn {
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-            .animate-btn:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-            }
-
-        .form-select.rounded-pill {
-            border-radius: 50rem !important; /* Fully rounded pill shape */
-            padding: 0.25rem 1rem; /* Smaller padding for sm select */
-            height: auto;
-            min-width: 100px; /* Ensure it doesn't get too small */
-        }
-
-        .pagination .page-link {
-            border-radius: 50rem !important;
-            margin: 0 0.25rem;
-            min-width: 38px; /* Ensure consistent width for pagination buttons */
-            text-align: center;
-        }
-
-        .pagination .page-item.active .page-link {
-            background-color: var(--bs-primary);
-            border-color: var(--bs-primary);
-            color: var(--bs-white);
-        }
-
-        [data-bs-theme="dark"] .pagination .page-item .page-link {
-            background-color: var(--bs-card-bg);
-            border-color: var(--bs-border-color);
-            color: var(--bs-body-color);
-        }
-
-            [data-bs-theme="dark"] .pagination .page-item .page-link:hover {
-                background-color: var(--bs-sidebar-active-bg);
-                border-color: var(--bs-sidebar-active-bg);
-            }
-
-        [data-bs-theme="dark"] .pagination .page-item.active .page-link {
-            background-color: var(--bs-primary);
-            border-color: var(--bs-primary);
-            color: var(--bs-white);
-        }
-
-        .form-control.rounded-pill {
-            border-radius: 50rem !important;
-            padding: 0.75rem 1.25rem;
-            height: auto;
-        }
-
-        [data-bs-theme="dark"] .form-control {
-            background-color: #495057;
-            color: var(--bs-body-color);
-            border-color: #6c757d;
-        }
-
-            [data-bs-theme="dark"] .form-control::placeholder {
-                color: rgba(255, 255, 255, 0.6);
-            }
-    </style>
 }
