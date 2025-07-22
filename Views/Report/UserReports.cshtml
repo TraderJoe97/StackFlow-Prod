@@ -344,6 +344,15 @@
             const activeSearchInput = document.getElementById('activeUserLiveSearch'); // Input field for active users
             const activeTable = document.getElementById('activeUserReportsTable'); // Table containing active user rows
 
+            // Create a "No results" message for Active Users (hidden by default)
+            let activeNoResultsMsg = document.createElement('div');
+            activeNoResultsMsg.className = 'alert alert-warning mt-2';
+            activeNoResultsMsg.style.display = 'none';
+            activeNoResultsMsg.innerHTML = '<i class="bi bi-exclamation-circle"></i> No active users found.';
+            if (activeTable) {
+                activeTable.parentNode.appendChild(activeNoResultsMsg);
+            }
+
             if (activeSearchInput && activeTable) {
 
                 // Event: Triggered when a key is released in the search box
@@ -352,12 +361,21 @@
 
                     const filter = activeSearchInput.value.toLowerCase(); // Convert search term to lowercase for case-insensitive matching
                     const rows = activeTable.querySelectorAll('tbody tr'); // Get all table rows inside <tbody>
+                    let visibleCount = 0; // Track visible rows
 
                     // Loop through all rows and show/hide based on the search term
                     rows.forEach(row => {
                         const text = row.innerText.toLowerCase(); // Combine all text in the row and convert to lowercase
-                        row.style.display = text.includes(filter) ? '' : 'none'; // Show row if it matches the search term
+                        if (text.includes(filter)) {
+                            row.style.display = ''; // Show row if it matches the search term
+                            visibleCount++;
+                        } else {
+                            row.style.display = 'none'; // Hide row if it does not match
+                        }
                     });
+
+                    // Show "No results" message if no visible rows
+                    activeNoResultsMsg.style.display = (visibleCount === 0) ? 'block' : 'none';
                 });
 
                 // Event: Prevent pressing "Enter" from submitting the form
@@ -372,6 +390,15 @@
             const pendingSearchInput = document.getElementById('pendingUserLiveSearch'); // Input field for pending users
             const pendingTable = document.getElementById('pendingUserReportsTable'); // Table containing pending user rows
 
+            // Create a "No results" message for Pending Users (hidden by default)
+            let pendingNoResultsMsg = document.createElement('div');
+            pendingNoResultsMsg.className = 'alert alert-warning mt-2';
+            pendingNoResultsMsg.style.display = 'none';
+            pendingNoResultsMsg.innerHTML = '<i class="bi bi-exclamation-circle"></i> No pending users found.';
+            if (pendingTable) {
+                pendingTable.parentNode.appendChild(pendingNoResultsMsg);
+            }
+
             if (pendingSearchInput && pendingTable) {
 
                 // Event: Triggered when a key is released in the search box
@@ -380,12 +407,21 @@
 
                     const filter = pendingSearchInput.value.toLowerCase(); // Convert search term to lowercase for case-insensitive matching
                     const rows = pendingTable.querySelectorAll('tbody tr'); // Get all table rows inside <tbody>
+                    let visibleCount = 0; // Track visible rows
 
                     // Loop through all rows and show/hide based on the search term
                     rows.forEach(row => {
                         const text = row.innerText.toLowerCase(); // Combine all text in the row and convert to lowercase
-                        row.style.display = text.includes(filter) ? '' : 'none'; // Show row if it matches the search term
+                        if (text.includes(filter)) {
+                            row.style.display = ''; // Show row if it matches the search term
+                            visibleCount++;
+                        } else {
+                            row.style.display = 'none'; // Hide row if it does not match
+                        }
                     });
+
+                    // Show "No results" message if no visible rows
+                    pendingNoResultsMsg.style.display = (visibleCount === 0) ? 'block' : 'none';
                 });
 
                 // Event: Prevent pressing "Enter" from submitting the form
@@ -396,3 +432,4 @@
         });
     </script>
 }
+
