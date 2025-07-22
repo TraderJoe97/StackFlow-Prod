@@ -174,6 +174,12 @@ namespace StackFlow.ApiControllers
             public DateTime? CompletedAt { get; set; }
         }
 
+        public class UpdateTicketStatusModel
+        {
+            public int TicketId { get; set; }
+            public string NewStatus { get; set; }
+        }
+
         /// <summary>
         /// DTO for Ticket Comment data returned by the API.
         /// </summary>
