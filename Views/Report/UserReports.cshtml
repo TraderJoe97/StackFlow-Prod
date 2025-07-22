@@ -335,4 +335,57 @@
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // --------------------------
+            // Live Search for Active Users
+            // --------------------------
+            const activeSearchInput = document.getElementById('activeUserLiveSearch');
+            const activeTable = document.getElementById('activeUserReportsTable');
+
+            if (activeSearchInput && activeTable) {
+                activeSearchInput.addEventListener('keyup', function (e) {
+                    // Prevent form submission while typing
+                    e.preventDefault();
+
+                    const filter = activeSearchInput.value.toLowerCase();
+                    const rows = activeTable.querySelectorAll('tbody tr');
+
+                    rows.forEach(row => {
+                        const text = row.innerText.toLowerCase();
+                        row.style.display = text.includes(filter) ? '' : 'none';
+                    });
+                });
+
+                // Prevent pressing Enter from submitting the form
+                activeSearchInput.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter') e.preventDefault();
+                });
+            }
+
+            // --------------------------
+            // Live Search for Pending Users
+            // --------------------------
+            const pendingSearchInput = document.getElementById('pendingUserLiveSearch');
+            const pendingTable = document.getElementById('pendingUserReportsTable');
+
+            if (pendingSearchInput && pendingTable) {
+                pendingSearchInput.addEventListener('keyup', function (e) {
+                    e.preventDefault();
+                    const filter = pendingSearchInput.value.toLowerCase();
+                    const rows = pendingTable.querySelectorAll('tbody tr');
+
+                    rows.forEach(row => {
+                        const text = row.innerText.toLowerCase();
+                        row.style.display = text.includes(filter) ? '' : 'none';
+                    });
+                });
+
+                pendingSearchInput.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter') e.preventDefault();
+                });
+            }
+        });
+    </script>
 }
