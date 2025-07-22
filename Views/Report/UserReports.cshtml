@@ -341,24 +341,26 @@
             // --------------------------
             // Live Search for Active Users
             // --------------------------
-            const activeSearchInput = document.getElementById('activeUserLiveSearch');
-            const activeTable = document.getElementById('activeUserReportsTable');
+            const activeSearchInput = document.getElementById('activeUserLiveSearch'); // Input field for active users
+            const activeTable = document.getElementById('activeUserReportsTable'); // Table containing active user rows
 
             if (activeSearchInput && activeTable) {
+
+                // Event: Triggered when a key is released in the search box
                 activeSearchInput.addEventListener('keyup', function (e) {
-                    // Prevent form submission while typing
-                    e.preventDefault();
+                    e.preventDefault(); // Prevent form submission during typing
 
-                    const filter = activeSearchInput.value.toLowerCase();
-                    const rows = activeTable.querySelectorAll('tbody tr');
+                    const filter = activeSearchInput.value.toLowerCase(); // Convert search term to lowercase for case-insensitive matching
+                    const rows = activeTable.querySelectorAll('tbody tr'); // Get all table rows inside <tbody>
 
+                    // Loop through all rows and show/hide based on the search term
                     rows.forEach(row => {
-                        const text = row.innerText.toLowerCase();
-                        row.style.display = text.includes(filter) ? '' : 'none';
+                        const text = row.innerText.toLowerCase(); // Combine all text in the row and convert to lowercase
+                        row.style.display = text.includes(filter) ? '' : 'none'; // Show row if it matches the search term
                     });
                 });
 
-                // Prevent pressing Enter from submitting the form
+                // Event: Prevent pressing "Enter" from submitting the form
                 activeSearchInput.addEventListener('keydown', function (e) {
                     if (e.key === 'Enter') e.preventDefault();
                 });
@@ -367,21 +369,26 @@
             // --------------------------
             // Live Search for Pending Users
             // --------------------------
-            const pendingSearchInput = document.getElementById('pendingUserLiveSearch');
-            const pendingTable = document.getElementById('pendingUserReportsTable');
+            const pendingSearchInput = document.getElementById('pendingUserLiveSearch'); // Input field for pending users
+            const pendingTable = document.getElementById('pendingUserReportsTable'); // Table containing pending user rows
 
             if (pendingSearchInput && pendingTable) {
-                pendingSearchInput.addEventListener('keyup', function (e) {
-                    e.preventDefault();
-                    const filter = pendingSearchInput.value.toLowerCase();
-                    const rows = pendingTable.querySelectorAll('tbody tr');
 
+                // Event: Triggered when a key is released in the search box
+                pendingSearchInput.addEventListener('keyup', function (e) {
+                    e.preventDefault(); // Prevent any default behavior (like form submission)
+
+                    const filter = pendingSearchInput.value.toLowerCase(); // Convert search term to lowercase for case-insensitive matching
+                    const rows = pendingTable.querySelectorAll('tbody tr'); // Get all table rows inside <tbody>
+
+                    // Loop through all rows and show/hide based on the search term
                     rows.forEach(row => {
-                        const text = row.innerText.toLowerCase();
-                        row.style.display = text.includes(filter) ? '' : 'none';
+                        const text = row.innerText.toLowerCase(); // Combine all text in the row and convert to lowercase
+                        row.style.display = text.includes(filter) ? '' : 'none'; // Show row if it matches the search term
                     });
                 });
 
+                // Event: Prevent pressing "Enter" from submitting the form
                 pendingSearchInput.addEventListener('keydown', function (e) {
                     if (e.key === 'Enter') e.preventDefault();
                 });
