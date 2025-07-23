@@ -175,3 +175,66 @@
     }
 </div>
 
+@@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <!-- Add Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Add chartjs-plugin-datalabels for better labels -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+
+   @@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <!-- Add Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Add chartjs-plugin-datalabels for better labels -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Register the plugin to all charts
+            Chart.register(ChartDataLabels);
+
+            // Prepare data for charts
+            const projectNames = @Html.Raw(Json.Serialize(Model.Select(r => r.Project.Name).ToArray()));
+            const projectStatuses = @Html.Raw(Json.Serialize(Model.Select(r => r.Project.Status).ToArray()));
+            const todoTickets = @Html.Raw(Json.Serialize(Model.Select(r => r.ToDoTickets).ToArray()));
+            const inProgressTickets = @Html.Raw(Json.Serialize(Model.Select(r => r.InProgressTickets).ToArray()));
+            const inReviewTickets = @Html.Raw(Json.Serialize(Model.Select(r => r.InReviewTickets).ToArray()));
+            const completedTickets = @Html.Raw(Json.Serialize(Model.Select(r => r.CompletedTickets).ToArray()));
+            const totalTickets = @Html.Raw(Json.Serialize(Model.Select(r => r.TotalTickets).ToArray()));
+
+            // Count project statuses
+            const statusCounts = {};
+            projectStatuses.forEach(status => {
+                statusCounts[status] = (statusCounts[status] || 0) + 1;
+            });
+
+            // Common chart options
+            const commonChartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            boxWidth: 12
+                        }
+                    },
+                    datalabels: {
+                        display: false // We'll enable selectively
+                    },
+                    tooltip: {
+                        boxPadding: 5,
+                        bodySpacing: 5
+                    }
+                }
+            };
+
+    
