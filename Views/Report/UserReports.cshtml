@@ -1,4 +1,4 @@
-﻿@using System.Security.Claims
+@using System.Security.Claims
 @model StackFlow.ViewModels.UserReportsCombinedViewModel
 
 @{
@@ -55,7 +55,7 @@
         </div>
     }
 
-    @* Tabbed Navigation for Active Users and Pending Verification Users *@
+    @* Tabbed Navigation *@
     <ul class="nav nav-tabs mb-3" id="userReportsTabs" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link @(activeTab == "activeUsers" ? "active" : "")"
@@ -76,7 +76,7 @@
     </ul>
 
     <div class="tab-content" id="userReportsTabsContent">
-        @* Active Users Tab Content *@
+        @* Active Users Tab *@
         <div class="tab-pane fade @(activeTab == "activeUsers" ? "show active" : "")" id="activeUsersContent" role="tabpanel" aria-labelledby="active-users-tab">
             <h3 class="fw-bold text-secondary mb-3 mt-4">Active Users</h3>
             <div class="mb-3">
@@ -85,7 +85,7 @@
                     <input type="hidden" name="pendingPage" value="@pendingCurrentPage" />
                     <input type="hidden" name="pendingPageSize" value="@pendingPageSize" />
                     <input type="hidden" name="tab" value="activeUsers" />
-                    <input type="text" name="searchQuery" class="form-control rounded-pill me-2" placeholder="Search by username, email, or role..." value="@activeSearchQuery" />
+                    <input type="text" name="searchQuery" id="activeUserLiveSearch" class="form-control rounded-pill me-2" placeholder="Search by username, email, or role..." value="@activeSearchQuery" />
                     <button type="submit" class="btn btn-primary rounded-pill"><i class="bi bi-search"></i> Search</button>
                     @if (!string.IsNullOrWhiteSpace(activeSearchQuery))
                     {
@@ -183,7 +183,7 @@
                     </table>
                 </div>
 
-                @* Active Users Pagination Controls *@
+                @* Pagination *@
                 <nav aria-label="Active Users Page navigation">
                     <ul class="pagination justify-content-center">
                         <li class="page-item @(activeCurrentPage == 1 ? "disabled" : "")">
@@ -207,7 +207,7 @@
             }
         </div>
 
-        @* Pending Verification Users Tab Content *@
+        @* Pending Users Tab *@
         <div class="tab-pane fade @(activeTab == "pendingUsers" ? "show active" : "")" id="pendingUsersContent" role="tabpanel" aria-labelledby="pending-users-tab">
             <h3 class="fw-bold text-secondary mb-3 mt-5">Pending Verification Users</h3>
 
@@ -219,6 +219,10 @@
             }
             else
             {
+                <div class="mb-3">
+                    <input type="text" id="pendingUserLiveSearch" class="form-control rounded-pill" placeholder="Search pending users..." />
+                </div>
+
                 <div class="table-responsive rounded-4 shadow-sm mb-3">
                     <table class="table table-hover table-bordered mb-0" id="pendingUserReportsTable">
                         <thead class="table-warning text-dark">
@@ -263,7 +267,7 @@
                     </table>
                 </div>
 
-                @* Pending Users Pagination Controls *@
+                @* Pagination *@
                 <nav aria-label="Pending Users Page navigation">
                     <ul class="pagination justify-content-center">
                         <li class="page-item @(pendingCurrentPage == 1 ? "disabled" : "")">
@@ -289,7 +293,7 @@
     </div>
 </div>
 
-@* Modals for each user for soft deletion *@
+@* Modals for soft deletion *@
 @foreach (var report in Model.ActiveUsers.Concat(Model.PendingUsers))
 {
     @if (report.User.Id != currentUserId)
@@ -333,24 +337,99 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // SignalR User Update Listener
-            document.addEventListener('userUpdate', function (event) {
-                const { action, user } = event.detail;
-                console.log(`User update event received: ${action} for user ID ${user.id}`);
 
-                if (action === 'roleUpdated') {
-                    const userRow = document.getElementById(`user-row-${user.id}`);
-                    if (userRow) {
-                        const roleCell = userRow.querySelector(`#user-role-${user.id}`);
-                        if (roleCell) {
-                            roleCell.textContent = user.role.title;
+            // --------------------------
+            // Live Search for Active Users
+            // --------------------------
+            const activeSearchInput = document.getElementById('activeUserLiveSearch'); // Input field for active users
+            const activeTable = document.getElementById('activeUserReportsTable'); // Table containing active user rows
+
+            // Create a "No results" message for Active Users (hidden by default)
+            let activeNoResultsMsg = document.createElement('div');
+            activeNoResultsMsg.className = 'alert alert-warning mt-2';
+            activeNoResultsMsg.style.display = 'none';
+            activeNoResultsMsg.innerHTML = '<i class="bi bi-exclamation-circle"></i> No active users found.';
+            if (activeTable) {
+                activeTable.parentNode.appendChild(activeNoResultsMsg);
+            }
+
+            if (activeSearchInput && activeTable) {
+
+                // Event: Triggered when a key is released in the search box
+                activeSearchInput.addEventListener('keyup', function (e) {
+                    e.preventDefault(); // Prevent form submission during typing
+
+                    const filter = activeSearchInput.value.toLowerCase(); // Convert search term to lowercase for case-insensitive matching
+                    const rows = activeTable.querySelectorAll('tbody tr'); // Get all table rows inside <tbody>
+                    let visibleCount = 0; // Track visible rows
+
+                    // Loop through all rows and show/hide based on the search term
+                    rows.forEach(row => {
+                        const text = row.innerText.toLowerCase(); // Combine all text in the row and convert to lowercase
+                        if (text.includes(filter)) {
+                            row.style.display = ''; // Show row if it matches the search term
+                            visibleCount++;
+                        } else {
+                            row.style.display = 'none'; // Hide row if it does not match
                         }
-                    }
-                } else if (action === 'verified') {
-                    // Logic to handle user verification (e.g., remove from pending, add to active)
-                    console.log(`User ${user.id} has been verified.`);
-                }
-            });
+                    });
+
+                    // Show "No results" message if no visible rows
+                    activeNoResultsMsg.style.display = (visibleCount === 0) ? 'block' : 'none';
+                });
+
+                // Event: Prevent pressing "Enter" from submitting the form
+                activeSearchInput.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter') e.preventDefault();
+                });
+            }
+
+            // --------------------------
+            // Live Search for Pending Users
+            // --------------------------
+            const pendingSearchInput = document.getElementById('pendingUserLiveSearch'); // Input field for pending users
+            const pendingTable = document.getElementById('pendingUserReportsTable'); // Table containing pending user rows
+
+            // Create a "No results" message for Pending Users (hidden by default)
+            let pendingNoResultsMsg = document.createElement('div');
+            pendingNoResultsMsg.className = 'alert alert-warning mt-2';
+            pendingNoResultsMsg.style.display = 'none';
+            pendingNoResultsMsg.innerHTML = '<i class="bi bi-exclamation-circle"></i> No pending users found.';
+            if (pendingTable) {
+                pendingTable.parentNode.appendChild(pendingNoResultsMsg);
+            }
+
+            if (pendingSearchInput && pendingTable) {
+
+                // Event: Triggered when a key is released in the search box
+                pendingSearchInput.addEventListener('keyup', function (e) {
+                    e.preventDefault(); // Prevent any default behavior (like form submission)
+
+                    const filter = pendingSearchInput.value.toLowerCase(); // Convert search term to lowercase for case-insensitive matching
+                    const rows = pendingTable.querySelectorAll('tbody tr'); // Get all table rows inside <tbody>
+                    let visibleCount = 0; // Track visible rows
+
+                    // Loop through all rows and show/hide based on the search term
+                    rows.forEach(row => {
+                        const text = row.innerText.toLowerCase(); // Combine all text in the row and convert to lowercase
+                        if (text.includes(filter)) {
+                            row.style.display = ''; // Show row if it matches the search term
+                            visibleCount++;
+                        } else {
+                            row.style.display = 'none'; // Hide row if it does not match
+                        }
+                    });
+
+                    // Show "No results" message if no visible rows
+                    pendingNoResultsMsg.style.display = (visibleCount === 0) ? 'block' : 'none';
+                });
+
+                // Event: Prevent pressing "Enter" from submitting the form
+                pendingSearchInput.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter') e.preventDefault();
+                });
+            }
         });
     </script>
 }
+
