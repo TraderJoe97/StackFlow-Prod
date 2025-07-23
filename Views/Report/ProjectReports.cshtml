@@ -420,3 +420,48 @@
     </script>
 }
 
+@section Styles {
+    <style>
+        /* ... (keep your existing styles) ... */
+
+        /* Enhanced chart styling */
+        .chart-container {
+            min-height: 200px;
+            width: 100%;
+        }
+
+        /* Adjust chart sizes for different screens */
+        @@media (max-width: 768px) {
+            .chart-container {
+                height: 250px !important;
+            }
+        }
+
+        @@media (min-width: 992px) {
+            .chart-container {
+                height: 280px !important;
+            }
+
+            #projectTicketChart {
+                height: 350px !important;
+            }
+        }
+
+        /* Better tab styling for mobile */
+        .nav-tabs .nav-link {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+
+        /* Card body padding adjustment */
+        .card-body {
+            padding: 1rem;
+        }
+
+        @@media (max-width: 576px) {
+            .card-body {
+                padding: 0.75rem;
+            }
+        }
+    </style>
+}
