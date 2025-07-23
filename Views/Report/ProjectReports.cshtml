@@ -175,17 +175,7 @@
     }
 </div>
 
-@@section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
-
-    <!-- Add Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Add chartjs-plugin-datalabels for better labels -->
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
-
-   @@section Scripts {
+@section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
@@ -237,4 +227,196 @@
                 }
             };
 
-    
+            // Project Status Pie Chart
+            const statusCtx = document.getElementById('projectStatusChart').getContext('2d');
+            new Chart(statusCtx, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(statusCounts),
+                    datasets: [{
+                        data: Object.values(statusCounts),
+                        backgroundColor: [
+                            'rgba(40, 167, 69, 0.8)', // Active - green
+                            'rgba(255, 193, 7, 0.8)',  // On Hold - yellow
+                            'rgba(108, 117, 125, 0.8)' // Other - gray
+                        ],
+                        borderColor: [
+                            'rgba(40, 167, 69, 1)',
+                            'rgba(255, 193, 7, 1)',
+                            'rgba(108, 117, 125, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    ...commonChartOptions,
+                    plugins: {
+                        ...commonChartOptions.plugins,
+                        datalabels: {
+                            color: '#fff',
+                            font: {
+                                weight: 'bold'
+                            },
+                            formatter: (value, ctx) => {
+                                const total = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${percentage}%`;
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = Math.round((value / total) * 100);
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                },
+                plugins: [ChartDataLabels]
+            });
+
+            // Ticket Status Bar Chart
+            const ticketStatusCtx = document.getElementById('ticketStatusChart').getContext('2d');
+            new Chart(ticketStatusCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['To Do', 'In Progress', 'In Review', 'Completed'],
+                    datasets: [{
+                        label: 'Ticket Count',
+                        data: [
+                            todoTickets.reduce((a, b) => a + b, 0),
+                            inProgressTickets.reduce((a, b) => a + b, 0),
+                            inReviewTickets.reduce((a, b) => a + b, 0),
+                            completedTickets.reduce((a, b) => a + b, 0)
+                        ],
+                        backgroundColor: [
+                            'rgba(13, 110, 253, 0.7)',   // To Do - blue
+                            'rgba(255, 193, 7, 0.7)',    // In Progress - yellow
+                            'rgba(111, 66, 193, 0.7)',   // In Review - purple
+                            'rgba(25, 135, 84, 0.7)'     // Completed - green
+                        ],
+                        borderColor: [
+                            'rgba(13, 110, 253, 1)',
+                            'rgba(255, 193, 7, 1)',
+                            'rgba(111, 66, 193, 1)',
+                            'rgba(25, 135, 84, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    ...commonChartOptions,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    },
+                    plugins: {
+                        ...commonChartOptions.plugins,
+                        legend: {
+                            display: false
+                        },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            color: '#333',
+                            font: {
+                                weight: 'bold'
+                            }
+                        }
+                    }
+                },
+                plugins: [ChartDataLabels]
+            });
+
+            // Project Ticket Breakdown Stacked Bar Chart
+            const projectTicketCtx = document.getElementById('projectTicketChart').getContext('2d');
+            new Chart(projectTicketCtx, {
+                type: 'bar',
+                data: {
+                    labels: projectNames,
+                    datasets: [
+                        {
+                            label: 'To Do',
+                            data: todoTickets,
+                            backgroundColor: 'rgba(13, 110, 253, 0.7)',
+                            borderColor: 'rgba(13, 110, 253, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'In Progress',
+                            data: inProgressTickets,
+                            backgroundColor: 'rgba(255, 193, 7, 0.7)',
+                            borderColor: 'rgba(255, 193, 7, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'In Review',
+                            data: inReviewTickets,
+                            backgroundColor: 'rgba(111, 66, 193, 0.7)',
+                            borderColor: 'rgba(111, 66, 193, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Completed',
+                            data: completedTickets,
+                            backgroundColor: 'rgba(25, 135, 84, 0.7)',
+                            borderColor: 'rgba(25, 135, 84, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    ...commonChartOptions,
+                    scales: {
+                        x: {
+                            stacked: true,
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    },
+                    plugins: {
+                        ...commonChartOptions.plugins,
+                        tooltip: {
+                            callbacks: {
+                                afterLabel: function(context) {
+                                    const dataset = context.dataset;
+                                    const total = totalTickets[context.dataIndex];
+                                    const percentage = Math.round((dataset.data[context.dataIndex] / total) * 100);
+                                    return `Percentage: ${percentage}%`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Handle window resize for better responsiveness
+            let resizeTimer;
+            window.addEventListener('resize', function() {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(function() {
+                    statusCtx.chart.resize();
+                    ticketStatusCtx.chart.resize();
+                    projectTicketCtx.chart.resize();
+                }, 200);
+            });
+        });
+    </script>
+}
+
