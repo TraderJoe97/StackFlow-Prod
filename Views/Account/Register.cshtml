@@ -3,24 +3,23 @@
     Layout = "_Layout";
 }
 
-<div class="auth-container">
-    <div class="auth-card">
-        <!-- Register Form (LEFT) -->
-        <div class="left-panel">
-            <h2 class="text-center mb-4 fw-bold text-success display-5">
+<div class="auth-wrapper">
+    <!-- Left Side: Register Form -->
+    <div class="auth-form-section">
+        <div class="auth-card">
+            <h2 class="auth-title text-success">
                 <i class="bi bi-person-plus-fill me-2"></i> Create Account
             </h2>
-            <hr class="mb-4" />
 
             @if (ViewData["RegistrationError"] != null)
             {
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
                     <i class="bi bi-exclamation-triangle-fill me-2"></i>@ViewData["RegistrationError"]
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             }
 
-            <form asp-controller="Account" asp-action="Register" method="post" class="needs-validation" novalidate>
+            <form asp-controller="Account" asp-action="Register" method="post" class="needs-validation mt-4" novalidate>
                 <div class="mb-3">
                     <label for="username" class="form-label fw-semibold">Username</label>
                     <input type="text" id="username" name="username" class="form-control form-control-lg rounded-pill" placeholder="Choose a username" required />
@@ -50,42 +49,41 @@
                 </div>
             </form>
         </div>
+    </div>
 
-        <!-- Welcome Panel (RIGHT) -->
-        <div class="right-panel">
-            <div class="welcome-text text-center">
-                <h2 class="display-5 fw-bold text-white">Welcome!</h2>
-                <p class="text-light">Already have an account? Login instead.</p>
-                <img src="~/images/logo.png" alt="Logo" class="img-fluid welcome-logo" />
-            </div>
+    <!-- Right Side: Welcome Message -->
+    <div class="auth-welcome-section">
+        <div class="welcome-overlay">
+            <h1 class="display-4 fw-bold text-light">Welcome to StackFlow</h1>
+            <p class="lead text-light">Join us and be part of the future!</p>
+            <img src="~/images/logo-white.png" class="welcome-logo" alt="Logo" />
         </div>
-
-        <!-- Decorative Circles -->
+        <!-- Circles -->
         <div class="circle circle1"></div>
         <div class="circle circle2"></div>
         <div class="circle circle3"></div>
     </div>
 </div>
 
-@section Styles {
-    <link rel="stylesheet" href="~/css/Account.css" />
-}
-
 @section Scripts {
     @await Html.PartialAsync("_ValidationScriptsPartial")
     <script>
-        (() => {
-            'use strict'
-            const forms = document.querySelectorAll('.needs-validation')
-            Array.prototype.slice.call(forms).forEach((form) => {
-                form.addEventListener('submit', (event) => {
+        (function () {
+            'use strict';
+            var forms = document.querySelectorAll('.needs-validation');
+            Array.prototype.slice.call(forms).forEach(function (form) {
+                form.addEventListener('submit', function (event) {
                     if (!form.checkValidity()) {
-                        event.preventDefault()
-                        event.stopPropagation()
+                        event.preventDefault();
+                        event.stopPropagation();
                     }
-                    form.classList.add('was-validated')
-                }, false)
-            })
-        })()
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        })();
     </script>
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/Account.css" />
 }
