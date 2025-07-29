@@ -1,88 +1,91 @@
 ﻿@{
     ViewData["Title"] = "Register";
-    Layout = "_Layout"; // Ensure it uses the shared layout
+    Layout = "_Layout";
 }
 
-<div class="account-page-container">
-    <div class="card shadow-lg border-0 rounded-4 p-4 account-card">
-        <h2 class="card-title text-center mb-4 fw-bold text-success display-5">
-            <i class="bi bi-person-plus-fill me-2"></i> Create Account
-        </h2>
-        <hr class="mb-4" />
+<div class="auth-container">
+    <div class="auth-card">
+        <!-- Register Form (LEFT) -->
+        <div class="left-panel">
+            <h2 class="text-center mb-4 fw-bold text-success display-5">
+                <i class="bi bi-person-plus-fill me-2"></i> Create Account
+            </h2>
+            <hr class="mb-4" />
 
-        @if (ViewData["RegistrationError"] != null)
-        {
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="bi bi-exclamation-triangle-fill me-2"></i>@ViewData["RegistrationError"]
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        }
+            @if (ViewData["RegistrationError"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>@ViewData["RegistrationError"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
 
-        <div class="row justify-content-center">
-            <div class="col-12">
-                <form asp-controller="Account" asp-action="Register" method="post" class="needs-validation" novalidate>
-                    <div class="mb-3">
-                        <label for="username" class="form-label fw-semibold">Username</label>
-                        <input type="text" id="username" name="username" class="form-control form-control-lg rounded-pill" placeholder="Choose a username" required />
-                        <div class="invalid-feedback">
-                            Please enter a username.
-                        </div>
-                    </div>
+            <form asp-controller="Account" asp-action="Register" method="post" class="needs-validation" novalidate>
+                <div class="mb-3">
+                    <label for="username" class="form-label fw-semibold">Username</label>
+                    <input type="text" id="username" name="username" class="form-control form-control-lg rounded-pill" placeholder="Choose a username" required />
+                    <div class="invalid-feedback">Please enter a username.</div>
+                </div>
 
-                    <div class="mb-3">
-                        <label for="email" class="form-label fw-semibold">Email</label>
-                        <input type="email" id="email" name="email" class="form-control form-control-lg rounded-pill" placeholder="your.email@omnitak.com" required />
-                        <div class="form-text text-muted">Must be an omnitak.com email address.</div>
-                        <div class="invalid-feedback">
-                            Please enter a valid omnitak.com email address.
-                        </div>
-                    </div>
+                <div class="mb-3">
+                    <label for="email" class="form-label fw-semibold">Email</label>
+                    <input type="email" id="email" name="email" class="form-control form-control-lg rounded-pill" placeholder="your.email@omnitak.com" required />
+                    <div class="form-text text-muted">Must be an omnitak.com email address.</div>
+                    <div class="invalid-feedback">Please enter a valid omnitak.com email address.</div>
+                </div>
 
-                    <div class="mb-4">
-                        <label for="password" class="form-label fw-semibold">Password</label>
-                        <input type="password" id="password" name="password" class="form-control form-control-lg rounded-pill" placeholder="Choose a strong password" required />
-                        <div class="invalid-feedback">
-                            Please enter a password.
-                        </div>
-                    </div>
+                <div class="mb-4">
+                    <label for="password" class="form-label fw-semibold">Password</label>
+                    <input type="password" id="password" name="password" class="form-control form-control-lg rounded-pill" placeholder="Choose a strong password" required />
+                    <div class="invalid-feedback">Please enter a password.</div>
+                </div>
 
-                    <div class="d-grid gap-3">
-                        <button type="submit" class="btn btn-success btn-lg rounded-pill shadow-sm animate-btn">
-                            <i class="bi bi-person-plus-fill me-2"></i> Register
-                        </button>
-                        <a asp-controller="Account" asp-action="Login" class="btn btn-outline-secondary btn-lg rounded-pill animate-btn">
-                            <i class="bi bi-box-arrow-in-right me-2"></i> Back to Login
-                        </a>
-                    </div>
-                </form>
+                <div class="d-grid gap-3">
+                    <button type="submit" class="btn btn-success btn-lg rounded-pill shadow-sm animate-btn">
+                        <i class="bi bi-person-plus-fill me-2"></i> Register
+                    </button>
+                    <a asp-controller="Account" asp-action="Login" class="btn btn-outline-secondary btn-lg rounded-pill animate-btn">
+                        <i class="bi bi-box-arrow-in-right me-2"></i> Back to Login
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Welcome Panel (RIGHT) -->
+        <div class="right-panel">
+            <div class="welcome-text text-center">
+                <h2 class="display-5 fw-bold text-white">Welcome!</h2>
+                <p class="text-light">Already have an account? Login instead.</p>
+                <img src="~/images/logo.png" alt="Logo" class="img-fluid welcome-logo" />
             </div>
         </div>
+
+        <!-- Decorative Circles -->
+        <div class="circle circle1"></div>
+        <div class="circle circle2"></div>
+        <div class="circle circle3"></div>
     </div>
 </div>
 
-@section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
-    <script>
-        // Bootstrap form validation
-        (function () {
-            'use strict'
-            var forms = document.querySelectorAll('.needs-validation')
-            Array.prototype.slice.call(forms)
-                .forEach(function (form) {
-                    form.addEventListener('submit', function (event) {
-                        if (!form.checkValidity()) {
-                            event.preventDefault()
-                            event.stopPropagation()
-                        }
-                        form.classList.add('was-validated')
-                    }, false)
-                })
-        })()
-    </script>
+@section Styles {
+    <link rel="stylesheet" href="~/css/Account.css" />
 }
 
-@section Styles {
-    <link rel="stylesheet" href="~/css/_Account.css" />
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+    <script>
+        (() => {
+            'use strict'
+            const forms = document.querySelectorAll('.needs-validation')
+            Array.prototype.slice.call(forms).forEach((form) => {
+                form.addEventListener('submit', (event) => {
+                    if (!form.checkValidity()) {
+                        event.preventDefault()
+                        event.stopPropagation()
+                    }
+                    form.classList.add('was-validated')
+                }, false)
+            })
+        })()
+    </script>
 }
