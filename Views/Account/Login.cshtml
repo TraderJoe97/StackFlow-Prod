@@ -1,108 +1,96 @@
-﻿@* No model needed for simple login form *@
-@{
+﻿@{
     ViewData["Title"] = "Login";
-    Layout = "_Layout"; // Use shared layout
+    Layout = "_Layout";
 }
 
 @section Styles {
-    <style>
-        body {
-            margin: 0;
-            background: linear-gradient(to right, #0052cc, #0073e6);
-            min-height: 100vh;
-        }
-    </style>
     <link rel="stylesheet" href="~/css/_Account.css" />
 }
 
-<div class="login-page-container d-flex flex-wrap">
-    <div class="left-panel text-white d-flex flex-column justify-content-center px-5 py-4 position-relative">
-        <div class="background-circles">
-            <div class="circle large"></div>
-            <div class="circle medium"></div>
-            <div class="circle small"></div>
-        </div>
-        <h1 class="display-4 fw-bold z-1">WELCOME</h1>
-        <h5 class="mb-4 z-1">YOUR HEADLINE NAME</h5>
-        <p class="lead z-1">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque eu erat lacus, vel congue mauris.
+<div class="container">
+    <div class="welcome-section">
+        <img src="~/images/logo.JPG" alt="Logo" class="logo" />
+        <h1>WELCOME BACK!</h1>
+        <p class="description">
+            Your personal assistant for effortless task management and a productive day.
         </p>
+
+        <!-- Decorative Circles -->
+        <div class="circle circle1"></div>
+        <div class="circle circle2"></div>
+        <div class="circle circle3"></div>
     </div>
 
-    <div class="right-panel d-flex align-items-center justify-content-center py-5">
-        <div class="card shadow-lg border-0 rounded-4 p-4 account-card w-100" style="max-width: 450px;">
-            <h2 class="card-title text-center mb-4 fw-bold text-primary display-5">
-                <i class="bi bi-person-circle me-2"></i> Welcome Back!
-            </h2>
-            <hr class="mb-4" />
+    <div class="login-section">
+        <h2>Log in</h2>
 
-            @if (TempData["SuccessMessage"] != null)
-            {
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            }
-            @if (TempData["ErrorMessage"] != null)
-            {
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <i class="bi bi-x-circle-fill me-2"></i>@TempData["ErrorMessage"]
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            }
-            @if (ViewData["LoginError"] != null)
-            {
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>@ViewData["LoginError"]
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            }
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-x-circle-fill me-2"></i>@TempData["ErrorMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        @if (ViewData["LoginError"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>@ViewData["LoginError"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
 
-            <form asp-controller="Account" asp-action="Login" method="post" class="needs-validation" novalidate>
-                <div class="mb-3">
-                    <label for="email" class="form-label fw-semibold">Email</label>
-                    <input type="email" id="email" name="email" class="form-control form-control-lg rounded-pill" placeholder="your.email@omnitak.com" required />
-                    <div class="invalid-feedback">Please enter a valid email address.</div>
-                </div>
+        <form asp-controller="Account" asp-action="Login" method="post" class="needs-validation" novalidate>
+            <label>
+                <span class="icon">👤</span>
+                <input type="email" name="email" class="form-control" placeholder="Your Email" required />
+                <div class="invalid-feedback">Please enter a valid email address.</div>
+            </label>
 
-                <div class="mb-4">
-                    <label for="password" class="form-label fw-semibold">Password</label>
-                    <input type="password" id="password" name="password" class="form-control form-control-lg rounded-pill" placeholder="Enter your password" required />
-                    <div class="invalid-feedback">Please enter your password.</div>
-                </div>
+            <label>
+                <span class="icon">🔒</span>
+                <input type="password" name="password" class="form-control" placeholder="Password" required />
+                <span class="show-password">SHOW</span>
+                <div class="invalid-feedback">Please enter your password.</div>
+            </label>
 
-                <div class="d-grid gap-3">
-                    <button type="submit" class="btn btn-primary btn-lg rounded-pill shadow-sm animate-btn">
-                        <i class="bi bi-box-arrow-in-right me-2"></i> Login
-                    </button>
-                    <a asp-controller="Account" asp-action="Register" class="btn btn-outline-secondary btn-lg rounded-pill animate-btn">
-                        <i class="bi bi-person-add me-2"></i> Register New Account
-                    </a>
-                </div>
-            </form>
-        </div>
+            <div class="options">
+                <label><input type="checkbox" /> Remember me</label>
+                <a href="#">Forgot Password?</a>
+            </div>
+
+            <button type="submit" class="btn-primary">Log in</button>
+
+            <div class="divider"><span>or</span></div>
+
+            <a asp-controller="Account" asp-action="Register" class="btn-secondary text-center d-block">
+                Register new account
+            </a>
+        </form>
     </div>
 </div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    @await Html.PartialAsync("_ValidationScriptsPartial")
     <script>
-        // Bootstrap form validation
         (function () {
-            'use strict'
-            var forms = document.querySelectorAll('.needs-validation')
-            Array.prototype.slice.call(forms)
-                .forEach(function (form) {
-                    form.addEventListener('submit', function (event) {
-                        if (!form.checkValidity()) {
-                            event.preventDefault()
-                            event.stopPropagation()
-                        }
-                        form.classList.add('was-validated')
-                    }, false)
-                })
-        })()
+            'use strict';
+            var forms = document.querySelectorAll('.needs-validation');
+            Array.prototype.slice.call(forms).forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        })();
     </script>
 }
