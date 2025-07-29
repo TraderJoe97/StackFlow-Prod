@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using StackFlow.Data;
 using StackFlow.Models;
 using System.Security.Claims;
@@ -17,10 +17,12 @@ namespace StackFlow.Controllers
     public class AccountController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly IEmailService _emailService;
 
-        public AccountController(AppDbContext context)
+        public AccountController(AppDbContext context, IEmailService emailService)
         {
             _context = context;
+            _emailService = emailService;
         }
 
         [HttpGet]
@@ -184,6 +186,17 @@ namespace StackFlow.Controllers
 
             _context.User.Add(newUser);
             await _context.SaveChangesAsync();
+
+            // Send account created email
+            try
+            {
+                await _emailService.SendEmailAsync(newUser.Email, "Account Created", "Welcome to StackFlow! Your account has been created and is pending verification by an administrator.");
+            }
+            catch (Exception ex)
+            {
+                // Log error, but don't prevent user creation
+                Console.WriteLine($"Error sending account creation email: {ex.Message}");
+            }
 
             TempData["SuccessMessage"] = "Registration successful! Your account is pending verification by an administrator.";
             return RedirectToAction("Login");
@@ -424,6 +437,28 @@ namespace StackFlow.Controllers
 
                 // Sign out the user immediately after deletion
                 await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+                // Send account deleted email to the user
+                try
+                {
+                    await _emailService.SendEmailAsync(userToDelete.Email, "Account Deleted", "Your StackFlow account has been successfully deleted.");
+                }
+                catch (Exception ex)
+                {
+                    // Log error, but don't prevent account deletion
+                    Console.WriteLine($"Error sending account deletion email to user: {ex.Message}");
+                }
+
+                // Optional: Send email to admin about ticket reassignment
+                try
+                {
+                    await _emailService.SendEmailAsync(adminUser.Email, "User Account Deleted and Tickets Reassigned", $"User {userToDelete.Name}'s account has been deleted and their tickets have been reassigned to you.");
+                }
+                catch (Exception ex)
+                {
+                    // Log error, but don't prevent account deletion or user email
+                    Console.WriteLine($"Error sending admin notification email about ticket reassignment: {ex.Message}");
+                }
 
                 TempData["SuccessMessage"] = "Your account has been successfully deleted.";
                 return RedirectToAction("DeletedAccount"); // Redirect to the deleted account page

@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using StackFlow.Utils;
 
 namespace StackFlow.ApiControllers
 {
@@ -20,10 +21,12 @@ namespace StackFlow.ApiControllers
     public class TicketsApiController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IEmailService _emailService;
 
-        public TicketsApiController(AppDbContext context)
+        public TicketsApiController(AppDbContext context, IEmailService emailService)
         {
             _context = context;
+            _emailService = emailService;
         }
 
         /// <summary>
@@ -178,6 +181,20 @@ namespace StackFlow.ApiControllers
             await _context.Entry(ticket).Reference(t => t.AssignedTo).LoadAsync();
             await _context.Entry(ticket).Reference(t => t.CreatedBy).LoadAsync();
 
+            // Send email to assigned user
+            if (ticket.AssignedTo != null && !ticket.AssignedTo.IsDeleted && ticket.AssignedTo.IsVerified)
+            {
+                try
+                {
+                    await _emailService.SendEmailAsync(ticket.AssignedTo.Email, "New Ticket Assigned to You", $"A new ticket has been assigned to you: {ticket.Title}. Description: {ticket.Description}");
+                }
+                catch (Exception ex)
+                {
+                    // Log error, but don't prevent ticket creation
+                    Console.WriteLine($"Error sending ticket assignment email: {ex.Message}");
+                }
+            }
+
             var ticketDto = new TicketDto
             {
                 Id = ticket.Id,
@@ -253,6 +270,9 @@ namespace StackFlow.ApiControllers
                 return NotFound();
             }
 
+            // Store the old assigned user ID to check if it changed
+            var oldAssignedToUserId = ticket.Assigned_To;
+
             // Update properties from DTO using C# model property names
             ticket.Title = updateDto.Title;
             ticket.Description = updateDto.Description;
@@ -266,6 +286,24 @@ namespace StackFlow.ApiControllers
             try
             {
                 await _context.SaveChangesAsync();
+
+                // Send email to the new assigned user if the assignment changed
+                if (oldAssignedToUserId != ticket.Assigned_To)
+                {
+                     var newlyAssignedUser = await _context.User.FindAsync(ticket.Assigned_To);
+                     if (newlyAssignedUser != null && !newlyAssignedUser.IsDeleted && newlyAssignedUser.IsVerified)
+                     {
+                         try
+                         {
+                              await _emailService.SendEmailAsync(newlyAssignedUser.Email, "Ticket Assigned to You", $"A ticket has been assigned to you or your assignment has been updated: {ticket.Title}. Description: {ticket.Description}");
+                         }
+                         catch (Exception ex)
+                         {
+                             // Log error
+                              Console.WriteLine($"Error sending ticket reassignment email: {ex.Message}");
+                         }
+                     }
+                }
             }
             catch (DbUpdateConcurrencyException)
             {

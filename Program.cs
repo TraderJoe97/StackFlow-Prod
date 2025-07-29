@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.AspNetCore.Http; // Ensure this is present for context.Response.WriteAsync
+using StackFlow.Utils;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -71,7 +72,7 @@ builder.Services.AddSwaggerGen(c =>
     // Configure JWT Bearer authorization in Swagger UI
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+        Description = "JWT Authorization header using the Bearer scheme. Example: "Authorization: Bearer {token}"",
         Name = "Authorization",
         In = ParameterLocation.Header,
         Type = SecuritySchemeType.ApiKey,
@@ -146,6 +147,13 @@ builder.Services.AddAuthorization();
 
 // Add SignalR services
 builder.Services.AddSignalR();
+
+// Add Email Service (Mailgun)
+builder.Services.AddTransient<IEmailService>(s => new MailgunEmailService(
+    builder.Configuration["MailgunSettings:ApiKey"],
+    builder.Configuration["MailgunSettings:Domain"],
+    builder.Configuration["MailgunSettings:FromEmail"]
+));
 
 var app = builder.Build();
 

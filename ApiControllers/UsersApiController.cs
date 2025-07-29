@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StackFlow.Data;
@@ -11,6 +11,7 @@ using System.Linq;
 using System;
 using Microsoft.AspNetCore.Authentication.JwtBearer; // Added for JWT Bearer authentication
 using StackFlow.ApiControllers.Dtos;
+using StackFlow.Utils;
 
 namespace StackFlow.ApiControllers
 {
@@ -25,10 +26,12 @@ namespace StackFlow.ApiControllers
     public class UsersApiController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IEmailService _emailService;
 
-        public UsersApiController(AppDbContext context)
+        public UsersApiController(AppDbContext context, IEmailService emailService)
         {
             _context = context;
+            _emailService = emailService;
         }
 
         public class UserQueryParameters
@@ -197,6 +200,18 @@ namespace StackFlow.ApiControllers
             try
             {
                 await _context.SaveChangesAsync();
+
+                // Send account verified email
+                try
+                {
+                    await _emailService.SendEmailAsync(userToVerify.Email, "Account Verified", $"Your StackFlow account for '{userToVerify.Name}' has been verified.");
+                }
+                catch (Exception ex)
+                {
+                    // Log error, but don't prevent verification
+                    Console.WriteLine($"Error sending account verification email: {ex.Message}");
+                }
+
                 return Ok(new { message = $"User '{userToVerify.Name}' has been verified successfully." });
             }
             catch (Exception ex)
@@ -211,7 +226,8 @@ namespace StackFlow.ApiControllers
         /// Accessible only by Admin role.
         /// </summary>
         /// <param name="id">The ID of the user whose role is to be updated.</param>
-        /// <param name="dto">The new role ID.</param>
+        /// <param name="dto">The new role ID.
+        /// </param>
         /// <returns>200 OK on success, 404 Not Found, 400 Bad Request, or 403 Forbidden.</returns>
         [HttpPut("{id}/role")] // Route: /api/users/{id}/role
         [Authorize(Roles = "Admin")]
@@ -235,7 +251,7 @@ namespace StackFlow.ApiControllers
                 return Forbid("You cannot change your own role via this endpoint. Use the 'Manage Account' section for self-management."); // 403 Forbidden
             }
 
-            userToUpdate.Role_Id = dto.NewRoleId;
+            userToUpdate.Role_Id = newRole.Id;
 
             try
             {
@@ -311,6 +327,28 @@ namespace StackFlow.ApiControllers
 
                 userToDelete.IsDeleted = true;
                 await _context.SaveChangesAsync(); // Then save user deletion status
+
+                // Send account deleted email to the user
+                try
+                {
+                    await _emailService.SendEmailAsync(userToDelete.Email, "Account Deleted", $"Your StackFlow account for '{userToDelete.Name}' has been deleted.");
+                }
+                catch (Exception ex)
+                {
+                    // Log error, but don't prevent deletion
+                    Console.WriteLine($"Error sending account deletion email to user: {ex.Message}");
+                }
+
+                // Optional: Send email to admin about ticket reassignment
+                try
+                {
+                     await _emailService.SendEmailAsync(adminUser.Email, "User Account Deleted and Tickets Reassigned", $"User '{userToDelete.Name}'s account has been deleted and their tickets have been reassigned to you.");
+                }
+                catch (Exception ex)
+                {
+                    // Log error, but don't prevent deletion or user email
+                    Console.WriteLine($"Error sending admin notification email about ticket reassignment: {ex.Message}");
+                }
 
                 return Ok(new { message = $"User '{userToDelete.Name}' soft-deleted and their tickets reassigned to {adminUser.Name}." });
             }
