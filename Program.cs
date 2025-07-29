@@ -72,7 +72,7 @@ builder.Services.AddSwaggerGen(c =>
     // Configure JWT Bearer authorization in Swagger UI
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Description = "JWT Authorization header using the Bearer scheme. Example: "Authorization: Bearer {token}"",
+        Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
         Name = "Authorization",
         In = ParameterLocation.Header,
         Type = SecuritySchemeType.ApiKey,
@@ -148,12 +148,8 @@ builder.Services.AddAuthorization();
 // Add SignalR services
 builder.Services.AddSignalR();
 
-// Add Email Service (Mailgun)
-builder.Services.AddTransient<IEmailService>(s => new MailgunEmailService(
-    builder.Configuration["MailgunSettings:ApiKey"],
-    builder.Configuration["MailgunSettings:Domain"],
-    builder.Configuration["MailgunSettings:FromEmail"]
-));
+// Add Email Service (SendGrid)
+builder.Services.AddTransient<IEmailService, SendGridEmailService>();
 
 var app = builder.Build();
 
