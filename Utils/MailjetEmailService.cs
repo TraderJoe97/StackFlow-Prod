@@ -1,12 +1,12 @@
 using Mailjet.Client;
 using Mailjet.Client.TransactionalEmails;
-using StackFlow.Services;
+using StackFlow.Utils;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration; // Added for IConfiguration
 using System; // Added for Exception
 
-namespace StackFlow.Utils // Assuming this is where your IEmailService is located
+namespace StackFlow.Utils 
 {
     public class MailjetEmailService : IEmailService
     {
@@ -34,10 +34,10 @@ namespace StackFlow.Utils // Assuming this is where your IEmailService is locate
 
             var email = new TransactionalEmail
             {
-                From = new SendContact("yourverifiedemail@yourdomain.com", "Your App Name"), // Replace with your verified sender email and name
+                From = new SendContact("stackflow.stackminds@gmail.com", "StackFlow Task Management"),
                 Subject = subject,
-                HtmlPart = htmlContent,
-                To = new List<SendContact> { new SendContact(toEmail) }
+                HTMLPart = htmlContent,
+                To = new List<SendContact> { new SendContact(toEmail, "StackFlow User") }
             };
 
             try
@@ -45,7 +45,7 @@ namespace StackFlow.Utils // Assuming this is where your IEmailService is locate
                 var response = await client.SendTransactionalEmailsAsync(new List<TransactionalEmail> { email });
 
                 // Check the response for success or failure
-                if (response.Messages != null && response.Messages.Count > 0)
+                if (response.Messages != null && response.Messages.Length > 0)
                 {
                     if (response.Messages[0].Status != "success")
                     {

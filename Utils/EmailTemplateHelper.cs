@@ -17,7 +17,7 @@ namespace StackFlow.Utils
             {
                 // Log error or handle missing template appropriately
                 Console.WriteLine($"Email template not found: {templatePath}");
-                return "Email template not found."; // Basic fallback
+                return $"Email template not found.{templatePath}"; // Basic fallback
             }
 
             var templateContent = await File.ReadAllTextAsync(templatePath);

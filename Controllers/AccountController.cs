@@ -1,16 +1,17 @@
-using Microsoft.AspNetCore.Mvc;
-using StackFlow.Data;
-using StackFlow.Models;
-using System.Security.Claims;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
+using BCrypt.Net; // For password hashing
+using Mailjet.Client.Resources;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using BCrypt.Net; // For password hashing
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using StackFlow.Data;
+using StackFlow.Models;
+using StackFlow.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using StackFlow.Utils;
+using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace StackFlow.Controllers
 {
@@ -173,7 +174,7 @@ namespace StackFlow.Controllers
                 return View();
             }
 
-            var newUser = new User
+            var newUser = new StackFlow.Models.User
             {
                 Name = username,
                 Email = email,
