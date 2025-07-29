@@ -160,6 +160,7 @@ namespace StackFlow.ApiControllers
             var userDto = new UserDto
             {
                 Id = user.Id,
+                Name = user.Name,
                 Email = user.Email,
                 Role = user.Role?.Name,
                 IsVerified = user.IsVerified,
@@ -201,10 +202,16 @@ namespace StackFlow.ApiControllers
             {
                 await _context.SaveChangesAsync();
 
-                // Send account verified email
+                // Send account verified email using template
                 try
                 {
-                    await _emailService.SendEmailAsync(userToVerify.Email, "Account Verified", $"Your StackFlow account for '{userToVerify.Name}' has been verified.");
+                    var placeholders = new Dictionary<string, string>
+                    {
+                        { "UserName", userToVerify.Name },
+                        { "CurrentYear", DateTime.UtcNow.Year.ToString() }
+                    };
+                    var emailBody = await EmailTemplateHelper.LoadTemplateAndPopulateAsync("AccountVerified.html", placeholders);
+                    await _emailService.SendEmailAsync(userToVerify.Email, "Your StackFlow Account Has Been Verified", emailBody);
                 }
                 catch (Exception ex)
                 {
@@ -328,10 +335,16 @@ namespace StackFlow.ApiControllers
                 userToDelete.IsDeleted = true;
                 await _context.SaveChangesAsync(); // Then save user deletion status
 
-                // Send account deleted email to the user
+                // Send account deleted email to the user using template
                 try
                 {
-                    await _emailService.SendEmailAsync(userToDelete.Email, "Account Deleted", $"Your StackFlow account for '{userToDelete.Name}' has been deleted.");
+                     var placeholders = new Dictionary<string, string>
+                     {
+                         { "UserName", userToDelete.Name },
+                         { "CurrentYear", DateTime.UtcNow.Year.ToString() }
+                     };
+                     var emailBody = await EmailTemplateHelper.LoadTemplateAndPopulateAsync("AccountDeleted.html", placeholders);
+                     await _emailService.SendEmailAsync(userToDelete.Email, "Your StackFlow Account Has Been Deleted", emailBody);
                 }
                 catch (Exception ex)
                 {
@@ -339,15 +352,25 @@ namespace StackFlow.ApiControllers
                     Console.WriteLine($"Error sending account deletion email to user: {ex.Message}");
                 }
 
-                // Optional: Send email to admin about ticket reassignment
-                try
+                // Optional: Send email to admin about ticket reassignment using template
+                if (adminUser != null) // Ensure adminUser was found earlier
                 {
-                     await _emailService.SendEmailAsync(adminUser.Email, "User Account Deleted and Tickets Reassigned", $"User '{userToDelete.Name}'s account has been deleted and their tickets have been reassigned to you.");
-                }
-                catch (Exception ex)
-                {
-                    // Log error, but don't prevent deletion or user email
-                    Console.WriteLine($"Error sending admin notification email about ticket reassignment: {ex.Message}");
+                    try
+                    {
+                         var adminPlaceholders = new Dictionary<string, string>
+                         {
+                             { "DeletedUserName", userToDelete.Name },
+                             { "AdminUserName", adminUser.Name },
+                             { "CurrentYear", DateTime.UtcNow.Year.ToString() }
+                         };
+                          var adminEmailBody = await EmailTemplateHelper.LoadTemplateAndPopulateAsync("AdminTicketReassignment.html", adminPlaceholders);
+                         await _emailService.SendEmailAsync(adminUser.Email, "User Account Deleted and Tickets Reassigned", adminEmailBody);
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log error, but don't prevent deletion or user email
+                        Console.WriteLine($"Error sending admin notification email about ticket reassignment: {ex.Message}");
+                    }
                 }
 
                 return Ok(new { message = $"User '{userToDelete.Name}' soft-deleted and their tickets reassigned to {adminUser.Name}." });

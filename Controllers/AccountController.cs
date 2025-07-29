@@ -187,10 +187,16 @@ namespace StackFlow.Controllers
             _context.User.Add(newUser);
             await _context.SaveChangesAsync();
 
-            // Send account created email
+            // Send account created email using template
             try
             {
-                await _emailService.SendEmailAsync(newUser.Email, "Account Created", "Welcome to StackFlow! Your account has been created and is pending verification by an administrator.");
+                var placeholders = new Dictionary<string, string>
+                {
+                    { "UserName", newUser.Name },
+                    { "CurrentYear", DateTime.UtcNow.Year.ToString() }
+                };
+                var emailBody = await EmailTemplateHelper.LoadTemplateAndPopulateAsync("AccountCreated.html", placeholders);
+                await _emailService.SendEmailAsync(newUser.Email, "Welcome to StackFlow! Account Created", emailBody);
             }
             catch (Exception ex)
             {
@@ -438,10 +444,16 @@ namespace StackFlow.Controllers
                 // Sign out the user immediately after deletion
                 await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
-                // Send account deleted email to the user
+                // Send account deleted email to the user using template
                 try
                 {
-                    await _emailService.SendEmailAsync(userToDelete.Email, "Account Deleted", "Your StackFlow account has been successfully deleted.");
+                    var placeholders = new Dictionary<string, string>
+                    {
+                        { "UserName", userToDelete.Name },
+                        { "CurrentYear", DateTime.UtcNow.Year.ToString() }
+                    };
+                    var emailBody = await EmailTemplateHelper.LoadTemplateAndPopulateAsync("AccountDeleted.html", placeholders);
+                    await _emailService.SendEmailAsync(userToDelete.Email, "Your StackFlow Account Has Been Deleted", emailBody);
                 }
                 catch (Exception ex)
                 {
@@ -449,15 +461,25 @@ namespace StackFlow.Controllers
                     Console.WriteLine($"Error sending account deletion email to user: {ex.Message}");
                 }
 
-                // Optional: Send email to admin about ticket reassignment
-                try
+                // Optional: Send email to admin about ticket reassignment using template
+                if (adminUser != null) // Ensure adminUser was found earlier
                 {
-                    await _emailService.SendEmailAsync(adminUser.Email, "User Account Deleted and Tickets Reassigned", $"User {userToDelete.Name}'s account has been deleted and their tickets have been reassigned to you.");
-                }
-                catch (Exception ex)
-                {
-                    // Log error, but don't prevent account deletion or user email
-                    Console.WriteLine($"Error sending admin notification email about ticket reassignment: {ex.Message}");
+                    try
+                    {
+                         var adminPlaceholders = new Dictionary<string, string>
+                         {
+                             { "DeletedUserName", userToDelete.Name },
+                             { "AdminUserName", adminUser.Name },
+                             { "CurrentYear", DateTime.UtcNow.Year.ToString() }
+                         };
+                          var adminEmailBody = await EmailTemplateHelper.LoadTemplateAndPopulateAsync("AdminTicketReassignment.html", adminPlaceholders);
+                         await _emailService.SendEmailAsync(adminUser.Email, "User Account Deleted and Tickets Reassigned", adminEmailBody);
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log error, but don't prevent account deletion or user email
+                        Console.WriteLine($"Error sending admin notification email about ticket reassignment: {ex.Message}");
+                    }
                 }
 
                 TempData["SuccessMessage"] = "Your account has been successfully deleted.";
