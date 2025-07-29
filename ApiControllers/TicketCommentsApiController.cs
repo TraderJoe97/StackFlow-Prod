@@ -11,7 +11,6 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using StackFlow.Utils; // Added for EmailTemplateHelper
-using StackFlow.Services; // Added for IEmailService
 
 namespace StackFlow.ApiControllers
 {

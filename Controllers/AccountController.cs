@@ -133,12 +133,12 @@ namespace StackFlow.Controllers
                 return View(); // Return to view with error
             }
 
-            // Basic email format validation
-            if (!email.EndsWith("@omnitak.com"))
-            {
-                ViewData["RegistrationError"] = "Only @omnitak.com email addresses are allowed.";
-                return View();
-            }
+            //// Basic email format validation
+            //if (!email.EndsWith("@omnitak.com"))
+            //{
+            //    ViewData["RegistrationError"] = "Only @omnitak.com email addresses are allowed.";
+            //    return View();
+            //}
 
             // Check if user with this email or username already exists
             if (await _context.User.AnyAsync(u => u.Email == email))

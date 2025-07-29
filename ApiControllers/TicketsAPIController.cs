@@ -11,7 +11,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using StackFlow.Utils;
-using StackFlow.Services; // Added for IEmailService
+
 
 namespace StackFlow.ApiControllers
 {
@@ -182,7 +182,7 @@ namespace StackFlow.ApiControllers
                 Assigned_To = createDto.AssignedToUserId,
                 Status = createDto.Status,
                 Priority = createDto.Priority,
-                Due_Date = createDto.DueDate, // Allow nullability
+                Due_Date = createDto.DueDate ?? default(DateTime), // Allow nullability
                 Created_By = currentUserId,
                 Created_At = DateTime.UtcNow
             };
@@ -339,8 +339,8 @@ namespace StackFlow.ApiControllers
             ticket.Assigned_To = updateDto.AssignedToUserId;
             ticket.Status = updateDto.Status;
             ticket.Priority = updateDto.Priority;
-            ticket.Due_Date = updateDto.DueDate; // Allow nullability
-            ticket.Completed_At = updateDto.CompletedAt; // Allow nullability
+            ticket.Due_Date = updateDto.DueDate ?? default(DateTime); // Allow nullability
+            ticket.Completed_At = updateDto.CompletedAt ?? default(DateTime); // Allow nullability
 
              // Update Completed_At if status changes to Done
             if (oldStatus != ticket.Status && ticket.Status == "Done")
@@ -349,7 +349,7 @@ namespace StackFlow.ApiControllers
             } else if (oldStatus != ticket.Status && oldStatus == "Done" && ticket.Status != "Done")
             {
                  // If status changes from Done to something else, clear Completed_At
-                ticket.Completed_At = null;
+                ticket.Completed_At = default;
             }
 
             try

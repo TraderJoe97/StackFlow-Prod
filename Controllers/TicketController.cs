@@ -9,7 +9,7 @@ using StackFlow.Models;
 using StackFlow.Utils;
 using StackFlow.ViewModels; // Ensure this is present
 using System.Security.Claims;
-using StackFlow.Services; // Added for IEmailService
+
 using System.Collections.Generic; // Added for Dictionary
 
 namespace StackFlow.Controllers
@@ -21,10 +21,10 @@ namespace StackFlow.Controllers
         private readonly IHubContext<DashboardHub> _hubContext;
         private readonly IEmailService _emailService; // Added IEmailService
 
-        public TicketController(AppDbContext context, IHubContext<DashboardHub> hubContext, IEmailService emailService) // Added IEmailService
+        public TicketController(AppDbContext context, IHubContext<DashboardHub> HubContext, IEmailService emailService) // Added IEmailService
         {
             _context = context;
-            _hubContext = hubHubContext;
+            _hubContext = HubContext;
             _emailService = emailService; // Assigned IEmailService
         }
 
@@ -110,8 +110,8 @@ namespace StackFlow.Controllers
                     await _hubContext.Clients.All.SendAsync("ReceiveTicketUpdate", "created", ticket.Id);
 
                     // Send email notification for new ticket creation
-                    var createdByUser = await _context.Users.FindAsync(currentUserId);
-                    var assignedToUser = ticket.Assigned_To.HasValue ? await _context.Users.FindAsync(ticket.Assigned_To.Value) : null;
+                    var createdByUser = await _context.User.FindAsync(currentUserId);
+                    var assignedToUser = ticket.Assigned_To.HasValue ? await _context.User.FindAsync(ticket.Assigned_To.Value) : null;
                     var project = await _context.Project.FindAsync(ticket.Project_Id);
 
 
@@ -299,7 +299,7 @@ namespace StackFlow.Controllers
                 // Send email notification for status update
                 if (oldStatus != newStatus) // Only send email if the status actually changed
                 {
-                    var updatedByUser = await _context.Users.FindAsync(currentUserId);
+                    var updatedByUser = await _context.User.FindAsync(currentUserId);
 
                     var placeholders = new Dictionary<string, string>
                     {
@@ -392,7 +392,7 @@ namespace StackFlow.Controllers
             await _hubContext.Clients.All.SendAsync("ReceiveTicketUpdate", "commented", ticket.Id);
 
             // Send email notification for new comment
-            var commentedByUser = await _context.Users.FindAsync(currentUserId);
+            var commentedByUser = await _context.User.FindAsync(currentUserId);
 
             var placeholders = new Dictionary<string, string>
             {
