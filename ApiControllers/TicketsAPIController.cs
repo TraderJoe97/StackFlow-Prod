@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StackFlow.ApiControllers.Dtos;
@@ -12,6 +11,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using StackFlow.Utils;
+using StackFlow.Services; // Added for IEmailService
 
 namespace StackFlow.ApiControllers
 {
@@ -116,8 +116,7 @@ namespace StackFlow.ApiControllers
         [Authorize(Roles = "Admin,Project Manager")]
         public async Task<ActionResult<TicketDto>> CreateTicket([FromBody] CreateTicketDto createDto)
         {
-
-            //validate the create DTO
+            // Validate the create DTO
             if (createDto == null)
             {
                 return BadRequest("Ticket creation data cannot be null.");
@@ -127,9 +126,11 @@ namespace StackFlow.ApiControllers
                 return BadRequest("Ticket title is required and must be less than 255 characters.");
             }
    
+            // Enum validation using IsDefined is fine, but consider if you need specific handling for invalid enum values
             if (!Enum.IsDefined(typeof(TicketStatus), createDto.Status))
             {
-                return BadRequest("Invalid ticket status.");
+                 // You might want to return a more specific error or a list of valid statuses
+                return BadRequest($"Invalid ticket status: {createDto.Status}. Valid statuses are: {string.Join(", ", Enum.GetNames(typeof(TicketStatus)))}");
             }
 
             // Check if project exists
@@ -139,26 +140,39 @@ namespace StackFlow.ApiControllers
                 return BadRequest("Project with ID " + createDto.ProjectId + " does not exist");
             }
 
-            // Check if Assigned Usser exists
-
-            var AssignedUser = await _context.User.FindAsync(createDto.AssignedToUserId);
-            if (AssignedUser == null)
+            // Check if Assigned User exists and is active/verified
+            User assignedUser = null;
+            if (createDto.AssignedToUserId.HasValue)
             {
-                return BadRequest("Assigned user Does not Exist");
-            } else if (AssignedUser.IsDeleted) 
-            {
-                return BadRequest("Assigned user is no longer active");
-            } else if (AssignedUser.IsVerified)
-            {
-                return BadRequest("Assigned user account not Verified.");
+                assignedUser = await _context.User.FindAsync(createDto.AssignedToUserId.Value);
+                if (assignedUser == null)
+                {
+                    return BadRequest("Assigned user does not exist.");
+                }
+                if (assignedUser.IsDeleted)
+                {
+                    return BadRequest("Assigned user is no longer active.");
+                }
+                if (!assignedUser.IsVerified)
+                {
+                     // Depending on your business logic, you might allow assigning to unverified users
+                     // or return a different error. This currently returns BadRequest.
+                     return BadRequest("Assigned user account not verified.");
+                }
             }
 
-
-                var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!int.TryParse(userIdString, out int currentUserId))
             {
                 return Unauthorized("User ID not found in claims.");
             }
+
+            var createdByUser = await _context.User.FindAsync(currentUserId);
+             if (createdByUser == null || createdByUser.IsDeleted || !createdByUser.IsVerified)
+            {
+                 return Unauthorized("Creating user is invalid or inactive.");
+            }
+
 
             var ticket = new Ticket
             {
@@ -168,7 +182,7 @@ namespace StackFlow.ApiControllers
                 Assigned_To = createDto.AssignedToUserId,
                 Status = createDto.Status,
                 Priority = createDto.Priority,
-                Due_Date = createDto.DueDate ?? default(DateTime), // Fix for CS0266 and CS8629
+                Due_Date = createDto.DueDate, // Allow nullability
                 Created_By = currentUserId,
                 Created_At = DateTime.UtcNow
             };
@@ -176,23 +190,54 @@ namespace StackFlow.ApiControllers
             _context.Ticket.Add(ticket);
             await _context.SaveChangesAsync();
 
-            // Reload ticket with navigation properties to populate DTO
+            // Reload ticket with navigation properties for email and DTO
             await _context.Entry(ticket).Reference(t => t.Project).LoadAsync();
             await _context.Entry(ticket).Reference(t => t.AssignedTo).LoadAsync();
             await _context.Entry(ticket).Reference(t => t.CreatedBy).LoadAsync();
 
-            // Send email to assigned user
-            if (ticket.AssignedTo != null && !ticket.AssignedTo.IsDeleted && ticket.AssignedTo.IsVerified)
+            // Send email notification for new ticket creation
+            try
             {
-                try
+                var placeholders = new Dictionary<string, string>
                 {
-                    await _emailService.SendEmailAsync(ticket.AssignedTo.Email, "New Ticket Assigned to You", $"A new ticket has been assigned to you: {ticket.Title}. Description: {ticket.Description}");
-                }
-                catch (Exception ex)
+                    { "TicketTitle", ticket.Title },
+                    { "TicketDescription", ticket.Description },
+                    { "ProjectName", ticket.Project?.Name ?? "N/A" },
+                    { "CreatedBy", ticket.CreatedBy?.Name ?? "N/A" },
+                    { "AssignedTo", ticket.AssignedTo?.Name ?? "Unassigned" },
+                    { "Priority", ticket.Priority },
+                    { "Status", ticket.Status },
+                     // Consider generating a link to the ticket details page if applicable
+                    { "TicketLink", $"{Request.Scheme}://{Request.Host}/Ticket/TicketDetails/{ticket.Id}" },
+                    { "CurrentYear", DateTime.UtcNow.Year.ToString() }
+                };
+
+                var recipientEmails = new List<string>();
+                if (ticket.AssignedTo != null && !string.IsNullOrEmpty(ticket.AssignedTo.Email) && !ticket.AssignedTo.IsDeleted && ticket.AssignedTo.IsVerified)
                 {
-                    // Log error, but don't prevent ticket creation
-                    Console.WriteLine($"Error sending ticket assignment email: {ex.Message}");
+                    recipientEmails.Add(ticket.AssignedTo.Email);
                 }
+                 // Also notify the creator if they are different from the assignee and their email is valid/verified
+                if (ticket.CreatedBy != null && !string.IsNullOrEmpty(ticket.CreatedBy.Email) && !ticket.CreatedBy.IsDeleted && ticket.CreatedBy.IsVerified && (ticket.AssignedTo == null || ticket.AssignedTo.Id != ticket.CreatedBy.Id))
+                {
+                     recipientEmails.Add(ticket.CreatedBy.Email);
+                }
+
+                if (recipientEmails.Any())
+                {
+                    var emailBody = await EmailTemplateHelper.LoadTemplateAndPopulateAsync("NewTicketCreated.html", placeholders);
+                    // Send email to all relevant recipients
+                    foreach (var email in recipientEmails)
+                    {
+                         // Add a check to ensure the recipient email is valid if necessary
+                        await _emailService.SendEmailAsync(email, $"New Ticket Created: {ticket.Title}", emailBody);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log error, but don't prevent ticket creation
+                Console.WriteLine($"Error sending new ticket email: {ex.Message}");
             }
 
             var ticketDto = new TicketDto
@@ -227,7 +272,7 @@ namespace StackFlow.ApiControllers
         [Authorize(Roles = "Admin,Project Manager")]
         public async Task<IActionResult> UpdateTicket(int id, [FromBody] UpdateTicketDto updateDto)
         {
-            //validate the update DTO
+            // Validate the update DTO
             if (updateDto == null)
             {
                 return BadRequest("Ticket update data cannot be null.");
@@ -236,9 +281,11 @@ namespace StackFlow.ApiControllers
             {
                 return BadRequest("Ticket title is required and must be less than 255 characters.");
             }
+            // Enum validation using IsDefined is fine, but consider if you need specific handling for invalid enum values
             if (!Enum.IsDefined(typeof(TicketStatus), updateDto.Status))
             {
-                return BadRequest("Invalid ticket status.");
+                 // You might want to return a more specific error or a list of valid statuses
+                 return BadRequest($"Invalid ticket status: {updateDto.Status}. Valid statuses are: {string.Join(", ", Enum.GetNames(typeof(TicketStatus)))}");
             }
             // Check if project exists
             var project = await _context.Project.FindAsync(updateDto.ProjectId);
@@ -247,63 +294,135 @@ namespace StackFlow.ApiControllers
                 return BadRequest("Project with ID " + updateDto.ProjectId + " does not exist");
             }
 
-            // Check if Assigned Usser exists
-
-            var AssignedUser = await _context.User.FindAsync(updateDto.AssignedToUserId);
-            if (AssignedUser == null)
+            // Check if Assigned User exists and is active/verified
+            User assignedUser = null;
+            if (updateDto.AssignedToUserId.HasValue)
             {
-                return BadRequest("Assigned user Does not Exist");
-            }
-            else if (AssignedUser.IsDeleted)
-            {
-                return BadRequest("Assigned user is no longer active");
-            }
-            else if (AssignedUser.IsVerified)
-            {
-                return BadRequest("Assigned user account not Verified.");
+                assignedUser = await _context.User.FindAsync(updateDto.AssignedToUserId.Value);
+                if (assignedUser == null)
+                {
+                    return BadRequest("Assigned user does not exist.");
+                }
+                if (assignedUser.IsDeleted)
+                {
+                    return BadRequest("Assigned user is no longer active.");
+                }
+                 if (!assignedUser.IsVerified)
+                 {
+                      // Depending on your business logic, you might allow assigning to unverified users
+                      // or return a different error. This currently returns BadRequest.
+                      return BadRequest("Assigned user account not verified.");
+                 }
             }
 
+            var ticket = await _context.Ticket
+                                     .Include(t => t.AssignedTo)
+                                     .Include(t => t.CreatedBy)
+                                     .Include(t => t.Project)
+                                     .FirstOrDefaultAsync(t => t.Id == id);
 
-            var ticket = await _context.Ticket.FindAsync(id);
             if (ticket == null)
             {
                 return NotFound();
             }
 
-            // Store the old assigned user ID to check if it changed
+            // Store old values before updating
             var oldAssignedToUserId = ticket.Assigned_To;
+            var oldStatus = ticket.Status;
+            var oldPriority = ticket.Priority;
+            var oldDueDate = ticket.Due_Date;
 
-            // Update properties from DTO using C# model property names
+            // Update properties from DTO
             ticket.Title = updateDto.Title;
             ticket.Description = updateDto.Description;
-            ticket.Id = updateDto.ProjectId;
+            ticket.Project_Id = updateDto.ProjectId; // Corrected ProjectId assignment
             ticket.Assigned_To = updateDto.AssignedToUserId;
             ticket.Status = updateDto.Status;
             ticket.Priority = updateDto.Priority;
-            ticket.Due_Date = updateDto.DueDate ?? default(DateTime); // Handle nullable DateTime
-            ticket.Completed_At = updateDto.CompletedAt ?? default(DateTime); // Handle nullable DateTime
+            ticket.Due_Date = updateDto.DueDate; // Allow nullability
+            ticket.Completed_At = updateDto.CompletedAt; // Allow nullability
+
+             // Update Completed_At if status changes to Done
+            if (oldStatus != ticket.Status && ticket.Status == "Done")
+            {
+                ticket.Completed_At = DateTime.UtcNow;
+            } else if (oldStatus != ticket.Status && oldStatus == "Done" && ticket.Status != "Done")
+            {
+                 // If status changes from Done to something else, clear Completed_At
+                ticket.Completed_At = null;
+            }
 
             try
             {
                 await _context.SaveChangesAsync();
 
-                // Send email to the new assigned user if the assignment changed
+                // Send email notifications based on changes
+                var updatedByUser = await _context.User.FindAsync(int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)));
+
+                // Notification for assigned user change
                 if (oldAssignedToUserId != ticket.Assigned_To)
                 {
-                     var newlyAssignedUser = await _context.User.FindAsync(ticket.Assigned_To);
-                     if (newlyAssignedUser != null && !newlyAssignedUser.IsDeleted && newlyAssignedUser.IsVerified)
-                     {
-                         try
-                         {
-                              await _emailService.SendEmailAsync(newlyAssignedUser.Email, "Ticket Assigned to You", $"A ticket has been assigned to you or your assignment has been updated: {ticket.Title}. Description: {ticket.Description}");
-                         }
-                         catch (Exception ex)
-                         {
-                             // Log error
-                              Console.WriteLine($"Error sending ticket reassignment email: {ex.Message}");
-                         }
-                     }
+                    var newlyAssignedUser = await _context.User.FindAsync(ticket.Assigned_To);
+                    if (newlyAssignedUser != null && !string.IsNullOrEmpty(newlyAssignedUser.Email) && !newlyAssignedUser.IsDeleted && newlyAssignedUser.IsVerified)
+                    {
+                        try
+                        {
+                             var placeholders = new Dictionary<string, string>
+                             {
+                                 { "TicketTitle", ticket.Title },
+                                 { "ProjectName", ticket.Project?.Name ?? "N/A" },
+                                 { "AssignedTo", newlyAssignedUser.Name ?? "Unassigned" },
+                                  { "TicketLink", $"{Request.Scheme}://{Request.Host}/Ticket/TicketDetails/{ticket.Id}" },
+                                 { "CurrentYear", DateTime.UtcNow.Year.ToString() }
+                             };
+                             var emailBody = await EmailTemplateHelper.LoadTemplateAndPopulateAsync("TicketAssigned.html", placeholders);
+                             await _emailService.SendEmailAsync(newlyAssignedUser.Email, $"Ticket Assigned to You: {ticket.Title}", emailBody);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Error sending ticket assignment email: {ex.Message}");
+                        }
+                    }
                 }
+
+                // Notification for status change
+                if (oldStatus != ticket.Status)
+                {
+                     var placeholders = new Dictionary<string, string>
+                    {
+                        { "TicketTitle", ticket.Title },
+                        { "OldStatus", oldStatus },
+                        { "NewStatus", ticket.Status },
+                        { "UpdatedBy", updatedByUser?.Name ?? "N/A" },
+                        { "TicketLink", $"{Request.Scheme}://{Request.Host}/Ticket/TicketDetails/{ticket.Id}" },
+                        { "CurrentYear", DateTime.UtcNow.Year.ToString() }
+                    };
+
+                    var recipientEmails = new List<string>();
+                     // Notify the assignee (if any and different from updater)
+                    if (ticket.AssignedTo != null && !string.IsNullOrEmpty(ticket.AssignedTo.Email) && ticket.AssignedTo.Id != updatedByUser.Id && !ticket.AssignedTo.IsDeleted && ticket.AssignedTo.IsVerified)
+                    {
+                         recipientEmails.Add(ticket.AssignedTo.Email);
+                    }
+                     // Notify the creator (if any and different from updater and assignee)
+                     if (ticket.CreatedBy != null && !string.IsNullOrEmpty(ticket.CreatedBy.Email) && ticket.CreatedBy.Id != updatedByUser.Id && (ticket.AssignedTo == null || ticket.AssignedTo.Id != ticket.CreatedBy.Id) && !ticket.CreatedBy.IsDeleted && ticket.CreatedBy.IsVerified)
+                    {
+                         recipientEmails.Add(ticket.CreatedBy.Email);
+                    }
+                     // You might also want to notify other relevant users like project members
+
+                     if (recipientEmails.Any())
+                    {
+                         var emailBody = await EmailTemplateHelper.LoadTemplateAndPopulateAsync("TicketStatusUpdated.html", placeholders);
+                         foreach (var email in recipientEmails)
+                         {
+                             await _emailService.SendEmailAsync(email, $"Ticket Status Updated: {ticket.Title}", emailBody);
+                         }
+                    }
+                }
+
+                // You could add similar logic for priority or due date changes if needed
+
             }
             catch (DbUpdateConcurrencyException)
             {
