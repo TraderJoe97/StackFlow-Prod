@@ -148,8 +148,8 @@ builder.Services.AddAuthorization();
 // Add SignalR services
 builder.Services.AddSignalR();
 
-// Add Email Service (SendGrid)
-builder.Services.AddTransient<IEmailService, SendGridEmailService>();
+// Add Email Service (Mailjet)
+builder.Services.AddTransient<IEmailService, MailjetEmailService>();
 
 var app = builder.Build();
 
