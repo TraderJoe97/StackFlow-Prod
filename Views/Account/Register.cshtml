@@ -4,64 +4,65 @@
 }
 
 <div class="auth-wrapper">
-    <!-- Left Side: Register Form -->
+    <!-- Left Side: Welcome Section -->
+    <div class="auth-welcome-section">
+        <div class="welcome-overlay">
+            <h1 class="welcome-title">Welcome to StackFlow</h1>
+            <p class="welcome-subtitle">Join us and be part of the future!</p>
+            <img src="~/images/logo-white.png" class="welcome-logo" alt="Logo" />
+        </div>
+
+        <!-- Circles -->
+        <div class="circle circle1"></div>
+        <div class="circle circle2"></div>
+        <div class="circle circle3"></div>
+    </div>
+
+    <!-- Right Side: Register Form -->
     <div class="auth-form-section">
         <div class="auth-card">
-            <h2 class="auth-title text-success">
+            <h2 class="auth-title">
                 <i class="bi bi-person-plus-fill me-2"></i> Create Account
             </h2>
 
             @if (ViewData["RegistrationError"] != null)
             {
-                <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+                <div class="auth-error">
                     <i class="bi bi-exclamation-triangle-fill me-2"></i>@ViewData["RegistrationError"]
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    <button type="button" class="close-btn" data-bs-dismiss="alert" aria-label="Close">&times;</button>
                 </div>
             }
 
-            <form asp-controller="Account" asp-action="Register" method="post" class="needs-validation mt-4" novalidate>
-                <div class="mb-3">
-                    <label for="username" class="form-label fw-semibold">Username</label>
-                    <input type="text" id="username" name="username" class="form-control form-control-lg rounded-pill" placeholder="Choose a username" required />
+            <form asp-controller="Account" asp-action="Register" method="post" class="auth-form" novalidate>
+                <div class="input-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" placeholder="Choose a username" required />
                     <div class="invalid-feedback">Please enter a username.</div>
                 </div>
 
-                <div class="mb-3">
-                    <label for="email" class="form-label fw-semibold">Email</label>
-                    <input type="email" id="email" name="email" class="form-control form-control-lg rounded-pill" placeholder="your.email@omnitak.com" required />
-                    <div class="form-text text-muted">Must be an omnitak.com email address.</div>
+                <div class="input-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" placeholder="your.email@omnitak.com" required />
+                    <div class="form-note">Must be an omnitak.com email address.</div>
                     <div class="invalid-feedback">Please enter a valid omnitak.com email address.</div>
                 </div>
 
-                <div class="mb-4">
-                    <label for="password" class="form-label fw-semibold">Password</label>
-                    <input type="password" id="password" name="password" class="form-control form-control-lg rounded-pill" placeholder="Choose a strong password" required />
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" placeholder="Choose a strong password" required />
                     <div class="invalid-feedback">Please enter a password.</div>
                 </div>
 
-                <div class="d-grid gap-3">
-                    <button type="submit" class="btn btn-success btn-lg rounded-pill shadow-sm animate-btn">
+                <div class="button-group">
+                    <button type="submit" class="primary-btn">
                         <i class="bi bi-person-plus-fill me-2"></i> Register
                     </button>
-                    <a asp-controller="Account" asp-action="Login" class="btn btn-outline-secondary btn-lg rounded-pill animate-btn">
+                    <a asp-controller="Account" asp-action="Login" class="secondary-btn">
                         <i class="bi bi-box-arrow-in-right me-2"></i> Back to Login
                     </a>
                 </div>
             </form>
         </div>
-    </div>
-
-    <!-- Right Side: Welcome Message -->
-    <div class="auth-welcome-section">
-        <div class="welcome-overlay">
-            <h1 class="display-4 fw-bold text-light">Welcome to StackFlow</h1>
-            <p class="lead text-light">Join us and be part of the future!</p>
-            <img src="~/images/logo-white.png" class="welcome-logo" alt="Logo" />
-        </div>
-        <!-- Circles -->
-        <div class="circle circle1"></div>
-        <div class="circle circle2"></div>
-        <div class="circle circle3"></div>
     </div>
 </div>
 
@@ -70,7 +71,7 @@
     <script>
         (function () {
             'use strict';
-            var forms = document.querySelectorAll('.needs-validation');
+            var forms = document.querySelectorAll('.auth-form');
             Array.prototype.slice.call(forms).forEach(function (form) {
                 form.addEventListener('submit', function (event) {
                     if (!form.checkValidity()) {

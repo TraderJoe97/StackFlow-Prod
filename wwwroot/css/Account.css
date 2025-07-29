@@ -30,6 +30,11 @@ body {
     padding: 50px;
     position: relative;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
 }
 
     .welcome-section h1 {
@@ -45,6 +50,16 @@ body {
     .welcome-section .description {
         font-size: 14px;
         line-height: 1.6;
+        margin-bottom: 20px;
+    }
+
+    .welcome-section .logo {
+        width: 120px;
+        height: auto;
+        opacity: 0.85;
+        margin-top: 10px;
+        filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.2));
+        mix-blend-mode: screen;
     }
 
 .login-section {
@@ -186,14 +201,4 @@ form input[type="password"] {
     height: 100px;
     top: -30px;
     right: -30px;
-}
-
-.logo {
-    width: 120px;
-    height: auto;
-    margin: 15px 0;
-    opacity: 0.85;
-    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.2));
-    mix-blend-mode: screen;
-    /* Optional: enhances blending with gradient */
 }
