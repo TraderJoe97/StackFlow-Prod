@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StackFlow.Data;
@@ -10,6 +10,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using StackFlow.Utils; // Added for EmailTemplateHelper
 
 namespace StackFlow.ApiControllers
 {
@@ -19,10 +20,12 @@ namespace StackFlow.ApiControllers
     public class TicketCommentsApiController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IEmailService _emailService; // Added IEmailService
 
-        public TicketCommentsApiController(AppDbContext context)
+        public TicketCommentsApiController(AppDbContext context, IEmailService emailService) // Added IEmailService
         {
             _context = context;
+            _emailService = emailService; // Assigned IEmailService
         }
 
         /// <summary>
@@ -35,7 +38,7 @@ namespace StackFlow.ApiControllers
         public async Task<ActionResult<IEnumerable<TicketCommentDto>>> GetCommentsForTicket(int ticketId)
         {
             var comments = await _context.TicketComment
-                                         .Where(tc => tc.Id == ticketId)
+                                         .Where(tc => tc.Ticket_Id == ticketId) // Corrected filtering by Ticket_Id
                                          .Include(tc => tc.CreatedBy) // Include User for Username
                                          .OrderBy(tc => tc.Created_At)
                                          .ToListAsync();
@@ -43,10 +46,10 @@ namespace StackFlow.ApiControllers
             var commentDtos = comments.Select(tc => new TicketCommentDto
             {
                 Id = tc.Id,
-                TicketId = tc.Id,
-                UserId = tc.Created_By, // Using UserId property as per TicketComment model
-                Username = tc.CreatedBy.Name, // Using Username property from User model
-                CommentText = tc.Content, // Using CommentText property as per TicketComment model
+                TicketId = tc.Ticket_Id,
+                UserId = tc.Created_By,
+                Username = tc.CreatedBy?.Name, // Using null-conditional operator for safety
+                CommentText = tc.Content,
                 CommentCreatedAt = tc.Created_At
             }).ToList();
 
@@ -100,11 +103,22 @@ namespace StackFlow.ApiControllers
                 return Unauthorized("User ID not found in claims.");
             }
 
-            // Ensure the ticket exists
-            var ticketExists = await _context.Ticket.AnyAsync(t => t.Id == ticketId);
-            if (!ticketExists)
+            // Ensure the ticket exists and include related entities for email notification
+            var ticket = await _context.Ticket
+                                     .Include(t => t.AssignedTo)
+                                     .Include(t => t.CreatedBy)
+                                     .Include(t => t.TicketComments) // Include existing comments to find other participants
+                                     .FirstOrDefaultAsync(t => t.Id == ticketId);
+
+            if (ticket == null)
             {
                 return NotFound($"Ticket with ID {ticketId} not found.");
+            }
+
+            if (string.IsNullOrWhiteSpace(createDto.CommentText))
+            {
+                 // Return a BadRequest with a specific error message for invalid input
+                return BadRequest("Comment text cannot be empty.");
             }
 
             var comment = new Comment
@@ -118,8 +132,64 @@ namespace StackFlow.ApiControllers
             _context.TicketComment.Add(comment);
             await _context.SaveChangesAsync();
 
-            // Reload comment with User to get username for DTO
+            // Reload comment with User to get username for DTO and email
             await _context.Entry(comment).Reference(c => c.CreatedBy).LoadAsync();
+
+            // Send email notification for new comment
+            try
+            {
+                var commentedByUser = comment.CreatedBy; // Use the reloaded user
+
+                var placeholders = new Dictionary<string, string>
+                {
+                    { "TicketTitle", ticket.Title },
+                    { "CommentedBy", commentedByUser?.Name ?? "N/A" },
+                    { "CommentContent", comment.Content },
+                     // Consider generating a link to the ticket details page with comment anchor if possible
+                    { "TicketLink", $"{Request.Scheme}://{Request.Host}/Ticket/TicketDetails/{ticket.Id}#comment-{comment.Id}" },
+                    { "CurrentYear", DateTime.UtcNow.Year.ToString() }
+                };
+
+                var recipientEmails = new List<string>();
+                
+                // Notify the assignee (if any and different from commenter and creator)
+                if (ticket.AssignedTo != null && !string.IsNullOrEmpty(ticket.AssignedTo.Email) && ticket.AssignedTo.Id != currentUserId && (ticket.CreatedBy == null || ticket.CreatedBy.Id != ticket.AssignedTo.Id) && !ticket.AssignedTo.IsDeleted && ticket.AssignedTo.IsVerified)
+                {
+                    recipientEmails.Add(ticket.AssignedTo.Email);
+                }
+
+                // Notify the creator (if any and different from commenter and assignee)
+                 if (ticket.CreatedBy != null && !string.IsNullOrEmpty(ticket.CreatedBy.Email) && ticket.CreatedBy.Id != currentUserId && (ticket.AssignedTo == null || ticket.AssignedTo.Id != ticket.CreatedBy.Id) && !ticket.CreatedBy.IsDeleted && ticket.CreatedBy.IsVerified)
+                 {
+                      recipientEmails.Add(ticket.CreatedBy.Email);
+                 }
+
+                // Notify other users who have commented on the ticket (excluding the current user, assignee, and creator)
+                var otherCommentersEmails = ticket.TicketComments
+                                                .Where(tc => tc.Created_By != currentUserId && (ticket.AssignedTo == null || tc.Created_By != ticket.AssignedTo.Id) && (ticket.CreatedBy == null || tc.Created_By != ticket.CreatedBy.Id) && tc.CreatedBy != null && !string.IsNullOrEmpty(tc.CreatedBy.Email) && !tc.CreatedBy.IsDeleted && tc.CreatedBy.IsVerified)
+                                                .Select(tc => tc.CreatedBy.Email)
+                                                .Distinct(); // Avoid sending multiple emails to the same person
+
+                recipientEmails.AddRange(otherCommentersEmails);
+
+                // Ensure unique recipient emails
+                recipientEmails = recipientEmails.Distinct().ToList();
+
+                if (recipientEmails.Any())
+                {
+                    var emailBody = await EmailTemplateHelper.LoadTemplateAndPopulateAsync("NewCommentAdded.html", placeholders);
+                    foreach (var email in recipientEmails)
+                    {
+                         // Add a check to ensure the recipient email is valid if necessary
+                        await _emailService.SendEmailAsync(email, $"New Comment on Ticket: {ticket.Title}", emailBody);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log error, but don't prevent comment creation
+                Console.WriteLine($"Error sending new comment email: {ex.Message}");
+            }
 
             var commentDto = new TicketCommentDto
             {
@@ -160,6 +230,10 @@ namespace StackFlow.ApiControllers
             if (comment.Created_By != currentUserId && !User.IsInRole("Admin"))
             {
                 return Forbid("You do not have permission to update this comment.");
+            }
+             if (string.IsNullOrWhiteSpace(updateDto.CommentText))
+            {
+                return BadRequest("Comment text cannot be empty.");
             }
 
             comment.Content = updateDto.CommentText.Trim();
@@ -228,4 +302,3 @@ namespace StackFlow.ApiControllers
         }
     }
 }
-

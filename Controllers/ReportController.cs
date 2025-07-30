@@ -1,17 +1,18 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using StackFlow.Data;
-using StackFlow.Models;
-using StackFlow.ViewModels;
 using StackFlow.Hubs;
-using Microsoft.AspNetCore.SignalR;
+using StackFlow.Models;
+using StackFlow.Utils;
+using StackFlow.ViewModels;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 
 namespace StackFlow.Controllers
 {
@@ -20,11 +21,13 @@ namespace StackFlow.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IHubContext<DashboardHub> _hubContext;
+        private readonly IEmailService _emailService;
 
-        public ReportController(AppDbContext context, IHubContext<DashboardHub> hubContext)
+        public ReportController(AppDbContext context, IHubContext<DashboardHub> hubContext, IEmailService emailService)
         {
             _context = context;
             _hubContext = hubContext;
+            _emailService = emailService;
         }
 
         /// <summary>
@@ -380,7 +383,17 @@ namespace StackFlow.Controllers
                                                  .FirstOrDefaultAsync(u => u.Id == userToVerify.Id);
 
                 await _hubContext.Clients.All.SendAsync("ReceiveUserUpdate", "verified", verifiedUser); // SignalR for UI refresh
-            }
+
+                // send email notifying user
+              var placeholders = new Dictionary<string, string>
+                    {
+                        { "UserName", userToVerify.Name },
+                        { "CurrentYear", DateTime.UtcNow.Year.ToString() }
+                    };
+                    var emailBody = await EmailTemplateHelper.LoadTemplateAndPopulateAsync("AccountVerified.html", placeholders);
+                    await _emailService.SendEmailAsync(userToVerify.Email, "Your StackFlow Account Has Been Verified", emailBody);
+                }
+                
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] = $"Error verifying user: {ex.Message}";

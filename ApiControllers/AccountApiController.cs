@@ -121,10 +121,10 @@ namespace StackFlow.ApiControllers
                 return BadRequest("All fields are required.");
             }
 
-            if (!dto.Email.EndsWith("@omnitak.com"))
-            {
-                return BadRequest("Only @omnitak.com email addresses are allowed.");
-            }
+            //if (!dto.Email.EndsWith("@omnitak.com"))
+            //{
+            //    return BadRequest("Only @omnitak.com email addresses are allowed.");
+            //}
 
             if (await _context.User.AnyAsync(u => u.Email == dto.Email))
             {

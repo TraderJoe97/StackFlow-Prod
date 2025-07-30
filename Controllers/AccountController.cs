@@ -1,26 +1,29 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using StackFlow.Data;
-using StackFlow.Models;
-using System.Security.Claims;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
+using BCrypt.Net; // For password hashing
+using Mailjet.Client.Resources;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using BCrypt.Net; // For password hashing
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using StackFlow.Data;
+using StackFlow.Models;
+using StackFlow.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using StackFlow.Utils;
+using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace StackFlow.Controllers
 {
     public class AccountController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly IEmailService _emailService;
 
-        public AccountController(AppDbContext context)
+        public AccountController(AppDbContext context, IEmailService emailService)
         {
             _context = context;
+            _emailService = emailService;
         }
 
         [HttpGet]
@@ -131,12 +134,12 @@ namespace StackFlow.Controllers
                 return View(); // Return to view with error
             }
 
-            // Basic email format validation
-            if (!email.EndsWith("@omnitak.com"))
-            {
-                ViewData["RegistrationError"] = "Only @omnitak.com email addresses are allowed.";
-                return View();
-            }
+            //// Basic email format validation
+            //if (!email.EndsWith("@omnitak.com"))
+            //{
+            //    ViewData["RegistrationError"] = "Only @omnitak.com email addresses are allowed.";
+            //    return View();
+            //}
 
             // Check if user with this email or username already exists
             if (await _context.User.AnyAsync(u => u.Email == email))
@@ -171,7 +174,7 @@ namespace StackFlow.Controllers
                 return View();
             }
 
-            var newUser = new User
+            var newUser = new StackFlow.Models.User
             {
                 Name = username,
                 Email = email,
@@ -184,6 +187,23 @@ namespace StackFlow.Controllers
 
             _context.User.Add(newUser);
             await _context.SaveChangesAsync();
+
+            // Send account created email using template
+            try
+            {
+                var placeholders = new Dictionary<string, string>
+                {
+                    { "UserName", newUser.Name },
+                    { "CurrentYear", DateTime.UtcNow.Year.ToString() }
+                };
+                var emailBody = await EmailTemplateHelper.LoadTemplateAndPopulateAsync("AccountCreated.html", placeholders);
+                await _emailService.SendEmailAsync(newUser.Email, "Welcome to StackFlow! Account Created", emailBody);
+            }
+            catch (Exception ex)
+            {
+                // Log error, but don't prevent user creation
+                Console.WriteLine($"Error sending account creation email: {ex.Message}");
+            }
 
             TempData["SuccessMessage"] = "Registration successful! Your account is pending verification by an administrator.";
             return RedirectToAction("Login");
@@ -424,6 +444,44 @@ namespace StackFlow.Controllers
 
                 // Sign out the user immediately after deletion
                 await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+                // Send account deleted email to the user using template
+                try
+                {
+                    var placeholders = new Dictionary<string, string>
+                    {
+                        { "UserName", userToDelete.Name },
+                        { "CurrentYear", DateTime.UtcNow.Year.ToString() }
+                    };
+                    var emailBody = await EmailTemplateHelper.LoadTemplateAndPopulateAsync("AccountDeleted.html", placeholders);
+                    await _emailService.SendEmailAsync(userToDelete.Email, "Your StackFlow Account Has Been Deleted", emailBody);
+                }
+                catch (Exception ex)
+                {
+                    // Log error, but don't prevent account deletion
+                    Console.WriteLine($"Error sending account deletion email to user: {ex.Message}");
+                }
+
+                // Optional: Send email to admin about ticket reassignment using template
+                if (adminUser != null) // Ensure adminUser was found earlier
+                {
+                    try
+                    {
+                         var adminPlaceholders = new Dictionary<string, string>
+                         {
+                             { "DeletedUserName", userToDelete.Name },
+                             { "AdminUserName", adminUser.Name },
+                             { "CurrentYear", DateTime.UtcNow.Year.ToString() }
+                         };
+                          var adminEmailBody = await EmailTemplateHelper.LoadTemplateAndPopulateAsync("AdminTicketReassignment.html", adminPlaceholders);
+                         await _emailService.SendEmailAsync(adminUser.Email, "User Account Deleted and Tickets Reassigned", adminEmailBody);
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log error, but don't prevent account deletion or user email
+                        Console.WriteLine($"Error sending admin notification email about ticket reassignment: {ex.Message}");
+                    }
+                }
 
                 TempData["SuccessMessage"] = "Your account has been successfully deleted.";
                 return RedirectToAction("DeletedAccount"); // Redirect to the deleted account page

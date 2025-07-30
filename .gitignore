@@ -196,4 +196,5 @@ Desktop.ini
 *.env.development.local
 *.env.test.local
 *.env.production.local
+/appsettings.Development.json
 # End of .gitignore

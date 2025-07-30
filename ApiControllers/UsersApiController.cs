@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StackFlow.Data;
@@ -11,6 +11,7 @@ using System.Linq;
 using System;
 using Microsoft.AspNetCore.Authentication.JwtBearer; // Added for JWT Bearer authentication
 using StackFlow.ApiControllers.Dtos;
+using StackFlow.Utils;
 
 namespace StackFlow.ApiControllers
 {
@@ -25,10 +26,12 @@ namespace StackFlow.ApiControllers
     public class UsersApiController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IEmailService _emailService;
 
-        public UsersApiController(AppDbContext context)
+        public UsersApiController(AppDbContext context, IEmailService emailService)
         {
             _context = context;
+            _emailService = emailService;
         }
 
         public class UserQueryParameters
@@ -157,6 +160,7 @@ namespace StackFlow.ApiControllers
             var userDto = new UserDto
             {
                 Id = user.Id,
+                Name = user.Name,
                 Email = user.Email,
                 Role = user.Role?.Name,
                 IsVerified = user.IsVerified,
@@ -197,6 +201,24 @@ namespace StackFlow.ApiControllers
             try
             {
                 await _context.SaveChangesAsync();
+
+                // Send account verified email using template
+                try
+                {
+                    var placeholders = new Dictionary<string, string>
+                    {
+                        { "UserName", userToVerify.Name },
+                        { "CurrentYear", DateTime.UtcNow.Year.ToString() }
+                    };
+                    var emailBody = await EmailTemplateHelper.LoadTemplateAndPopulateAsync("AccountVerified.html", placeholders);
+                    await _emailService.SendEmailAsync(userToVerify.Email, "Your StackFlow Account Has Been Verified", emailBody);
+                }
+                catch (Exception ex)
+                {
+                    // Log error, but don't prevent verification
+                    Console.WriteLine($"Error sending account verification email: {ex.Message}");
+                }
+
                 return Ok(new { message = $"User '{userToVerify.Name}' has been verified successfully." });
             }
             catch (Exception ex)
@@ -211,7 +233,8 @@ namespace StackFlow.ApiControllers
         /// Accessible only by Admin role.
         /// </summary>
         /// <param name="id">The ID of the user whose role is to be updated.</param>
-        /// <param name="dto">The new role ID.</param>
+        /// <param name="dto">The new role ID.
+        /// </param>
         /// <returns>200 OK on success, 404 Not Found, 400 Bad Request, or 403 Forbidden.</returns>
         [HttpPut("{id}/role")] // Route: /api/users/{id}/role
         [Authorize(Roles = "Admin")]
@@ -235,7 +258,7 @@ namespace StackFlow.ApiControllers
                 return Forbid("You cannot change your own role via this endpoint. Use the 'Manage Account' section for self-management."); // 403 Forbidden
             }
 
-            userToUpdate.Role_Id = dto.NewRoleId;
+            userToUpdate.Role_Id = newRole.Id;
 
             try
             {
@@ -311,6 +334,44 @@ namespace StackFlow.ApiControllers
 
                 userToDelete.IsDeleted = true;
                 await _context.SaveChangesAsync(); // Then save user deletion status
+
+                // Send account deleted email to the user using template
+                try
+                {
+                     var placeholders = new Dictionary<string, string>
+                     {
+                         { "UserName", userToDelete.Name },
+                         { "CurrentYear", DateTime.UtcNow.Year.ToString() }
+                     };
+                     var emailBody = await EmailTemplateHelper.LoadTemplateAndPopulateAsync("AccountDeleted.html", placeholders);
+                     await _emailService.SendEmailAsync(userToDelete.Email, "Your StackFlow Account Has Been Deleted", emailBody);
+                }
+                catch (Exception ex)
+                {
+                    // Log error, but don't prevent deletion
+                    Console.WriteLine($"Error sending account deletion email to user: {ex.Message}");
+                }
+
+                // Optional: Send email to admin about ticket reassignment using template
+                if (adminUser != null) // Ensure adminUser was found earlier
+                {
+                    try
+                    {
+                         var adminPlaceholders = new Dictionary<string, string>
+                         {
+                             { "DeletedUserName", userToDelete.Name },
+                             { "AdminUserName", adminUser.Name },
+                             { "CurrentYear", DateTime.UtcNow.Year.ToString() }
+                         };
+                          var adminEmailBody = await EmailTemplateHelper.LoadTemplateAndPopulateAsync("AdminTicketReassignment.html", adminPlaceholders);
+                         await _emailService.SendEmailAsync(adminUser.Email, "User Account Deleted and Tickets Reassigned", adminEmailBody);
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log error, but don't prevent deletion or user email
+                        Console.WriteLine($"Error sending admin notification email about ticket reassignment: {ex.Message}");
+                    }
+                }
 
                 return Ok(new { message = $"User '{userToDelete.Name}' soft-deleted and their tickets reassigned to {adminUser.Name}." });
             }

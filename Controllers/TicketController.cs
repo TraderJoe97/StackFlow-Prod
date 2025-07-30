@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.SignalR;
@@ -10,6 +10,8 @@ using StackFlow.Utils;
 using StackFlow.ViewModels; // Ensure this is present
 using System.Security.Claims;
 
+using System.Collections.Generic; // Added for Dictionary
+
 namespace StackFlow.Controllers
 {
     [Authorize] // All actions in this controller require authentication
@@ -17,11 +19,13 @@ namespace StackFlow.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IHubContext<DashboardHub> _hubContext;
+        private readonly IEmailService _emailService; // Added IEmailService
 
-        public TicketController(AppDbContext context, IHubContext<DashboardHub> hubContext)
+        public TicketController(AppDbContext context, IHubContext<DashboardHub> HubContext, IEmailService emailService) // Added IEmailService
         {
             _context = context;
-            _hubContext = hubContext;
+            _hubContext = HubContext;
+            _emailService = emailService; // Assigned IEmailService
         }
 
         /// <summary>
@@ -77,11 +81,11 @@ namespace StackFlow.Controllers
             // Remove navigation properties from ModelState validation, as they are not posted from the form
             ModelState.Remove("Project");
             ModelState.Remove("AssignedTo");
-            ModelState.Remove("Comments"); // Reverted from TaskComments
-            ModelState.Remove("CreatedBy"); // Reverted from TaskCreatedBy
-            ModelState.Remove("CreatedByUserId"); // Reverted from TaskCreatedByUserId
-            ModelState.Remove("CreatedAt"); // Reverted from TaskCreatedAt
-            ModelState.Remove("CompletedAt"); // Reverted from TaskCompletedAt
+            ModelState.Remove("Comments");
+            ModelState.Remove("CreatedBy");
+            ModelState.Remove("CreatedByUserId");
+            ModelState.Remove("CreatedAt");
+            ModelState.Remove("CompletedAt");
 
 
             var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -105,15 +109,57 @@ namespace StackFlow.Controllers
                     // Send minimal data: action and ticket ID
                     await _hubContext.Clients.All.SendAsync("ReceiveTicketUpdate", "created", ticket.Id);
 
-                    return RedirectToAction("Index", "Dashboard"); // Redirect to Dashboard Index
+                    // Send email notification for new ticket creation
+                    var createdByUser = await _context.User.FindAsync(currentUserId);
+                    var assignedToUser = ticket.Assigned_To.HasValue ? await _context.User.FindAsync(ticket.Assigned_To.Value) : null;
+                    var project = await _context.Project.FindAsync(ticket.Project_Id);
+
+
+                    var placeholders = new Dictionary<string, string>
+                    {
+                        { "TicketTitle", ticket.Title },
+                        { "TicketDescription", ticket.Description },
+                        { "ProjectName", project?.Name ?? "N/A" },
+                        { "CreatedBy", createdByUser?.Name ?? "N/A" },
+                        { "AssignedTo", assignedToUser?.Name ?? "Unassigned" },
+                        { "Priority", ticket.Priority },
+                        { "Status", ticket.Status },
+                        { "TicketLink", Url.Action("TicketDetails", "Ticket", new { id = ticket.Id }, Request.Scheme) }, // Generate ticket details link
+                        { "CurrentYear", DateTime.UtcNow.Year.ToString() }
+                    };
+
+                    // Determine recipients (e.g., all project members, assigned user, admin)
+                    // For simplicity, let's send to the assigned user and the creator for now.
+                    // You might want to expand this logic based on your requirements.
+                    var recipientEmails = new List<string>();
+                     if (assignedToUser != null && !string.IsNullOrEmpty(assignedToUser.Email))
+                    {
+                        recipientEmails.Add(assignedToUser.Email);
+                    }
+                    if (createdByUser != null && !string.IsNullOrEmpty(createdByUser.Email) && (assignedToUser == null || assignedToUser.Id != createdByUser.Id))
+                    {
+                         recipientEmails.Add(createdByUser.Email);
+                    }
+
+                    if (recipientEmails.Any())
+                    {
+                         var emailBody = await EmailTemplateHelper.LoadTemplateAndPopulateAsync("NewTicketCreated.html", placeholders);
+                         // Send email to all relevant recipients
+                         foreach (var email in recipientEmails)
+                         {
+                             await _emailService.SendEmailAsync(email, $"New Ticket Created: {ticket.Title}", emailBody);
+                         }
+                    }
+
+                    return RedirectToAction("Index", "Dashboard");
                 }
                 catch (Exception ex)
                 {
                     TempData["ErrorMessage"] = $"Error creating ticket: {ex.Message}";
                     ViewBag.Projects = new SelectList(await _context.Project.ToListAsync(), "Id", "Name", ticket.Project_Id);
                     ViewBag.Users = new SelectList(await _context.User.ToListAsync(), "Id", "Name", ticket.Assigned_To);
-                    ViewBag.TicketStatuses = new SelectList(new List<string> { "To_Do", "In_Progress", "In_Review", "Done" }, ticket.Status); // Reverted
-                    ViewBag.TicketPriorities = new SelectList(new List<string> { "Low", "Medium", "High" }, ticket.Priority); // Reverted
+                    ViewBag.TicketStatuses = new SelectList(new List<string> { "To_Do", "In_Progress", "In_Review", "Done" }, ticket.Status);
+                    ViewBag.TicketPriorities = new SelectList(new List<string> { "Low", "Medium", "High" }, ticket.Priority);
                     return View(ticket);
                 }
             }
@@ -121,8 +167,8 @@ namespace StackFlow.Controllers
             TempData["ErrorMessage"] = "Please correct the errors in the form.";
             ViewBag.Projects = new SelectList(await _context.Project.ToListAsync(), "Id", "Name", ticket.Project_Id);
             ViewBag.Users = new SelectList(await _context.User.ToListAsync(), "Id", "Name", ticket.Assigned_To);
-            ViewBag.TicketStatuses = new SelectList(new List<string> { "To_Do", "In_Progress", "In_Review", "Done" }, ticket.Status); // Reverted
-            ViewBag.TicketPriorities = new SelectList(new List<string> { "Low", "Medium", "High" }, ticket.Priority); // Reverted
+            ViewBag.TicketStatuses = new SelectList(new List<string> { "To_Do", "In_Progress", "In_Review", "Done" }, ticket.Status);
+            ViewBag.TicketPriorities = new SelectList(new List<string> { "Low", "Medium", "High" }, ticket.Priority);
 
             foreach (var modelStateEntry in ModelState.Values)
             {
@@ -211,13 +257,18 @@ namespace StackFlow.Controllers
                 return Unauthorized();
             }
 
-            var ticket = await _context.Ticket.FindAsync(ticketId); // Reverted from Tasks.FindAsync
+            var ticket = await _context.Ticket
+                                     .Include(t => t.AssignedTo) // Include AssignedTo to get email
+                                     .Include(t => t.CreatedBy) // Include CreatedBy to get email
+                                     .Include(t => t.Project) // Include Project to get name
+                                     .FirstOrDefaultAsync(t => t.Id == ticketId);
+
+
             if (ticket == null)
             {
                 return NotFound();
             }
 
-            // Trim whitespace from newStatus for robust comparison
             newStatus = newStatus?.Trim();
 
             var allowedStatuses = new List<string> { "To_Do", "In_Progress", "In_Review", "Done" };
@@ -227,13 +278,13 @@ namespace StackFlow.Controllers
                 return RedirectToAction(nameof(TicketDetails), new { id = ticketId });
             }
 
-            string oldStatus = ticket.Status; // Reverted
-            ticket.Status = newStatus; // Reverted
+            string oldStatus = ticket.Status;
+            ticket.Status = newStatus;
             if (oldStatus != newStatus)
             {
-                if (newStatus == "Done") // Reverted
+                if (newStatus == "Done")
                 {
-                    ticket.Completed_At = DateTime.UtcNow; // Reverted
+                    ticket.Completed_At = DateTime.UtcNow;
                 }
             }
 
@@ -243,8 +294,44 @@ namespace StackFlow.Controllers
                 await _context.SaveChangesAsync();
                 TempData["SuccessMessage"] = $"Ticket '{ticket.Title}' status updated to '{newStatus}' successfully!";
 
-                // Send minimal data: action and ticket ID
                 await _hubContext.Clients.All.SendAsync("ReceiveTicketUpdate", "updated", ticket.Id, oldStatus);
+
+                // Send email notification for status update
+                if (oldStatus != newStatus) // Only send email if the status actually changed
+                {
+                    var updatedByUser = await _context.User.FindAsync(currentUserId);
+
+                    var placeholders = new Dictionary<string, string>
+                    {
+                        { "TicketTitle", ticket.Title },
+                        { "OldStatus", oldStatus },
+                        { "NewStatus", newStatus },
+                        { "UpdatedBy", updatedByUser?.Name ?? "N/A" },
+                         { "TicketLink", Url.Action("TicketDetails", "Ticket", new { id = ticket.Id }, Request.Scheme) }, // Generate ticket details link
+                        { "CurrentYear", DateTime.UtcNow.Year.ToString() }
+                    };
+
+                    // Determine recipients (e.g., assigned user, creator, project members)
+                    // For simplicity, send to the assigned user and the creator.
+                     var recipientEmails = new List<string>();
+                     if (ticket.AssignedTo != null && !string.IsNullOrEmpty(ticket.AssignedTo.Email))
+                    {
+                        recipientEmails.Add(ticket.AssignedTo.Email);
+                    }
+                    if (ticket.CreatedBy != null && !string.IsNullOrEmpty(ticket.CreatedBy.Email) && (ticket.AssignedTo == null || ticket.AssignedTo.Id != ticket.CreatedBy.Id))
+                    {
+                         recipientEmails.Add(ticket.CreatedBy.Email);
+                    }
+
+                    if (recipientEmails.Any())
+                    {
+                         var emailBody = await EmailTemplateHelper.LoadTemplateAndPopulateAsync("TicketStatusUpdated.html", placeholders);
+                         foreach (var email in recipientEmails)
+                         {
+                             await _emailService.SendEmailAsync(email, $"Ticket Status Updated: {ticket.Title}", emailBody);
+                         }
+                    }
+                }
 
             }
             catch (Exception ex)
@@ -278,27 +365,68 @@ namespace StackFlow.Controllers
                 return RedirectToAction(nameof(TicketDetails), new { id = ticketId });
             }
 
-            var ticket = await _context.Ticket.FirstOrDefaultAsync(t => t.Id == ticketId); // Reverted from Tasks.FirstOrDefaultAsync
+            var ticket = await _context.Ticket
+                                     .Include(t => t.AssignedTo) // Include AssignedTo to get email
+                                     .Include(t => t.CreatedBy) // Include CreatedBy to get email
+                                     .FirstOrDefaultAsync(t => t.Id == ticketId);
+
+
             if (ticket == null)
             {
                 TempData["ErrorMessage"] = "Ticket not found.";
-                return RedirectToAction("Index", "Dashboard"); // Redirect to Dashboard Index
+                return RedirectToAction("Index", "Dashboard");
             }
 
-            var ticketComment = new Comment // Reverted from TaskComment
+            var ticketComment = new Comment
             {
-                Ticket_Id = ticketId, // Reverted
+                Ticket_Id = ticketId,
                 Created_By = currentUserId,
                 Content = commentText.Trim(),
                 Created_At = DateTime.UtcNow
             };
 
-            _context.TicketComment.Add(ticketComment); // Reverted
+            _context.TicketComment.Add(ticketComment);
             await _context.SaveChangesAsync();
 
             TempData["SuccessMessage"] = "Comment added successfully!";
-            // Comments are not being updated in the main dashboard view, so a simple notification is fine.
             await _hubContext.Clients.All.SendAsync("ReceiveTicketUpdate", "commented", ticket.Id);
+
+            // Send email notification for new comment
+            var commentedByUser = await _context.User.FindAsync(currentUserId);
+
+            var placeholders = new Dictionary<string, string>
+            {
+                { "TicketTitle", ticket.Title },
+                { "CommentedBy", commentedByUser?.Name ?? "N/A" },
+                { "CommentContent", ticketComment.Content },
+                { "TicketLink", Url.Action("TicketDetails", "Ticket", new { id = ticket.Id }, Request.Scheme) }, // Generate ticket details link
+                { "CurrentYear", DateTime.UtcNow.Year.ToString() }
+            };
+
+            // Determine recipients (e.g., assigned user, creator, other users who commented)
+            // For simplicity, send to the assigned user and the creator.
+             var recipientEmails = new List<string>();
+             if (ticket.AssignedTo != null && !string.IsNullOrEmpty(ticket.AssignedTo.Email))
+            {
+                recipientEmails.Add(ticket.AssignedTo.Email);
+            }
+            if (ticket.CreatedBy != null && !string.IsNullOrEmpty(ticket.CreatedBy.Email) && (ticket.AssignedTo == null || ticket.AssignedTo.Id != ticket.CreatedBy.Id))
+            {
+                 recipientEmails.Add(ticket.CreatedBy.Email);
+            }
+
+             // You might want to add logic here to include other users who have commented on the ticket
+             // to the recipient list.
+
+            if (recipientEmails.Any())
+            {
+                 var emailBody = await EmailTemplateHelper.LoadTemplateAndPopulateAsync("NewCommentAdded.html", placeholders);
+                 foreach (var email in recipientEmails)
+                 {
+                     await _emailService.SendEmailAsync(email, $"New Comment on Ticket: {ticket.Title}", emailBody);
+                 }
+            }
+
 
             return RedirectToAction(nameof(TicketDetails), new { id = ticketId });
         }

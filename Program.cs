@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.AspNetCore.Http; // Ensure this is present for context.Response.WriteAsync
+using StackFlow.Utils;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -146,6 +147,9 @@ builder.Services.AddAuthorization();
 
 // Add SignalR services
 builder.Services.AddSignalR();
+
+// Add Email Service (Mailjet)
+builder.Services.AddTransient<IEmailService, MailjetEmailService>();
 
 var app = builder.Build();
 

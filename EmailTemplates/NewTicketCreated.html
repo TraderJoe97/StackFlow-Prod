@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #28a745; /* Green color for creation */
+        }
+        .ticket-details {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e9ecef;
+            border-left: 4px solid #28a745;
+        }
+        .ticket-details p {
+            margin: 5px 0;
+        }
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 0.9em;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>New Ticket Created</h2>
+        <p>Hello,</p>
+        <p>A new ticket has been created in the system. Please review the details:</p>
+
+        <div class="ticket-details">
+            <p><strong>Title:</strong> {{TicketTitle}}</p>
+            <p><strong>Description:</strong> {{TicketDescription}}</p>
+            <p><strong>Project:</strong> {{ProjectName}}</p>
+            <p><strong>Created By:</strong> {{CreatedBy}}</p>
+            <p><strong>Assigned To:</strong> {{AssignedTo}}</p>
+            <p><strong>Priority:</strong> {{Priority}}</p>
+            <p><strong>Status:</strong> {{Status}}</p>
+        </div>
+
+        <p>You can view the ticket details <a href="{{TicketLink}}">here</a>.</p>
+
+        <p>Thank you,</p>
+        <p>StackFlow Team</p>
+
+        <div class="footer">
+            &copy; {{CurrentYear}} StackFlow. All rights reserved.
+        </div>
+    </div>
+</body>
+</html>
