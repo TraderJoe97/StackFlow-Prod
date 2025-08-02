@@ -5,7 +5,7 @@
     font-family: 'Segoe UI', sans-serif;
 }
 
-body {
+.auth-wrapper {
     background: linear-gradient(135deg, #2d6cdf, #1e3c72);
     height: 100vh;
     display: flex;
@@ -13,7 +13,7 @@ body {
     align-items: center;
 }
 
-.container {
+.auth-container {
     background: white;
     display: flex;
     border-radius: 15px;
@@ -23,182 +23,182 @@ body {
     max-width: 95%;
 }
 
-.welcome-section {
-    flex: 1;
-    background: radial-gradient(circle at 40% 40%, #3579ec, #174a9c);
-    color: white;
-    padding: 50px;
-    position: relative;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-}
-
-    .welcome-section h1 {
-        font-size: 36px;
-        margin-bottom: 10px;
+    .auth-container .welcome-section {
+        flex: 1;
+        background: radial-gradient(circle at 40% 40%, #3579ec, #174a9c);
+        color: white;
+        padding: 50px;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
     }
 
-    .welcome-section .headline {
-        font-size: 18px;
+        .auth-container .welcome-section h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+
+        .auth-container .welcome-section .headline {
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+
+        .auth-container .welcome-section .description {
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .auth-container .welcome-section .logo {
+            width: 120px;
+            height: auto;
+            opacity: 0.85;
+            margin-top: 10px;
+            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.2));
+            mix-blend-mode: screen;
+        }
+
+    .auth-container .login-section {
+        flex: 1;
+        padding: 50px;
+    }
+
+        .auth-container .login-section h2 {
+            font-size: 28px;
+            margin-bottom: 30px;
+        }
+
+    .auth-container form label {
+        display: flex;
+        align-items: center;
+        background: #f2f2f2;
+        border-radius: 8px;
         margin-bottom: 15px;
+        padding: 10px 15px;
+        position: relative;
     }
 
-    .welcome-section .description {
+    .auth-container form input[type="text"],
+    .auth-container form input[type="password"] {
+        border: none;
+        background: transparent;
+        flex: 1;
+        font-size: 16px;
+        margin-left: 10px;
+        outline: none;
+    }
+
+    .auth-container .icon {
+        font-size: 18px;
+    }
+
+    .auth-container .show-password {
+        font-size: 12px;
+        color: #3579ec;
+        cursor: pointer;
+        position: absolute;
+        right: 15px;
+    }
+
+    .auth-container .options {
+        display: flex;
+        justify-content: space-between;
         font-size: 14px;
-        line-height: 1.6;
         margin-bottom: 20px;
     }
 
-    .welcome-section .logo {
-        width: 120px;
-        height: auto;
-        opacity: 0.85;
-        margin-top: 10px;
-        filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.2));
-        mix-blend-mode: screen;
-    }
+        .auth-container .options a {
+            text-decoration: none;
+            color: #3579ec;
+        }
 
-.login-section {
-    flex: 1;
-    padding: 50px;
-}
-
-    .login-section h2 {
-        font-size: 28px;
-        margin-bottom: 30px;
-    }
-
-form label {
-    display: flex;
-    align-items: center;
-    background: #f2f2f2;
-    border-radius: 8px;
-    margin-bottom: 15px;
-    padding: 10px 15px;
-    position: relative;
-}
-
-form input[type="text"],
-form input[type="password"] {
-    border: none;
-    background: transparent;
-    flex: 1;
-    font-size: 16px;
-    margin-left: 10px;
-    outline: none;
-}
-
-.icon {
-    font-size: 18px;
-}
-
-.show-password {
-    font-size: 12px;
-    color: #3579ec;
-    cursor: pointer;
-    position: absolute;
-    right: 15px;
-}
-
-.options {
-    display: flex;
-    justify-content: space-between;
-    font-size: 14px;
-    margin-bottom: 20px;
-}
-
-    .options a {
-        text-decoration: none;
-        color: #3579ec;
-    }
-
-.btn-primary {
-    background-color: #174a9c;
-    color: white;
-    border: none;
-    width: 100%;
-    padding: 12px;
-    border-radius: 8px;
-    font-size: 16px;
-    cursor: pointer;
-    margin-bottom: 15px;
-}
-
-.divider {
-    text-align: center;
-    position: relative;
-    margin: 15px 0;
-}
-
-    .divider span {
-        background: white;
-        padding: 0 10px;
-        position: relative;
-        z-index: 1;
-    }
-
-    .divider::before {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 0;
-        height: 1px;
+    .auth-container .btn-primary {
+        background-color: #174a9c;
+        color: white;
+        border: none;
         width: 100%;
-        background: #ccc;
-        z-index: 0;
+        padding: 12px;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+        margin-bottom: 15px;
     }
 
-.btn-secondary {
-    background: white;
-    border: 2px solid #174a9c;
-    color: #174a9c;
-    width: 100%;
-    padding: 12px;
-    border-radius: 8px;
-    font-size: 16px;
-    cursor: pointer;
-}
-
-.signup {
-    font-size: 14px;
-    text-align: center;
-    margin-top: 20px;
-}
-
-    .signup a {
-        color: #3579ec;
-        text-decoration: none;
+    .auth-container .divider {
+        text-align: center;
+        position: relative;
+        margin: 15px 0;
     }
 
-/* Decorative circles */
-.circle {
-    position: absolute;
-    border-radius: 50%;
-    background: radial-gradient(circle at top left, #4d89ff, #174a9c);
-    opacity: 0.9;
-}
+        .auth-container .divider span {
+            background: white;
+            padding: 0 10px;
+            position: relative;
+            z-index: 1;
+        }
 
-.circle1 {
-    width: 200px;
-    height: 200px;
-    bottom: -50px;
-    left: -50px;
-}
+        .auth-container .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            height: 1px;
+            width: 100%;
+            background: #ccc;
+            z-index: 0;
+        }
 
-.circle2 {
-    width: 150px;
-    height: 150px;
-    bottom: 30px;
-    left: 120px;
-}
+    .auth-container .btn-secondary {
+        background: white;
+        border: 2px solid #174a9c;
+        color: #174a9c;
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+    }
 
-.circle3 {
-    width: 100px;
-    height: 100px;
-    top: -30px;
-    right: -30px;
-}
+    .auth-container .signup {
+        font-size: 14px;
+        text-align: center;
+        margin-top: 20px;
+    }
+
+        .auth-container .signup a {
+            color: #3579ec;
+            text-decoration: none;
+        }
+
+    /* Decorative circles */
+    .auth-container .circle {
+        position: absolute;
+        border-radius: 50%;
+        background: radial-gradient(circle at top left, #4d89ff, #174a9c);
+        opacity: 0.9;
+    }
+
+    .auth-container .circle1 {
+        width: 200px;
+        height: 200px;
+        bottom: -50px;
+        left: -50px;
+    }
+
+    .auth-container .circle2 {
+        width: 150px;
+        height: 150px;
+        bottom: 30px;
+        left: 120px;
+    }
+
+    .auth-container .circle3 {
+        width: 100px;
+        height: 100px;
+        top: -30px;
+        right: -30px;
+    }

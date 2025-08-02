@@ -3,64 +3,67 @@
     Layout = "_Layout";
 }
 
-<div class="auth-wrapper">
-    <!-- Left Side: Welcome Section -->
-    <div class="auth-welcome-section">
-        <div class="welcome-overlay">
-            <h1 class="welcome-title">Welcome to StackFlow</h1>
-            <p class="welcome-subtitle">Join us and be part of the future!</p>
-            <img src="~/images/logo-white.png" class="welcome-logo" alt="Logo" />
+@section Styles {
+    <link rel="stylesheet" href="~/css/Account.css" />
+}
+
+<div class="account-wrapper">
+    <div class="container">
+        <div class="welcome-section">
+            <img src="~/images/logo.JPG" alt="Logo" class="logo" />
+            <h1>WELCOME!</h1>
+            <p class="description">
+                Join us and simplify your workflow today.
+            </p>
+
+            <div class="circle circle1"></div>
+            <div class="circle circle2"></div>
+            <div class="circle circle3"></div>
         </div>
 
-        <!-- Circles -->
-        <div class="circle circle1"></div>
-        <div class="circle circle2"></div>
-        <div class="circle circle3"></div>
-    </div>
+        <div class="login-section">
+            <h2>Register</h2>
 
-    <!-- Right Side: Register Form -->
-    <div class="auth-form-section">
-        <div class="auth-card">
-            <h2 class="auth-title">
-                <i class="bi bi-person-plus-fill me-2"></i> Create Account
-            </h2>
-
-            @if (ViewData["RegistrationError"] != null)
+            @if (ViewData["RegisterError"] != null)
             {
-                <div class="auth-error">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>@ViewData["RegistrationError"]
-                    <button type="button" class="close-btn" data-bs-dismiss="alert" aria-label="Close">&times;</button>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>@ViewData["RegisterError"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             }
 
-            <form asp-controller="Account" asp-action="Register" method="post" class="auth-form" novalidate>
-                <div class="input-group">
-                    <label for="username">Username</label>
-                    <input type="text" id="username" name="username" placeholder="Choose a username" required />
+            <form asp-controller="Account" asp-action="Register" method="post" class="needs-validation" novalidate>
+                <label>
+                    <span class="icon">👤</span>
+                    <input type="text" name="username" class="form-control" placeholder="Username" required />
                     <div class="invalid-feedback">Please enter a username.</div>
-                </div>
+                </label>
 
-                <div class="input-group">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" name="email" placeholder="your.email@omnitak.com" required />
-                    <div class="form-note">Must be an omnitak.com email address.</div>
-                    <div class="invalid-feedback">Please enter a valid omnitak.com email address.</div>
-                </div>
+                <label>
+                    <span class="icon">📧</span>
+                    <input type="email" name="email" class="form-control" placeholder="Email" required />
+                    <div class="invalid-feedback">Please enter a valid email.</div>
+                </label>
 
-                <div class="input-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" name="password" placeholder="Choose a strong password" required />
-                    <div class="invalid-feedback">Please enter a password.</div>
-                </div>
+                <label>
+                    <span class="icon">🔒</span>
+                    <input type="password" name="password" class="form-control" placeholder="Password" required />
+                    <div class="invalid-feedback">Please enter your password.</div>
+                </label>
 
-                <div class="button-group">
-                    <button type="submit" class="primary-btn">
-                        <i class="bi bi-person-plus-fill me-2"></i> Register
-                    </button>
-                    <a asp-controller="Account" asp-action="Login" class="secondary-btn">
-                        <i class="bi bi-box-arrow-in-right me-2"></i> Back to Login
-                    </a>
-                </div>
+                <label>
+                    <span class="icon">🔒</span>
+                    <input type="password" name="confirmPassword" class="form-control" placeholder="Confirm Password" required />
+                    <div class="invalid-feedback">Passwords must match.</div>
+                </label>
+
+                <button type="submit" class="btn-primary">Register</button>
+
+                <div class="divider"><span>or</span></div>
+
+                <a asp-controller="Account" asp-action="Login" class="btn-secondary text-center d-block">
+                    Already have an account? Log in
+                </a>
             </form>
         </div>
     </div>
@@ -71,7 +74,7 @@
     <script>
         (function () {
             'use strict';
-            var forms = document.querySelectorAll('.auth-form');
+            var forms = document.querySelectorAll('.needs-validation');
             Array.prototype.slice.call(forms).forEach(function (form) {
                 form.addEventListener('submit', function (event) {
                     if (!form.checkValidity()) {
@@ -83,8 +86,4 @@
             });
         })();
     </script>
-}
-
-@section Styles {
-    <link rel="stylesheet" href="~/css/Account.css" />
 }

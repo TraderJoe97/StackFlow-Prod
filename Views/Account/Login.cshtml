@@ -7,72 +7,73 @@
     <link rel="stylesheet" href="~/css/Account.css" />
 }
 
-<div class="container">
-    <div class="welcome-section">
-        <img src="~/images/logo.JPG" alt="Logo" class="logo" />
-        <h1>WELCOME BACK!</h1>
-        <p class="description">
-            Your personal assistant for effortless task management and a productive day.
-        </p>
+<div class="account-wrapper">
+    <div class="container">
+        <div class="welcome-section">
+            <img src="~/images/logo.JPG" alt="Logo" class="logo" />
+            <h1>WELCOME BACK!</h1>
+            <p class="description">
+                Your personal assistant for effortless task management and a productive day.
+            </p>
 
-        <!-- Decorative Circles -->
-        <div class="circle circle1"></div>
-        <div class="circle circle2"></div>
-        <div class="circle circle3"></div>
-    </div>
+            <div class="circle circle1"></div>
+            <div class="circle circle2"></div>
+            <div class="circle circle3"></div>
+        </div>
 
-    <div class="login-section">
-        <h2>Log in</h2>
+        <div class="login-section">
+            <h2>Log in</h2>
 
-        @if (TempData["SuccessMessage"] != null)
-        {
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        }
-        @if (TempData["ErrorMessage"] != null)
-        {
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="bi bi-x-circle-fill me-2"></i>@TempData["ErrorMessage"]
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        }
-        @if (ViewData["LoginError"] != null)
-        {
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="bi bi-exclamation-triangle-fill me-2"></i>@ViewData["LoginError"]
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        }
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-x-circle-fill me-2"></i>@TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+            @if (ViewData["LoginError"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>@ViewData["LoginError"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
 
-        <form asp-controller="Account" asp-action="Login" method="post" class="needs-validation" novalidate>
-            <label>
-                <span class="icon">👤</span>
-                <input type="email" name="email" class="form-control" placeholder="Your Email" required />
-                <div class="invalid-feedback">Please enter a valid email address.</div>
-            </label>
+            <form asp-controller="Account" asp-action="Login" method="post" class="needs-validation" novalidate>
+                <label>
+                    <span class="icon">👤</span>
+                    <input type="email" name="email" class="form-control" placeholder="Your Email" required />
+                    <div class="invalid-feedback">Please enter a valid email address.</div>
+                </label>
 
-            <label>
-                <span class="icon">🔒</span>
-                <input type="password" name="password" class="form-control" placeholder="Password" required />
-                <span class="show-password">SHOW</span>
-                <div class="invalid-feedback">Please enter your password.</div>
-            </label>
+                <label>
+                    <span class="icon">🔒</span>
+                    <input type="password" name="password" class="form-control" placeholder="Password" required />
+                    <span class="show-password">SHOW</span>
+                    <div class="invalid-feedback">Please enter your password.</div>
+                </label>
 
-            <div class="options">
-                <label><input type="checkbox" /> Remember me</label>
-                <a href="#">Forgot Password?</a>
-            </div>
+                <div class="options">
+                    <label><input type="checkbox" /> Remember me</label>
+                    <a href="#">Forgot Password?</a>
+                </div>
 
-            <button type="submit" class="btn-primary">Log in</button>
+                <button type="submit" class="btn-primary">Log in</button>
 
-            <div class="divider"><span>or</span></div>
+                <div class="divider"><span>or</span></div>
 
-            <a asp-controller="Account" asp-action="Register" class="btn-secondary text-center d-block">
-                Register new account
-            </a>
-        </form>
+                <a asp-controller="Account" asp-action="Register" class="btn-secondary text-center d-block">
+                    Register new account
+                </a>
+            </form>
+        </div>
     </div>
 </div>
 
