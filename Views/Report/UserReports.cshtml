@@ -45,3 +45,28 @@
             </ul>
         </div>
     </div>
+    <div class="tab-content" id="userReportsTabsContent">
+        @* Active Users Tab with Filters *@
+        <div class="tab-pane fade @(activeTab == "activeUsers" ? "show active" : "")" id="activeUsersContent" role="tabpanel" aria-labelledby="active-users-tab">
+            <h3 class="fw-bold text-secondary mb-3 mt-4">Active Users</h3>
+            <div class="mb-3">
+                <form asp-action="UserReports" method="get" class="d-flex" id="activeUserSearchForm">
+                    <input type="hidden" name="activePageSize" value="@activePageSize" />
+                    <input type="hidden" name="pendingPage" value="@pendingCurrentPage" />
+                    <input type="hidden" name="pendingPageSize" value="@pendingPageSize" />
+                    <input type="hidden" name="tab" value="activeUsers" />
+                    <input type="text" name="searchQuery" id="activeUserLiveSearch" class="form-control rounded-pill me-2" placeholder="Search by username, email, or role..." value="@activeSearchQuery" />
+                    <button type="submit" class="btn btn-primary rounded-pill"><i class="bi bi-search"></i> Search</button>
+                    @if (!string.IsNullOrWhiteSpace(activeSearchQuery))
+                    {
+                        <a asp-action="UserReports" class="btn btn-outline-secondary rounded-pill ms-2"
+                           asp-route-activePage="@activeCurrentPage"
+                           asp-route-activePageSize="@activePageSize"
+                           asp-route-pendingPage="@pendingCurrentPage"
+                           asp-route-pendingPageSize="@pendingPageSize"
+                           asp-route-tab="activeUsers">
+                            <i class="bi bi-x-circle"></i> Clear
+                        </a>
+                    }
+                </form>
+            </div>
