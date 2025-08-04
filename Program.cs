@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.AspNetCore.Http; // Ensure this is present for context.Response.WriteAsync
+using Microsoft.AspNetCore.Http.Features; // For IHttpContextAccessor
 using StackFlow.Utils;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -119,7 +120,7 @@ builder.Services.AddAuthentication(options =>
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        ValidAudience = builder.Configuration["Jwt:Audience"],
+ ValidAudience = builder.Configuration["Jwt:Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
     };
     // This tells the JWT Bearer middleware NOT to redirect to login for API calls
@@ -151,7 +152,19 @@ builder.Services.AddSignalR();
 // Add Email Service (Mailjet)
 builder.Services.AddTransient<IEmailService, MailjetEmailService>();
 
+builder.Services.AddHttpContextAccessor(); // Required to access HttpContext
+
 var app = builder.Build();
+// Register AI services
+builder.Services.AddSingleton<ToolDefinitions>(); // ToolDefinitions can be a singleton as it likely holds static or stateless data
+
+// Register AI services
+builder.Services.AddSingleton<ToolDefinitions>(); // ToolDefinitions can be a singleton as it likely holds static or stateless data
+builder.Services.AddTransient<AiOrchestrator>(); // AiOrchestrator might hold request-specific state, so Transient is a good default
+builder.Services.AddTransient<AiOrchestrator>(serviceProvider =>
+ {
+ return new AiOrchestrator(serviceProvider.GetRequiredService<ToolDefinitions>(), serviceProvider.GetRequiredService<IHttpContextAccessor>(), builder.Configuration["AzureOpenAI:Endpoint"], builder.Configuration["AzureOpenAI:ApiKey"]);
+});
 
 
 // Configure the HTTP request pipeline.

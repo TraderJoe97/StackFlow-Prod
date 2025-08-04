@@ -73,6 +73,11 @@
                         </ul>
                     </li>
                 }
+ @if (User.Identity.IsAuthenticated)
+ {
+                <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Ai" asp-action="Chat">AI Assistant</a></li>
+
+ }
                 else
                 {
                     <li class="nav-item">

@@ -1,0 +1,57 @@
+cshtml
+@{
+    ViewData["Title"] = "AI Chat";
+}
+
+<h1>AI Chat</h1>
+
+<div class="chat-container">
+    <div id="chatBox" class="chat-box">
+        <!-- Conversation will be displayed here -->
+    </div>
+    <div class="input-area">
+        <input type="text" id="userInput" placeholder="Type your message...">
+        <button id="sendButton">Send</button>
+    </div>
+</div>
+
+<link rel="stylesheet" href="~/css/chat.css" />
+
+@section Scripts {
+    <script src="~/js/aiAssistant.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Initialize the AI assistant (assuming this function exists in aiAssistant.js)
+            initializeAIAssistant();
+
+            $('#sendButton').click(function () {
+                sendMessage();
+            });
+
+            $('#userInput').keypress(function (e) {
+                if (e.which === 13) { // Enter key pressed
+                    sendMessage();
+                }
+            });
+
+            function sendMessage() {
+                var userInput = $('#userInput').val();
+                if (userInput.trim() === '') {
+                    return;
+                }
+
+                // Display user message
+                $('#chatBox').append('<div class="user-message">' + userInput + '</div>');
+                $('#userInput').val('');
+                $('#chatBox').scrollTop($('#chatBox')[0].scrollHeight); // Auto-scroll to bottom
+
+                // Send message to AI (assuming this function exists in aiAssistant.js)
+                sendToAI(userInput);
+            }
+
+            // Function to display AI response (should be called from your aiAssistant.js)
+            // Example: function displayAIResponse(response) { ... }
+            // For now, we'll add a placeholder in the JS file to connect this
+        });
+    </script>
+}

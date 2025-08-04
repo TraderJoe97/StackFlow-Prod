@@ -1,4 +1,4 @@
-﻿@* This partial now only contains the navigation links.
+@* This partial now only contains the navigation links.
    The offcanvas container is in _Layout.cshtml, and the desktop fixed sidebar
    container is in Dashboard/Index.cshtml. *@
 <ul class="navbar-nav  sidebar-nav flex-column">
@@ -65,6 +65,15 @@
                 <i class="bi bi-person-circle me-2 mx-2 px-2"></i><span class="sidebar-text"> Manage Account</span>
         </a>
     </li>
+    }
+    @if (User.Identity.IsAuthenticated)
+    {
+        <li class="nav-item">
+            <a class="nav-link @(ViewContext.RouteData.Values["Controller"].ToString() == "Ai" && ViewContext.RouteData.Values["Action"].ToString() == "Chat" ? "active" : "")"
+            asp-area="" asp-controller="Ai" asp-action="Chat">
+                <i class="bi bi-robot me-2 mx-2 px-2"></i> <span class="sidebar-text">AI Assistant</span>
+            </a>
+        </li>
     }
     
 </ul>
