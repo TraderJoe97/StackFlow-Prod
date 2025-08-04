@@ -305,3 +305,36 @@
         </div>
     </div>
 </div>
+@section Styles {
+    <style>
+        .filter-header {
+            position: relative;
+            min-width: 120px;
+        }
+
+        .header-filter {
+            width: 100%;
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
+            background-color: var(--bs-body-bg);
+            color: var(--bs-body-color);
+            border-color: var(--bs-border-color);
+        }
+
+        .table-primary th {
+            vertical-align: top;
+            background-color: var(--bs-primary);
+            color: white;
+        }
+
+        .table-primary {
+            --bs-table-bg: var(--bs-primary);
+        }
+
+        .table-warning th {
+            background-color: var(--bs-warning);
+            color: var(--bs-dark);
+        }
+    </style>
+}
+
