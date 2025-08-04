@@ -70,3 +70,238 @@
                     }
                 </form>
             </div>
+              @if (!Model.ActiveUsers.Any())
+            {
+                <div class="alert alert-info rounded-4 shadow-sm" role="alert">
+                    <i class="bi bi-info-circle-fill me-2"></i> No active users found matching your criteria.
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive rounded-4 shadow-sm mb-3">
+                    <table class="table table-hover table-bordered mb-0" id="activeUserReportsTable">
+                        <thead class="table-primary text-white">
+                            <tr>
+                                <th scope="col">Username</th>
+                                <th scope="col">Email</th>
+                                <th scope="col" class="filter-header">
+                                    Role
+                                    <select class="form-select form-select-sm mt-1 header-filter" data-column="2">
+                                        <option value="">All</option>
+                                        @foreach (var role in Model.ActiveUsers.Select(u => u.User.Role?.Name).Distinct())
+                                        {
+                                            <option value="@role">@role</option>
+                                        }
+                                    </select>
+                                </th>
+                                <th scope="col" class="filter-header">
+                                    Total Tickets
+                                    <select class="form-select form-select-sm mt-1 header-filter" data-column="3">
+                                        <option value="">All</option>
+                                        <option value="0">0</option>
+                                        <option value="1-5">1-5</option>
+                                        <option value="6-10">6-10</option>
+                                        <option value="10+">10+</option>
+                                    </select>
+                                </th>
+                                <th scope="col" class="filter-header">
+                                    To Do
+                                    <select class="form-select form-select-sm mt-1 header-filter" data-column="4">
+                                        <option value="">All</option>
+                                        <option value="0">0</option>
+                                        <option value="1+">1+</option>
+                                    </select>
+                                </th>
+                                <th scope="col" class="filter-header">
+                                    In Progress
+                                    <select class="form-select form-select-sm mt-1 header-filter" data-column="5">
+                                        <option value="">All</option>
+                                        <option value="0">0</option>
+                                        <option value="1+">1+</option>
+                                    </select>
+                                </th>
+                                <th scope="col" class="filter-header">
+                                    In Review
+                                    <select class="form-select form-select-sm mt-1 header-filter" data-column="6">
+                                        <option value="">All</option>
+                                        <option value="0">0</option>
+                                        <option value="1+">1+</option>
+                                    </select>
+                                </th>
+                                <th scope="col" class="filter-header">
+                                    Completed
+                                    <select class="form-select form-select-sm mt-1 header-filter" data-column="7">
+                                        <option value="">All</option>
+                                        <option value="0">0</option>
+                                        <option value="1+">1+</option>
+                                    </select>
+                                </th>
+                                <th scope="col">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var report in Model.ActiveUsers)
+                            {
+                                <tr id="user-row-@report.User.Id">
+                                    <td>@report.User.Name</td>
+                                    <td>@report.User.Email</td>
+                                    <td id="user-role-@report.User.Id">@report.User.Role?.Name</td>
+                                    <td class="@(report.TotalTicketsAssigned == 0 ? "text-muted" : "text-primary fw-bold")">
+                                        @report.TotalTicketsAssigned
+                                    </td>
+                                    <td class="@(report.ToDoTicketsAssigned > 0 ? "text-danger fw-bold" : "text-muted")">
+                                        @report.ToDoTicketsAssigned
+                                    </td>
+                                    <td class="@(report.InProgressTicketsAssigned > 0 ? "text-warning fw-bold" : "text-muted")">
+                                        @report.InProgressTicketsAssigned
+                                    </td>
+                                    <td class="@(report.InReviewTicketsAssigned > 0 ? "text-info fw-bold" : "text-muted")">
+                                        @report.InReviewTicketsAssigned
+                                    </td>
+                                    <td class="@(report.CompletedTicketsAssigned > 0 ? "text-success fw-bold" : "text-muted")">
+                                        @report.CompletedTicketsAssigned
+                                    </td>
+                                    <td>
+                                        @if (report.User.Id != currentUserId)
+                                        {
+                                            <div class="d-flex flex-column flex-md-row align-items-stretch align-items-md-center gap-2">
+                                                <form asp-action="UpdateUserRole" asp-controller="Report" method="post" class="d-inline-flex flex-grow-1" data-user-id="@report.User.Id">
+                                                    <input type="hidden" name="userId" value="@report.User.Id" />
+                                                    <input type="hidden" name="activePage" value="@activeCurrentPage" />
+                                                    <input type="hidden" name="activePageSize" value="@activePageSize" />
+                                                    <input type="hidden" name="searchQuery" value="@activeSearchQuery" />
+                                                    <input type="hidden" name="pendingPage" value="@pendingCurrentPage" />
+                                                    <input type="hidden" name="pendingPageSize" value="@pendingPageSize" />
+                                                    <input type="hidden" name="tab" value="activeUsers" />
+                                                    <select name="newRoleId" class="form-select form-select-sm rounded-pill" onchange="this.form.submit()">
+                                                        @foreach (var role in ViewBag.Roles as SelectList)
+                                                        {
+                                                            <option value="@role.Value" selected="@(role.Value == report.User.Role_Id.ToString())">@role.Text</option>
+                                                        }
+                                                    </select>
+                                                </form>
+
+                                                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill animate-btn"
+                                                        data-bs-toggle="modal" data-bs-target="#softDeleteUserModal_@report.User.Id">
+                                                    <i class="bi bi-person-x"></i> Delete
+                                                </button>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted fst-italic">Current User</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+   @* Pagination *@
+                <nav aria-label="Active Users Page navigation">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item @(activeCurrentPage == 1 ? "disabled" : "")">
+                            <a class="page-link rounded-pill mx-1" href="@Url.Action("UserReports", new { activePage = activeCurrentPage - 1, activePageSize = activePageSize, searchQuery = activeSearchQuery, pendingPage = pendingCurrentPage, pendingPageSize = pendingPageSize, tab = "activeUsers" })" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                        @for (int i = 1; i <= activeTotalPages; i++)
+                        {
+                            <li class="page-item @(i == activeCurrentPage ? "active" : "")">
+                                <a class="page-link rounded-pill mx-1" href="@Url.Action("UserReports", new { activePage = i, activePageSize = activePageSize, searchQuery = activeSearchQuery, pendingPage = pendingCurrentPage, pendingPageSize = pendingPageSize, tab = "activeUsers" })">@i</a>
+                            </li>
+                        }
+                        <li class="page-item @(activeCurrentPage == activeTotalPages ? "disabled" : "")">
+                            <a class="page-link rounded-pill mx-1" href="@Url.Action("UserReports", new { activePage = activeCurrentPage + 1, activePageSize = activePageSize, searchQuery = activeSearchQuery, pendingPage = pendingCurrentPage, pendingPageSize = pendingPageSize, tab = "activeUsers" })" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            }
+        </div>
+
+        @* Pending Users Tab (without filters) *@
+        <div class="tab-pane fade @(activeTab == "pendingUsers" ? "show active" : "")" id="pendingUsersContent" role="tabpanel" aria-labelledby="pending-users-tab">
+            <h3 class="fw-bold text-secondary mb-3 mt-5">Pending Verification Users</h3>
+
+            @if (!Model.PendingUsers.Any())
+            {
+                <div class="alert alert-info rounded-4 shadow-sm" role="alert">
+                    <i class="bi bi-info-circle-fill me-2"></i> No users pending verification.
+                </div>
+            }
+            else
+            {
+                <div class="mb-3">
+                    <input type="text" id="pendingUserLiveSearch" class="form-control rounded-pill" placeholder="Search pending users..." />
+                </div>
+
+                <div class="table-responsive rounded-4 shadow-sm mb-3">
+                    <table class="table table-hover table-bordered mb-0" id="pendingUserReportsTable">
+                        <thead class="table-warning text-dark">
+                            <tr>
+                                <th scope="col">Username</th>
+                                <th scope="col">Email</th>
+                                <th scope="col">Registered At</th>
+                                <th scope="col">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var report in Model.PendingUsers)
+                            {
+                                <tr id="user-row-@report.User.Id">
+                                    <td>@report.User.Name</td>
+                                    <td>@report.User.Email</td>
+                                    <td>@report.User.Created_At.ToShortDateString()</td>
+                                    <td>
+                                        <div class="d-flex flex-column flex-md-row align-items-stretch align-items-md-center gap-2">
+                                            <form asp-action="VerifyUser" asp-controller="Report" method="post" class="d-inline-block">
+                                                <input type="hidden" name="id" value="@report.User.Id" />
+                                                <input type="hidden" name="activePage" value="@activeCurrentPage" />
+                                                <input type="hidden" name="activePageSize" value="@activePageSize" />
+                                                <input type="hidden" name="searchQuery" value="@activeSearchQuery" />
+                                                <input type="hidden" name="pendingPage" value="@pendingCurrentPage" />
+                                                <input type="hidden" name="pendingPageSize" value="@pendingPageSize" />
+                                                <input type="hidden" name="tab" value="pendingUsers" />
+                                                <button type="submit" class="btn btn-sm btn-success rounded-pill animate-btn">
+                                                    <i class="bi bi-check-circle"></i> Verify
+                                                </button>
+                                            </form>
+
+                                            <button type="button" class="btn btn-sm btn-outline-danger rounded-pill animate-btn"
+                                                    data-bs-toggle="modal" data-bs-target="#softDeleteUserModal_@report.User.Id">
+                                                <i class="bi bi-person-x"></i> Delete
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                @* Pagination *@
+                <nav aria-label="Pending Users Page navigation">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item @(pendingCurrentPage == 1 ? "disabled" : "")">
+                            <a class="page-link rounded-pill mx-1" href="@Url.Action("UserReports", new { activePage = activeCurrentPage, activePageSize = activePageSize, searchQuery = activeSearchQuery, pendingPage = pendingCurrentPage - 1, pendingPageSize = pendingPageSize, tab = "pendingUsers" })" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                        @for (int i = 1; i <= pendingTotalPages; i++)
+                        {
+                            <li class="page-item @(i == pendingCurrentPage ? "active" : "")">
+                                <a class="page-link rounded-pill mx-1" href="@Url.Action("UserReports", new { activePage = activeCurrentPage, activePageSize = activePageSize, searchQuery = activeSearchQuery, pendingPage = i, pendingPageSize = pendingPageSize, tab = "pendingUsers" })">@i</a>
+                            </li>
+                        }
+                        <li class="page-item @(pendingCurrentPage == pendingTotalPages ? "disabled" : "")">
+                            <a class="page-link rounded-pill mx-1" href="@Url.Action("UserReports", new { activePage = activeCurrentPage, activePageSize = activePageSize, searchQuery = activeSearchQuery, pendingPage = pendingCurrentPage + 1, pendingPageSize = pendingPageSize, tab = "pendingUsers" })" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            }
+        </div>
+    </div>
+</div>
