@@ -3,6 +3,10 @@
 
 @{
     ViewData["Title"] = "User Reports";
+
+    // Get the active tab from query string or default to "activeUsers"
+    var activeTab = Context.Request.Query["tab"].FirstOrDefault() ?? "activeUsers";
+
     // Active Users Pagination Data
     var activeCurrentPage = Model.ActiveUsersCurrentPage;
     var activePageSize = Model.ActiveUsersPageSize;
@@ -15,68 +19,34 @@
     var pendingTotalPages = Model.PendingUsersTotalPages;
 
     var currentUserId = ViewBag.CurrentUserId;
-
-    // Determine which tab should be active
-    var activeTab = Context.Request.Query["tab"].ToString();
-    if (string.IsNullOrEmpty(activeTab))
-    {
-        activeTab = "activeUsers";
-    }
 }
 
 <div class="card shadow-lg border-0 rounded-4 p-4 mt-4 mb-4">
-    <div class="d-flex justify-content-between align-items-start mb-3">
-        <h2 class="card-title mb-0 fw-bold text-primary display-6">
-            <i class="bi bi-file-earmark-person-fill me-2"></i> User Reports
-        </h2>
-        <div class="d-flex gap-2">
-            <a asp-action="ChartsReport" asp-controller="Report" class="btn btn-primary rounded-pill shadow-sm animate-btn">
-                <i class="bi bi-bar-chart-line-fill me-1"></i> View Charts
-            </a>
-            <a asp-action="Index" asp-controller="Dashboard" class="btn btn-outline-secondary rounded-pill shadow-sm animate-btn">
-                <i class="bi bi-arrow-left-circle me-1"></i> Back to Dashboard
-            </a>
+    <div class="card-header bg-transparent border-0 p-0 mb-4">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
+            <h2 class="fw-bold mb-3 mb-md-0">User Management</h2>
+            <ul class="nav nav-tabs card-header-tabs d-flex flex-row" id="userReportsTabs" role="tablist">
+                <li class="nav-item me-2" role="presentation">
+                    <button class="nav-link @(activeTab == "activeUsers" ? "active" : "") rounded-pill"
+                            id="active-users-tab" data-bs-toggle="tab"
+                            data-bs-target="#activeUsersContent" type="button" role="tab"
+                            aria-controls="activeUsersContent" aria-selected="@(activeTab == "activeUsers" ? "true" : "false")">
+                        Active Users
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link @(activeTab == "pendingUsers" ? "active" : "") rounded-pill"
+                            id="pending-users-tab" data-bs-toggle="tab"
+                            data-bs-target="#pendingUsersContent" type="button" role="tab"
+                            aria-controls="pendingUsersContent" aria-selected="@(activeTab == "pendingUsers" ? "true" : "false")">
+                        Pending Verification
+                    </button>
+                </li>
+            </ul>
         </div>
     </div>
-    <hr class="mb-4" />
-
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
-    @if (TempData["ErrorMessage"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="bi bi-x-circle-fill me-2"></i>@TempData["ErrorMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
-
-    @* Tabbed Navigation *@
-    <ul class="nav nav-tabs mb-3" id="userReportsTabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link @(activeTab == "activeUsers" ? "active" : "")"
-                    id="active-users-tab" data-bs-toggle="tab" data-bs-target="#activeUsersContent"
-                    type="button" role="tab" aria-controls="activeUsersContent"
-                    aria-selected="@(activeTab == "activeUsers" ? "true" : "false")">
-                Active Users
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link @(activeTab == "pendingUsers" ? "active" : "")"
-                    id="pending-users-tab" data-bs-toggle="tab" data-bs-target="#pendingUsersContent"
-                    type="button" role="tab" aria-controls="pendingUsersContent"
-                    aria-selected="@(activeTab == "pendingUsers" ? "true" : "false")">
-                Pending Verification
-            </button>
-        </li>
-    </ul>
-
     <div class="tab-content" id="userReportsTabsContent">
-        @* Active Users Tab *@
+        @* Active Users Tab with Filters *@
         <div class="tab-pane fade @(activeTab == "activeUsers" ? "show active" : "")" id="activeUsersContent" role="tabpanel" aria-labelledby="active-users-tab">
             <h3 class="fw-bold text-secondary mb-3 mt-4">Active Users</h3>
             <div class="mb-3">
@@ -100,7 +70,6 @@
                     }
                 </form>
             </div>
-
             @if (!Model.ActiveUsers.Any())
             {
                 <div class="alert alert-info rounded-4 shadow-sm" role="alert">
@@ -115,35 +84,81 @@
                             <tr>
                                 <th scope="col">Username</th>
                                 <th scope="col">Email</th>
-                                <th scope="col">Role</th>
-                                <th scope="col">Total Assigned Tickets</th>
-                                <th scope="col">To Do</th>
-                                <th scope="col">In Progress</th>
-                                <th scope="col">In Review</th>
-                                <th scope="col">Completed</th>
+                                <th scope="col" class="filter-header">
+                                    Role
+                                    <select class="form-select form-select-sm mt-1 header-filter" data-column="2" id="roleFilter">
+                                        <option value="">All</option>
+                                        @foreach (var role in Model.ActiveUsers.Select(u => u.User.Role?.Name).Distinct())
+                                        {
+                                            <option value="@role">@role</option>
+                                        }
+                                    </select>
+                                </th>
+                                <th scope="col" class="filter-header">
+                                    Total Tickets
+                                    <select class="form-select form-select-sm mt-1 header-filter" data-column="3" id="totalTicketsFilter">
+                                        <option value="">All</option>
+                                        <option value="0">0</option>
+                                        <option value="1-5">1-5</option>
+                                        <option value="6-10">6-10</option>
+                                        <option value="10+">10+</option>
+                                    </select>
+                                </th>
+                                <th scope="col" class="filter-header">
+                                    To Do
+                                    <select class="form-select form-select-sm mt-1 header-filter" data-column="4" id="todoFilter">
+                                        <option value="">All</option>
+                                        <option value="0">0</option>
+                                        <option value="1+">1+</option>
+                                    </select>
+                                </th>
+                                <th scope="col" class="filter-header">
+                                    In Progress
+                                    <select class="form-select form-select-sm mt-1 header-filter" data-column="5" id="inProgressFilter">
+                                        <option value="">All</option>
+                                        <option value="0">0</option>
+                                        <option value="1+">1+</option>
+                                    </select>
+                                </th>
+                                <th scope="col" class="filter-header">
+                                    In Review
+                                    <select class="form-select form-select-sm mt-1 header-filter" data-column="6" id="inReviewFilter">
+                                        <option value="">All</option>
+                                        <option value="0">0</option>
+                                        <option value="1+">1+</option>
+                                    </select>
+                                </th>
+                                <th scope="col" class="filter-header">
+                                    Completed
+                                    <select class="form-select form-select-sm mt-1 header-filter" data-column="7" id="completedFilter">
+                                        <option value="">All</option>
+                                        <option value="0">0</option>
+                                        <option value="1+">1+</option>
+                                    </select>
+                                </th>
                                 <th scope="col">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach (var report in Model.ActiveUsers)
                             {
-                                <tr id="user-row-@report.User.Id">
+                                <tr id="user-row-@report.User.Id" class="user-row">
                                     <td>@report.User.Name</td>
                                     <td>@report.User.Email</td>
-                                    <td id="user-role-@report.User.Id">@report.User.Role?.Name</td>
-                                    <td class="@(report.TotalTicketsAssigned == 0 ? "text-muted" : "text-primary fw-bold")">
+                                    <td class="role-cell">@report.User.Role?.Name</td>
+                                    <td class="@(report.TotalTicketsAssigned == 0 ? "text-muted" : "text-primary fw-bold") total-tickets-cell">
                                         @report.TotalTicketsAssigned
                                     </td>
-                                    <td class="@(report.ToDoTicketsAssigned > 0 ? "text-danger fw-bold" : "text-muted")">
+                                    <td class="@(report.ToDoTicketsAssigned > 0 ? "text-danger fw-bold" : "text-muted") todo-tickets-cell">
                                         @report.ToDoTicketsAssigned
                                     </td>
-                                    <td class="@(report.InProgressTicketsAssigned > 0 ? "text-warning fw-bold" : "text-muted")">
+                                    <td class="@(report.InProgressTicketsAssigned > 0 ? "text-warning fw-bold" : "text-muted") inprogress-tickets-cell">
                                         @report.InProgressTicketsAssigned
                                     </td>
-                                    <td class="@(report.InReviewTicketsAssigned > 0 ? "text-info fw-bold" : "text-muted")">
+                                    <td class="@(report.InReviewTicketsAssigned > 0 ? "text-info fw-bold" : "text-muted") inreview-tickets-cell">
                                         @report.InReviewTicketsAssigned
                                     </td>
-                                    <td class="@(report.CompletedTicketsAssigned > 0 ? "text-success fw-bold" : "text-muted")">
+                                    <td class="@(report.CompletedTicketsAssigned > 0 ? "text-success fw-bold" : "text-muted") completed-tickets-cell">
                                         @report.CompletedTicketsAssigned
                                     </td>
                                     <td>
@@ -182,7 +197,6 @@
                         </tbody>
                     </table>
                 </div>
-
                 @* Pagination *@
                 <nav aria-label="Active Users Page navigation">
                     <ul class="pagination justify-content-center">
@@ -207,7 +221,7 @@
             }
         </div>
 
-        @* Pending Users Tab *@
+        @* Pending Users Tab (without filters) *@
         <div class="tab-pane fade @(activeTab == "pendingUsers" ? "show active" : "")" id="pendingUsersContent" role="tabpanel" aria-labelledby="pending-users-tab">
             <h3 class="fw-bold text-secondary mb-3 mt-5">Pending Verification Users</h3>
 
@@ -236,7 +250,7 @@
                         <tbody>
                             @foreach (var report in Model.PendingUsers)
                             {
-                                <tr id="user-row-@report.User.Id">
+                                <tr class="pending-user-row">
                                     <td>@report.User.Name</td>
                                     <td>@report.User.Email</td>
                                     <td>@report.User.Created_At.ToShortDateString()</td>
@@ -266,7 +280,6 @@
                         </tbody>
                     </table>
                 </div>
-
                 @* Pagination *@
                 <nav aria-label="Pending Users Page navigation">
                     <ul class="pagination justify-content-center">
@@ -293,143 +306,104 @@
     </div>
 </div>
 
-@* Modals for soft deletion *@
-@foreach (var report in Model.ActiveUsers.Concat(Model.PendingUsers))
-{
-    @if (report.User.Id != currentUserId)
-    {
-        <div class="modal fade" id="softDeleteUserModal_@report.User.Id" tabindex="-1" aria-labelledby="softDeleteUserModalLabel_@report.User.Id" aria-hidden="true">
-            <div class="modal-dialog modal-sm modal-dialog-centered">
-                <div class="modal-content rounded-4">
-                    <div class="modal-header bg-danger text-white rounded-top-4">
-                        <h5 class="modal-title" id="softDeleteUserModalLabel_@report.User.Id">Confirm Soft Delete</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body text-center">
-                        <p>Are you sure you want to soft-delete user <strong>@report.User.Name</strong>?</p>
-                        <p class="text-danger"><strong>WARNING: Their @report.TotalTicketsAssigned assigned tickets will be reassigned to you!</strong></p>
-                    </div>
-                    <div class="modal-footer justify-content-center">
-                        <button type="button" class="btn btn-secondary rounded-pill animate-btn" data-bs-dismiss="modal">Cancel</button>
-                        <form asp-action="SoftDeleteUser" asp-controller="Report" method="post" class="d-inline">
-                            <input type="hidden" name="id" value="@report.User.Id" />
-                            <input type="hidden" name="activePage" value="@activeCurrentPage" />
-                            <input type="hidden" name="activePageSize" value="@activePageSize" />
-                            <input type="hidden" name="searchQuery" value="@activeSearchQuery" />
-                            <input type="hidden" name="pendingPage" value="@pendingCurrentPage" />
-                            <input type="hidden" name="pendingPageSize" value="@pendingPageSize" />
-                            <input type="hidden" name="tab" value="@activeTab" />
-                            <button type="submit" class="btn btn-danger rounded-pill animate-btn">
-                                Soft Delete
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    }
-}
-
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
-
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+        $(document).ready(function() {
+            // Active Users Table Filtering
+            function filterActiveUsers() {
+                const roleFilter = $('#roleFilter').val().toLowerCase();
+                const totalTicketsFilter = $('#totalTicketsFilter').val();
+                const todoFilter = $('#todoFilter').val();
+                const inProgressFilter = $('#inProgressFilter').val();
+                const inReviewFilter = $('#inReviewFilter').val();
+                const completedFilter = $('#completedFilter').val();
 
-            // --------------------------
-            // Live Search for Active Users
-            // --------------------------
-            const activeSearchInput = document.getElementById('activeUserLiveSearch'); // Input field for active users
-            const activeTable = document.getElementById('activeUserReportsTable'); // Table containing active user rows
+                $('.user-row').each(function() {
+                    const $row = $(this);
+                    const role = $row.find('.role-cell').text().toLowerCase();
+                    const totalTickets = parseInt($row.find('.total-tickets-cell').text());
+                    const todoTickets = parseInt($row.find('.todo-tickets-cell').text());
+                    const inProgressTickets = parseInt($row.find('.inprogress-tickets-cell').text());
+                    const inReviewTickets = parseInt($row.find('.inreview-tickets-cell').text());
+                    const completedTickets = parseInt($row.find('.completed-tickets-cell').text());
 
-            // Create a "No results" message for Active Users (hidden by default)
-            let activeNoResultsMsg = document.createElement('div');
-            activeNoResultsMsg.className = 'alert alert-warning mt-2';
-            activeNoResultsMsg.style.display = 'none';
-            activeNoResultsMsg.innerHTML = '<i class="bi bi-exclamation-circle"></i> No active users found.';
-            if (activeTable) {
-                activeTable.parentNode.appendChild(activeNoResultsMsg);
-            }
+                    // Role filter
+                    const roleMatch = !roleFilter || role.includes(roleFilter);
 
-            if (activeSearchInput && activeTable) {
-
-                // Event: Triggered when a key is released in the search box
-                activeSearchInput.addEventListener('keyup', function (e) {
-                    e.preventDefault(); // Prevent form submission during typing
-
-                    const filter = activeSearchInput.value.toLowerCase(); // Convert search term to lowercase for case-insensitive matching
-                    const rows = activeTable.querySelectorAll('tbody tr'); // Get all table rows inside <tbody>
-                    let visibleCount = 0; // Track visible rows
-
-                    // Loop through all rows and show/hide based on the search term
-                    rows.forEach(row => {
-                        const text = row.innerText.toLowerCase(); // Combine all text in the row and convert to lowercase
-                        if (text.includes(filter)) {
-                            row.style.display = ''; // Show row if it matches the search term
-                            visibleCount++;
-                        } else {
-                            row.style.display = 'none'; // Hide row if it does not match
+                    // Total tickets filter
+                    let totalTicketsMatch = true;
+                    if (totalTicketsFilter) {
+                        if (totalTicketsFilter === "0") {
+                            totalTicketsMatch = totalTickets === 0;
+                        } else if (totalTicketsFilter === "1-5") {
+                            totalTicketsMatch = totalTickets >= 1 && totalTickets <= 5;
+                        } else if (totalTicketsFilter === "6-10") {
+                            totalTicketsMatch = totalTickets >= 6 && totalTickets <= 10;
+                        } else if (totalTicketsFilter === "10+") {
+                            totalTicketsMatch = totalTickets > 10;
                         }
-                    });
+                    }
 
-                    // Show "No results" message if no visible rows
-                    activeNoResultsMsg.style.display = (visibleCount === 0) ? 'block' : 'none';
-                });
+                    // Todo tickets filter
+                    let todoMatch = true;
+                    if (todoFilter === "0") {
+                        todoMatch = todoTickets === 0;
+                    } else if (todoFilter === "1+") {
+                        todoMatch = todoTickets > 0;
+                    }
 
-                // Event: Prevent pressing "Enter" from submitting the form
-                activeSearchInput.addEventListener('keydown', function (e) {
-                    if (e.key === 'Enter') e.preventDefault();
-                });
-            }
+                    // In Progress tickets filter
+                    let inProgressMatch = true;
+                    if (inProgressFilter === "0") {
+                        inProgressMatch = inProgressTickets === 0;
+                    } else if (inProgressFilter === "1+") {
+                        inProgressMatch = inProgressTickets > 0;
+                    }
 
-            // --------------------------
-            // Live Search for Pending Users
-            // --------------------------
-            const pendingSearchInput = document.getElementById('pendingUserLiveSearch'); // Input field for pending users
-            const pendingTable = document.getElementById('pendingUserReportsTable'); // Table containing pending user rows
+                    // In Review tickets filter
+                    let inReviewMatch = true;
+                    if (inReviewFilter === "0") {
+                        inReviewMatch = inReviewTickets === 0;
+                    } else if (inReviewFilter === "1+") {
+                        inReviewMatch = inReviewTickets > 0;
+                    }
 
-            // Create a "No results" message for Pending Users (hidden by default)
-            let pendingNoResultsMsg = document.createElement('div');
-            pendingNoResultsMsg.className = 'alert alert-warning mt-2';
-            pendingNoResultsMsg.style.display = 'none';
-            pendingNoResultsMsg.innerHTML = '<i class="bi bi-exclamation-circle"></i> No pending users found.';
-            if (pendingTable) {
-                pendingTable.parentNode.appendChild(pendingNoResultsMsg);
-            }
+                    // Completed tickets filter
+                    let completedMatch = true;
+                    if (completedFilter === "0") {
+                        completedMatch = completedTickets === 0;
+                    } else if (completedFilter === "1+") {
+                        completedMatch = completedTickets > 0;
+                    }
 
-            if (pendingSearchInput && pendingTable) {
-
-                // Event: Triggered when a key is released in the search box
-                pendingSearchInput.addEventListener('keyup', function (e) {
-                    e.preventDefault(); // Prevent any default behavior (like form submission)
-
-                    const filter = pendingSearchInput.value.toLowerCase(); // Convert search term to lowercase for case-insensitive matching
-                    const rows = pendingTable.querySelectorAll('tbody tr'); // Get all table rows inside <tbody>
-                    let visibleCount = 0; // Track visible rows
-
-                    // Loop through all rows and show/hide based on the search term
-                    rows.forEach(row => {
-                        const text = row.innerText.toLowerCase(); // Combine all text in the row and convert to lowercase
-                        if (text.includes(filter)) {
-                            row.style.display = ''; // Show row if it matches the search term
-                            visibleCount++;
-                        } else {
-                            row.style.display = 'none'; // Hide row if it does not match
-                        }
-                    });
-
-                    // Show "No results" message if no visible rows
-                    pendingNoResultsMsg.style.display = (visibleCount === 0) ? 'block' : 'none';
-                });
-
-                // Event: Prevent pressing "Enter" from submitting the form
-                pendingSearchInput.addEventListener('keydown', function (e) {
-                    if (e.key === 'Enter') e.preventDefault();
+                    // Show/hide based on all filters
+                    if (roleMatch && totalTicketsMatch && todoMatch && inProgressMatch && inReviewMatch && completedMatch) {
+                        $row.show();
+                    } else {
+                        $row.hide();
+                    }
                 });
             }
+
+            // Attach event handlers to all active users filters
+            $('.header-filter').change(filterActiveUsers);
+
+            // Pending Users Live Search
+            $('#pendingUserLiveSearch').on('keyup', function() {
+                const searchText = $(this).val().toLowerCase();
+                $('.pending-user-row').each(function() {
+                    const $row = $(this);
+                    const username = $row.find('td:eq(0)').text().toLowerCase();
+                    const email = $row.find('td:eq(1)').text().toLowerCase();
+                    const date = $row.find('td:eq(2)').text().toLowerCase();
+
+                    if (username.includes(searchText) || email.includes(searchText) || date.includes(searchText)) {
+                        $row.show();
+                    } else {
+                        $row.hide();
+                    }
+                });
+            });
         });
     </script>
 }
-
