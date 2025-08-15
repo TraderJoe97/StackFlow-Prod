@@ -1,5 +1,5 @@
-﻿﻿@{
-    ViewData["Title"] = "Login";
+﻿@{
+    ViewData["Title"] = "Account";
     Layout = "_Layout";
 }
 
@@ -7,72 +7,112 @@
     <link rel="stylesheet" href="~/css/Account.css" />
 }
 
-<div class="container">
-    <div class="welcome-section">
-        <img src="~/images/logo.JPG" alt="Logo" class="logo" />
-        <h1>WELCOME BACK!</h1>
-        <p class="description">
-            Your personal assistant for effortless task management and a productive day.
-        </p>
+<div class="body">
+    <div class="container flip-container" id="flip-container">
+        <!-- Welcome Section (same for both forms) -->
+        <div class="welcome-section">
+            <img src="~/images/logo.png" alt="Logo" class="logo" />
+            <h1 id="welcome-title">WELCOME BACK!</h1>
+            <p class="description" id="welcome-desc">
+                Your personal assistant for effortless task management and a productive day.
+            </p>
 
-        <!-- Decorative Circles -->
-        <div class="circle circle1"></div>
-        <div class="circle circle2"></div>
-        <div class="circle circle3"></div>
-    </div>
+            <!-- Decorative Circles -->
+            <div class="circle circle1"></div>
+            <div class="circle circle2"></div>
+            <div class="circle circle3"></div>
+        </div>
 
-    <div class="login-section">
-        <h2>Log in</h2>
+        <!-- Forms Container -->
+        <div class="forms-panel">
+            <!-- Login Form -->
+            <form id="login-form" asp-controller="Account" asp-action="Login" method="post" class="form-panel needs-validation" novalidate>
+                <h2>Log in</h2>
 
-        @if (TempData["SuccessMessage"] != null)
-        {
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        }
-        @if (TempData["ErrorMessage"] != null)
-        {
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="bi bi-x-circle-fill me-2"></i>@TempData["ErrorMessage"]
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        }
-        @if (ViewData["LoginError"] != null)
-        {
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="bi bi-exclamation-triangle-fill me-2"></i>@ViewData["LoginError"]
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        }
+                @* Alerts *@
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="bi bi-x-circle-fill me-2"></i>@TempData["ErrorMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
 
-        <form asp-controller="Account" asp-action="Login" method="post" class="needs-validation" novalidate>
-            <label>
-                <span class="icon">👤</span>
-                <input type="email" name="email" class="form-control" placeholder="Your Email" required />
-                <div class="invalid-feedback">Please enter a valid email address.</div>
-            </label>
+                <label>
+                    <span class="icon">👤</span>
+                    <input type="email" name="email" class="form-control" placeholder="Your Email" required />
+                    <div class="invalid-feedback">Please enter a valid email address.</div>
+                </label>
 
-            <label>
-                <span class="icon">🔒</span>
-                <input type="password" name="password" class="form-control" placeholder="Password" required />
-                <span class="show-password">SHOW</span>
-                <div class="invalid-feedback">Please enter your password.</div>
-            </label>
+                <label>
+                    <span class="icon">🔒</span>
+                    <input type="password" name="password" class="form-control" placeholder="Password" required />
+                    <span class="show-password">SHOW</span>
+                    <div class="invalid-feedback">Please enter your password.</div>
+                </label>
 
-            <div class="options">
-                <label><input type="checkbox" /> Remember me</label>
-                <a href="#">Forgot Password?</a>
-            </div>
+                <div class="options">
+                    <label><input type="checkbox" /> Remember me</label>
+                    <a href="#">Forgot Password?</a>
+                </div>
 
-            <button type="submit" class="btn-primary">Log in</button>
+                <button type="submit" class="btn-primary">Log in</button>
 
-            <div class="divider"><span>or</span></div>
+                <div class="divider"><span>or</span></div>
 
-            <a asp-controller="Account" asp-action="Register" class="btn-secondary text-center d-block">
-                Register new account
-            </a>
-        </form>
+                <button type="button" id="switch-to-register" class="btn-secondary text-center d-block">Register new account</button>
+            </form>
+
+            <!-- Register Form -->
+            <form id="register-form" asp-controller="Account" asp-action="Register" method="post" class="form-panel needs-validation" novalidate>
+                <h2>Register</h2>
+
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="bi bi-x-circle-fill me-2"></i>@TempData["ErrorMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+
+                <label>
+                    <span class="icon">👤</span>
+                    <input type="text" name="username" class="form-control" placeholder="Username" required />
+                    <div class="invalid-feedback">Please enter a username.</div>
+                </label>
+
+                <label>
+                    <span class="icon">📧</span>
+                    <input type="email" name="email" class="form-control" placeholder="Email" required />
+                    <div class="invalid-feedback">Please enter a valid email.</div>
+                </label>
+
+                <label>
+                    <span class="icon">🔒</span>
+                    <input type="password" name="password" class="form-control" placeholder="Password" required />
+                    <div class="invalid-feedback">Please enter a password.</div>
+                </label>
+
+                <label>
+                    <span class="icon">🔒</span>
+                    <input type="password" name="confirmPassword" class="form-control" placeholder="Confirm Password" required />
+                    <div class="invalid-feedback">Please confirm your password.</div>
+                </label>
+
+                <button type="submit" class="btn-primary">Register</button>
+
+                <div class="divider"><span>or</span></div>
+
+                <button type="button" id="switch-to-login" class="btn-secondary text-center d-block">Back to login</button>
+            </form>
+        </div>
     </div>
 </div>
 
@@ -92,5 +132,30 @@
                 }, false);
             });
         })();
+
+        // Flip effect JS
+        const flipContainer = document.getElementById('flip-container');
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+        const switchToRegister = document.getElementById('switch-to-register');
+        const switchToLogin = document.getElementById('switch-to-login');
+        const welcomeTitle = document.getElementById('welcome-title');
+        const welcomeDesc = document.getElementById('welcome-desc');
+
+        switchToRegister.addEventListener('click', () => {
+            flipContainer.classList.add('flipped');
+            loginForm.style.display = 'none';
+            registerForm.style.display = 'block';
+            welcomeTitle.textContent = "WELCOME!";
+            welcomeDesc.textContent = "Let's get you started with a new account!";
+        });
+
+        switchToLogin.addEventListener('click', () => {
+            flipContainer.classList.remove('flipped');
+            registerForm.style.display = 'none';
+            loginForm.style.display = 'block';
+            welcomeTitle.textContent = "WELCOME BACK!";
+            welcomeDesc.textContent = "Your personal assistant for effortless task management and a productive day.";
+        });
     </script>
 }
